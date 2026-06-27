@@ -1,0 +1,78 @@
+import { useState } from 'react'
+import { useLocation, useNavigate, Navigate } from 'react-router-dom'
+import { ApiError } from '@/api/client'
+import { authApi } from '@/api/auth'
+import { useAuthStore } from '@/store/auth'
+import Screen from '@/components/ui/Screen'
+import Button from '@/components/ui/Button'
+import PinInput from '@/components/auth/PinInput'
+
+interface NavState {
+  identityVerificationId: string
+  name: string
+}
+
+export default function SignupPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const setTokens = useAuthStore((s) => s.setTokens)
+
+  const state = location.state as NavState | null
+  const [pin, setPin] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // KYC 안 거치고 직접 진입한 경우 → 홈으로
+  if (!state?.identityVerificationId) {
+    return <Navigate to="/" replace />
+  }
+
+  const handleSubmit = async () => {
+    if (pin.length !== 6) return
+    setError(null)
+    setLoading(true)
+    try {
+      const tokens = await authApi.signup(state.identityVerificationId, pin)
+      setTokens(tokens.accessToken, tokens.refreshToken)
+      navigate('/done', { replace: true })
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setError(`${e.message} (${e.status})`)
+      } else if (e instanceof Error) {
+        setError(e.message)
+      }
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Screen>
+      <h1 style={{ margin: 0, fontSize: 24 }}>
+        {state.name}님, 6자리 PIN을 설정해주세요
+      </h1>
+      <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+        다음 로그인부터 이 PIN으로 빠르게 들어올 수 있어요.
+      </p>
+
+      <PinInput value={pin} onChange={setPin} disabled={loading} />
+
+      {error && (
+        <div
+          style={{
+            padding: 12,
+            background: '#fef2f2',
+            color: '#b91c1c',
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      <Button onClick={handleSubmit} disabled={loading || pin.length !== 6}>
+        {loading ? '가입 중…' : '가입 완료'}
+      </Button>
+    </Screen>
+  )
+}
