@@ -78,6 +78,22 @@ declare global {
       close(): void
     }
 
+    interface CustomOverlayOptions {
+      position: LatLng
+      content: string | HTMLElement
+      map?: Map
+      xAnchor?: number
+      yAnchor?: number
+      zIndex?: number
+      clickable?: boolean
+    }
+
+    class CustomOverlay {
+      constructor(options: CustomOverlayOptions)
+      setMap(map: Map | null): void
+      setPosition(position: LatLng): void
+    }
+
     namespace event {
       function addListener(target: object, type: string, handler: () => void): void
       function removeListener(target: object, type: string, handler: () => void): void
