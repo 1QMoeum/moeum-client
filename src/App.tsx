@@ -5,6 +5,8 @@ import KycPage from '@/pages/KycPage'
 import SignupPage from '@/pages/SignupPage'
 import LoginPage from '@/pages/LoginPage'
 import KycLoginPage from '@/pages/KycLoginPage'
+import MyDataConsentPage from '@/pages/MyDataConsentPage'
+import MyDataAccountsPage from '@/pages/MyDataAccountsPage'
 import DonePage from '@/pages/DonePage'
 import MapDemoPage from '@/pages/MapDemoPage'
 import EventMapPage from '@/pages/EventMapPage'
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/kyc-login" element={<KycLoginPage />} />
+        <Route path="/mydata/consent" element={<MyDataConsentPage />} />
+        <Route path="/mydata/accounts" element={<MyDataAccountsPage />} />
         <Route path="/done" element={<DonePage />} />
         <Route path="/map" element={<MapDemoPage />} />
         <Route path="/events" element={<EventMapPage />} />

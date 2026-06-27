@@ -29,7 +29,7 @@ export default function SignupPage() {
     if (pin.length !== 6) return
     signup(
       { identityVerificationId: state.identityVerificationId, pin },
-      { onSuccess: () => navigate('/done', { replace: true }) },
+      { onSuccess: () => navigate('/mydata/consent', { replace: true }) },
     )
   }
 
@@ -46,7 +46,7 @@ export default function SignupPage() {
 
       {error && <ErrorBanner message={toErrorMessage(error)} />}
 
-      <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
+      <Button variant="solid" onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
         {isPending ? '가입 중…' : '가입 완료'}
       </Button>
     </Screen>
