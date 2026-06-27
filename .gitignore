@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 법정동 원본 SHP (대용량 바이너리 — 변환 후 public/geo 만 사용)
+/data/

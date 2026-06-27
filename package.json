@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "geo:build": "bash scripts/build-legaldong.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.5.2",
+    "mapshaper": "^0.7.33",
     "oxlint": "^1.69.0",
     "postcss": "^8.5.15",
     "prettier": "^3.8.5",
