@@ -28,14 +28,28 @@ export default function KycPage() {
     <Screen>
       <h1 style={{ margin: 0, fontSize: 24 }}>본인인증</h1>
       <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-        금융인증서 또는 PASS 로 본인인증을 진행합니다.
+        본인 명의 휴대폰으로 인증을 진행해요.
       </p>
 
       {error && <ErrorBanner message={toErrorMessage(error)} />}
 
-      <Button onClick={handleStart} disabled={isPending}>
-        {isPending ? '진행 중…' : '본인인증 시작'}
-      </Button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Button variant="solid" onClick={handleStart} disabled={isPending}>
+          {isPending ? '진행 중…' : '본인인증 시작'}
+        </Button>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 12,
+            color: '#8b95a1',
+            textAlign: 'center',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.55,
+          }}
+        >
+          카카오 인증은 지원하지 않아요 · 금융인증서 · PASS · 토스 이용
+        </p>
+      </div>
     </Screen>
   )
 }
