@@ -7,6 +7,7 @@ import LoginPage from '@/pages/LoginPage'
 import KycLoginPage from '@/pages/KycLoginPage'
 import DonePage from '@/pages/DonePage'
 import MapDemoPage from '@/pages/MapDemoPage'
+import EventMapPage from '@/pages/EventMapPage'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/kyc-login" element={<KycLoginPage />} />
         <Route path="/done" element={<DonePage />} />
         <Route path="/map" element={<MapDemoPage />} />
+        <Route path="/events" element={<EventMapPage />} />
       </Routes>
     </AuthBootstrap>
   )

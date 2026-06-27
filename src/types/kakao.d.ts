@@ -21,6 +21,8 @@ declare global {
       constructor()
       extend(latlng: LatLng): void
       isEmpty(): boolean
+      getSouthWest(): LatLng
+      getNorthEast(): LatLng
     }
 
     interface MapOptions {
@@ -32,6 +34,10 @@ declare global {
       constructor(container: HTMLElement, options: MapOptions)
       setBounds(bounds: LatLngBounds): void
       setCenter(latlng: LatLng): void
+      getLevel(): number
+      setLevel(level: number): void
+      getBounds(): LatLngBounds
+      getCenter(): LatLng
     }
 
     interface PolygonOptions {
@@ -46,6 +52,35 @@ declare global {
     class Polygon {
       constructor(options: PolygonOptions)
       setMap(map: Map | null): void
+    }
+
+    interface MarkerOptions {
+      position: LatLng
+      map?: Map
+      title?: string
+    }
+
+    class Marker {
+      constructor(options: MarkerOptions)
+      setMap(map: Map | null): void
+      getPosition(): LatLng
+    }
+
+    interface InfoWindowOptions {
+      content: string | HTMLElement
+      position?: LatLng
+      removable?: boolean
+    }
+
+    class InfoWindow {
+      constructor(options: InfoWindowOptions)
+      open(map: Map, marker?: Marker): void
+      close(): void
+    }
+
+    namespace event {
+      function addListener(target: object, type: string, handler: () => void): void
+      function removeListener(target: object, type: string, handler: () => void): void
     }
   }
 }
