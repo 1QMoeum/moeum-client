@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, Navigate } from 'react-router-dom'
-import { ApiError } from '@/api/client'
-import { authApi } from '@/api/auth'
-import { useAuthStore } from '@/store/auth'
+import { toErrorMessage } from '@/api/client'
+import { useSignup } from '@/hooks/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
 import PinInput from '@/components/auth/PinInput'
@@ -15,34 +14,22 @@ interface NavState {
 export default function SignupPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const setTokens = useAuthStore((s) => s.setTokens)
 
+  const { mutate: signup, isPending, error } = useSignup()
   const state = location.state as NavState | null
   const [pin, setPin] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // KYC 안 거치고 직접 진입한 경우 → 홈으로
   if (!state?.identityVerificationId) {
     return <Navigate to="/" replace />
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (pin.length !== 6) return
-    setError(null)
-    setLoading(true)
-    try {
-      const tokens = await authApi.signup(state.identityVerificationId, pin)
-      setTokens(tokens.accessToken, tokens.refreshToken)
-      navigate('/done', { replace: true })
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`${e.message} (${e.status})`)
-      } else if (e instanceof Error) {
-        setError(e.message)
-      }
-      setLoading(false)
-    }
+    signup(
+      { identityVerificationId: state.identityVerificationId, pin },
+      { onSuccess: () => navigate('/done', { replace: true }) },
+    )
   }
 
   return (
@@ -54,7 +41,7 @@ export default function SignupPage() {
         다음 로그인부터 이 PIN으로 빠르게 들어올 수 있어요.
       </p>
 
-      <PinInput value={pin} onChange={setPin} disabled={loading} />
+      <PinInput value={pin} onChange={setPin} disabled={isPending} />
 
       {error && (
         <div
@@ -66,12 +53,12 @@ export default function SignupPage() {
             fontSize: 14,
           }}
         >
-          {error}
+          {toErrorMessage(error)}
         </div>
       )}
 
-      <Button onClick={handleSubmit} disabled={loading || pin.length !== 6}>
-        {loading ? '가입 중…' : '가입 완료'}
+      <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
+        {isPending ? '가입 중…' : '가입 완료'}
       </Button>
     </Screen>
   )

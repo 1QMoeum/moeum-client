@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ApiError } from '@/api/client'
-import { authApi } from '@/api/auth'
-import { useAuthStore } from '@/store/auth'
+import { toErrorMessage } from '@/api/client'
+import { useKycLogin } from '@/hooks/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
 import PinInput from '@/components/auth/PinInput'
@@ -16,33 +15,21 @@ interface NavState {
 export default function KycLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const setTokens = useAuthStore((s) => s.setTokens)
 
+  const { mutate: kycLogin, isPending, error } = useKycLogin()
   const state = location.state as NavState | null
   const [pin, setPin] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   if (!state?.identityVerificationId) {
     return <Navigate to="/" replace />
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (pin.length !== 6) return
-    setError(null)
-    setLoading(true)
-    try {
-      const tokens = await authApi.kycLogin(state.identityVerificationId, pin)
-      setTokens(tokens.accessToken, tokens.refreshToken)
-      navigate('/done', { replace: true })
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`${e.message} (${e.status})`)
-      } else if (e instanceof Error) {
-        setError(e.message)
-      }
-      setLoading(false)
-    }
+    kycLogin(
+      { identityVerificationId: state.identityVerificationId, pin },
+      { onSuccess: () => navigate('/done', { replace: true }) },
+    )
   }
 
   return (
@@ -54,7 +41,7 @@ export default function KycLoginPage() {
         가입할 때 설정한 6자리 PIN입니다.
       </p>
 
-      <PinInput value={pin} onChange={setPin} disabled={loading} />
+      <PinInput value={pin} onChange={setPin} disabled={isPending} />
 
       {error && (
         <div
@@ -66,12 +53,12 @@ export default function KycLoginPage() {
             fontSize: 14,
           }}
         >
-          {error}
+          {toErrorMessage(error)}
         </div>
       )}
 
-      <Button onClick={handleSubmit} disabled={loading || pin.length !== 6}>
-        {loading ? '로그인 중…' : '로그인'}
+      <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
+        {isPending ? '로그인 중…' : '로그인'}
       </Button>
     </Screen>
   )

@@ -1,0 +1,64 @@
+import { useMutation } from '@tanstack/react-query'
+import type { ApiError } from '@/api/client'
+import { authApi } from '@/api/auth'
+import { requestKgInicisIdentityVerification } from '@/lib/portone'
+import { useAuthStore } from '@/store/auth'
+import type { KycVerifyResponse, TokenResponse } from '@/types/api'
+
+/**
+ * auth 도메인의 서버 통신을 React Query mutation 으로 감싼 훅 레이어.
+ * 페이지는 loading/error 상태와 토큰 저장 같은 부수효과를 직접 다루지 않고
+ * 여기서 반환하는 isPending/error/mutate 만 소비한다.
+ */
+
+interface KycPinVars {
+  identityVerificationId: string
+  pin: string
+}
+
+/** 포트원 본인인증 → 서버 KYC 검증까지 한 흐름. newUser 판별값과 id 를 함께 반환. */
+export function useVerifyKyc() {
+  return useMutation<{ identityVerificationId: string; result: KycVerifyResponse }, Error, void>({
+    mutationFn: async () => {
+      const identityVerificationId = await requestKgInicisIdentityVerification()
+      const result = await authApi.verifyKyc(identityVerificationId)
+      return { identityVerificationId, result }
+    },
+  })
+}
+
+/** 간편 로그인 — refresh + PIN. 성공 시 토큰 저장. */
+export function useLogin() {
+  const setTokens = useAuthStore((s) => s.setTokens)
+  return useMutation<TokenResponse, ApiError, { refreshToken: string; pin: string }>({
+    mutationFn: ({ refreshToken, pin }) => authApi.login(refreshToken, pin),
+    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+  })
+}
+
+/** 회원가입 — KYC + PIN. 성공 시 토큰 저장. */
+export function useSignup() {
+  const setTokens = useAuthStore((s) => s.setTokens)
+  return useMutation<TokenResponse, ApiError, KycPinVars>({
+    mutationFn: ({ identityVerificationId, pin }) => authApi.signup(identityVerificationId, pin),
+    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+  })
+}
+
+/** 재인증 로그인 — KYC + PIN. 성공 시 토큰 저장. */
+export function useKycLogin() {
+  const setTokens = useAuthStore((s) => s.setTokens)
+  return useMutation<TokenResponse, ApiError, KycPinVars>({
+    mutationFn: ({ identityVerificationId, pin }) => authApi.kycLogin(identityVerificationId, pin),
+    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+  })
+}
+
+/** 로그아웃 — 멱등. 서버 호출 성공/실패와 무관하게 로컬 토큰은 클리어. */
+export function useLogout() {
+  const clearTokens = useAuthStore((s) => s.clearTokens)
+  return useMutation<null, ApiError, string>({
+    mutationFn: (refreshToken) => authApi.logout(refreshToken),
+    onSettled: () => clearTokens(),
+  })
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ApiError } from '@/api/client'
-import { authApi } from '@/api/auth'
+import { toErrorMessage } from '@/api/client'
+import { useLogin } from '@/hooks/auth'
 import { useAuthStore } from '@/store/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
@@ -11,40 +11,31 @@ import PinInput from '@/components/auth/PinInput'
 export default function LoginPage() {
   const navigate = useNavigate()
   const refreshToken = useAuthStore((s) => s.refreshToken)
-  const setTokens = useAuthStore((s) => s.setTokens)
   const clearTokens = useAuthStore((s) => s.clearTokens)
 
+  const { mutate: login, isPending, error } = useLogin()
   const [pin, setPin] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // 저장된 refresh 가 없으면 KYC 부터
   if (!refreshToken) {
     return <Navigate to="/kyc" replace />
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (pin.length !== 6) return
-    setError(null)
-    setLoading(true)
-    try {
-      const tokens = await authApi.login(refreshToken, pin)
-      setTokens(tokens.accessToken, tokens.refreshToken)
-      navigate('/done', { replace: true })
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`${e.message} (${e.status})`)
-        // refresh 만료/위조면 KYC 부터 다시
-        if (e.status === 2006) {
-          clearTokens()
-          navigate('/kyc', { replace: true })
-          return
-        }
-      } else if (e instanceof Error) {
-        setError(e.message)
-      }
-      setLoading(false)
-    }
+    login(
+      { refreshToken, pin },
+      {
+        onSuccess: () => navigate('/done', { replace: true }),
+        onError: (e) => {
+          // refresh 만료/위조면 KYC 부터 다시
+          if (e.status === 2006) {
+            clearTokens()
+            navigate('/kyc', { replace: true })
+          }
+        },
+      },
+    )
   }
 
   return (
@@ -54,7 +45,7 @@ export default function LoginPage() {
         가입할 때 설정한 6자리 PIN입니다.
       </p>
 
-      <PinInput value={pin} onChange={setPin} disabled={loading} />
+      <PinInput value={pin} onChange={setPin} disabled={isPending} />
 
       {error && (
         <div
@@ -66,12 +57,12 @@ export default function LoginPage() {
             fontSize: 14,
           }}
         >
-          {error}
+          {toErrorMessage(error)}
         </div>
       )}
 
-      <Button onClick={handleSubmit} disabled={loading || pin.length !== 6}>
-        {loading ? '로그인 중…' : '로그인'}
+      <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
+        {isPending ? '로그인 중…' : '로그인'}
       </Button>
 
       <button

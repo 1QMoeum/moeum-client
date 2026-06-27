@@ -1,6 +1,5 @@
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ApiError } from '@/api/client'
-import { authApi } from '@/api/auth'
+import { useLogout } from '@/hooks/auth'
 import { useAuthStore } from '@/store/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
@@ -13,7 +12,7 @@ export default function DonePage() {
   const navigate = useNavigate()
   const accessToken = useAuthStore((s) => s.accessToken)
   const refreshToken = useAuthStore((s) => s.refreshToken)
-  const clearTokens = useAuthStore((s) => s.clearTokens)
+  const { mutate: logout, isPending } = useLogout()
 
   if (!accessToken || !refreshToken) {
     return <Navigate to="/" replace />
@@ -21,16 +20,11 @@ export default function DonePage() {
 
   const mask = (t: string) => `${t.slice(0, 16)}…${t.slice(-8)}`
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout(refreshToken)
-    } catch (e) {
-      // logout 은 멱등 — 실패해도 무시
-      if (e instanceof ApiError) console.warn(e.message)
-    } finally {
-      clearTokens()
-      navigate('/', { replace: true })
-    }
+  // logout 은 멱등 — 서버 실패해도 훅의 onSettled 에서 토큰 클리어 후 홈으로
+  const handleLogout = () => {
+    logout(refreshToken, {
+      onSettled: () => navigate('/', { replace: true }),
+    })
   }
 
   return (
@@ -61,8 +55,8 @@ export default function DonePage() {
         </div>
       </section>
 
-      <Button onClick={handleLogout} style={{ background: '#ef4444' }}>
-        로그아웃
+      <Button onClick={handleLogout} disabled={isPending} style={{ background: '#ef4444' }}>
+        {isPending ? '로그아웃 중…' : '로그아웃'}
       </Button>
     </Screen>
   )

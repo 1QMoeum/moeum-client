@@ -1,8 +1,6 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ApiError } from '@/api/client'
-import { authApi } from '@/api/auth'
-import { requestKgInicisIdentityVerification } from '@/lib/portone'
+import { toErrorMessage } from '@/api/client'
+import { useVerifyKyc } from '@/hooks/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
 
@@ -14,32 +12,15 @@ import Button from '@/components/ui/Button'
  */
 export default function KycPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { mutate: verifyKyc, isPending, error } = useVerifyKyc()
 
-  const handleStart = async () => {
-    setError(null)
-    setLoading(true)
-    try {
-      const identityVerificationId = await requestKgInicisIdentityVerification()
-      const verifyResult = await authApi.verifyKyc(identityVerificationId)
-
-      const navState = { identityVerificationId, name: verifyResult.name }
-      if (verifyResult.newUser) {
-        navigate('/signup', { state: navState })
-      } else {
-        navigate('/kyc-login', { state: navState })
-      }
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`${e.message} (${e.status})`)
-      } else if (e instanceof Error) {
-        setError(e.message)
-      } else {
-        setError('알 수 없는 오류가 발생했습니다.')
-      }
-      setLoading(false)
-    }
+  const handleStart = () => {
+    verifyKyc(undefined, {
+      onSuccess: ({ identityVerificationId, result }) => {
+        const navState = { identityVerificationId, name: result.name }
+        navigate(result.newUser ? '/signup' : '/kyc-login', { state: navState })
+      },
+    })
   }
 
   return (
@@ -59,12 +40,12 @@ export default function KycPage() {
             fontSize: 14,
           }}
         >
-          {error}
+          {toErrorMessage(error)}
         </div>
       )}
 
-      <Button onClick={handleStart} disabled={loading}>
-        {loading ? '진행 중…' : '본인인증 시작'}
+      <Button onClick={handleStart} disabled={isPending}>
+        {isPending ? '진행 중…' : '본인인증 시작'}
       </Button>
     </Screen>
   )
