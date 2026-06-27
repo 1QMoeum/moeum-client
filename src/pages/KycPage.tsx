@@ -3,6 +3,7 @@ import { toErrorMessage } from '@/api/client'
 import { useVerifyKyc } from '@/hooks/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 
 /**
  * KYC 인증 트리거 화면.
@@ -30,19 +31,7 @@ export default function KycPage() {
         금융인증서 또는 PASS 로 본인인증을 진행합니다.
       </p>
 
-      {error && (
-        <div
-          style={{
-            padding: 12,
-            background: '#fef2f2',
-            color: '#b91c1c',
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          {toErrorMessage(error)}
-        </div>
-      )}
+      {error && <ErrorBanner message={toErrorMessage(error)} />}
 
       <Button onClick={handleStart} disabled={isPending}>
         {isPending ? '진행 중…' : '본인인증 시작'}

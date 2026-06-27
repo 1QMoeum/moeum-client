@@ -4,6 +4,7 @@ import { toErrorMessage } from '@/api/client'
 import { useKycLogin } from '@/hooks/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 import PinInput from '@/components/auth/PinInput'
 
 interface NavState {
@@ -43,19 +44,7 @@ export default function KycLoginPage() {
 
       <PinInput value={pin} onChange={setPin} disabled={isPending} />
 
-      {error && (
-        <div
-          style={{
-            padding: 12,
-            background: '#fef2f2',
-            color: '#b91c1c',
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          {toErrorMessage(error)}
-        </div>
-      )}
+      {error && <ErrorBanner message={toErrorMessage(error)} />}
 
       <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
         {isPending ? '로그인 중…' : '로그인'}

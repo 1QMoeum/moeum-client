@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { toErrorMessage } from '@/api/client'
+import { ErrorCode } from '@/constants/errorCodes'
 import { useLogin } from '@/hooks/auth'
 import { useAuthStore } from '@/store/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 import PinInput from '@/components/auth/PinInput'
 
 /** 간편 로그인 — refresh + PIN. 평상시 경로. */
@@ -29,7 +31,7 @@ export default function LoginPage() {
         onSuccess: () => navigate('/done', { replace: true }),
         onError: (e) => {
           // refresh 만료/위조면 KYC 부터 다시
-          if (e.status === 2006) {
+          if (e.status === ErrorCode.REFRESH_INVALID) {
             clearTokens()
             navigate('/kyc', { replace: true })
           }
@@ -47,19 +49,7 @@ export default function LoginPage() {
 
       <PinInput value={pin} onChange={setPin} disabled={isPending} />
 
-      {error && (
-        <div
-          style={{
-            padding: 12,
-            background: '#fef2f2',
-            color: '#b91c1c',
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          {toErrorMessage(error)}
-        </div>
-      )}
+      {error && <ErrorBanner message={toErrorMessage(error)} />}
 
       <Button onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
         {isPending ? '로그인 중…' : '로그인'}
