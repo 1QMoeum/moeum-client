@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import AuthBootstrap from '@/components/auth/AuthBootstrap'
 import HomePage from '@/pages/HomePage'
+import MainPage from '@/pages/MainPage'
 import KycPage from '@/pages/KycPage'
 import SignupPage from '@/pages/SignupPage'
 import LoginPage from '@/pages/LoginPage'
@@ -17,6 +18,7 @@ export default function App() {
     <AuthBootstrap>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/main" element={<MainPage />} />
         <Route path="/kyc" element={<KycPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
