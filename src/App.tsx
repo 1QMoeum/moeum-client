@@ -10,6 +10,7 @@ import MyDataAccountsPage from '@/pages/MyDataAccountsPage'
 import DonePage from '@/pages/DonePage'
 import MapDemoPage from '@/pages/MapDemoPage'
 import EventMapPage from '@/pages/EventMapPage'
+import WalletPage from '@/pages/WalletPage'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/done" element={<DonePage />} />
         <Route path="/map" element={<MapDemoPage />} />
         <Route path="/events" element={<EventMapPage />} />
+        <Route path="/wallet" element={<WalletPage />} />
       </Routes>
     </AuthBootstrap>
   )

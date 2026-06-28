@@ -98,7 +98,7 @@ export default function DonePage() {
             {account === undefined
               ? '계좌 연동 상태를 확인하고 있어요.'
               : isLinked
-                ? '예금 토큰 충전 계좌가 등록되어 있어요.\n커스터디 지갑 생성은 다음 PR.'
+                ? '예금 토큰 충전 계좌가 등록되어 있어요.\n내 커스터디 지갑을 확인해 보세요.'
                 : '아직 예금 토큰 충전 계좌를 등록하지 않았어요.'}
           </p>
         </header>
@@ -125,23 +125,26 @@ export default function DonePage() {
           <Button variant="solid" onClick={() => navigate('/mydata/consent')}>계좌 연동하러 가기</Button>
         )}
         {isLinked && (
-          <button
-            type="button"
-            onClick={() => navigate('/mydata/consent')}
-            style={{
-              all: 'unset',
-              width: '100%',
-              padding: '12px 0',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500,
-              color: '#6b7684',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            다른 계좌로 변경
-          </button>
+          <>
+            <Button variant="solid" onClick={() => navigate('/wallet')}>내 지갑 보기</Button>
+            <button
+              type="button"
+              onClick={() => navigate('/mydata/consent')}
+              style={{
+                all: 'unset',
+                width: '100%',
+                padding: '12px 0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#6b7684',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              다른 계좌로 변경
+            </button>
+          </>
         )}
         <button
           type="button"

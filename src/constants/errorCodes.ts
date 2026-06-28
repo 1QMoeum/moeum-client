@@ -5,6 +5,8 @@
 export const ErrorCode = {
   /** refresh 토큰 만료/위조 — KYC 부터 다시 시작해야 함 */
   REFRESH_INVALID: 2006,
+  /** 커스터디 지갑 미생성 — 빈 상태(생성 안내) 노출 */
+  WALLET_NOT_FOUND: 3000,
 } as const
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]

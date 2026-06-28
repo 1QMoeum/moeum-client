@@ -54,3 +54,15 @@ export interface BankAccountResponse {
   accountNumber: string
   accountHolder: string
 }
+
+/** ===== 도메인 타입 — wallet (커스터디 지갑, ResponseDTO 적용) =====
+ *  서버 WalletResponse DTO 기준. 개인키는 절대 내려오지 않는다.
+ *  (서버 필드명이 다르면 이 인터페이스만 맞추면 페이지/훅은 그대로 동작) */
+export interface WalletResponse {
+  /** 커스터디 지갑 주소 (0x…) */
+  walletAddress: string
+  /** 예금토큰 잔액 — DB 캐시값 (서버 BigDecimal → JSON number) */
+  tokenBalance: number
+  /** 블록 익스플로러 주소 링크 */
+  explorerUrl: string
+}
