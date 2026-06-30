@@ -4,6 +4,8 @@ import { eventApi } from '@/api/events'
 import { getUserIdFromToken } from '@/lib/jwt'
 import { useAuthStore } from '@/store/auth'
 import type {
+  BudgetPlanResponse,
+  CreateBudgetRequest,
   CreateEventRequest,
   CreateEventResponse,
   EventDetailResponse,
@@ -11,6 +13,7 @@ import type {
   EventListResponse,
   MapBounds,
   ParticipateResponse,
+  UpdateBudgetRequest,
 } from '@/types/event'
 
 /** 줌아웃 — 법정동별 집계. 줌아웃 상태일 때만 호출. */
@@ -106,5 +109,73 @@ export function useParticipateEvent() {
       void qc.invalidateQueries({ queryKey: ['events', 'map'] })
       void qc.invalidateQueries({ queryKey: ['events', 'within'] })
     },
+  })
+}
+
+/** 사용 계획 쿼리 키. 생성/수정/취소 mutation 의 setQueryData 대상. */
+const budgetsKey = (eventId: number) => ['events', 'budgets', eventId] as const
+
+/**
+ * 사용 계획 조회 (지출 항목 + 합계). eventId 가 없으면 비활성화.
+ * 사용 계획이 없는 이벤트면 items 빈 배열로 내려온다.
+ */
+export function useEventBudgets(eventId: number | null) {
+  return useQuery<BudgetPlanResponse, ApiError>({
+    queryKey: budgetsKey(eventId ?? -1),
+    enabled: eventId !== null,
+    staleTime: 30_000,
+    queryFn: () => eventApi.budgets(eventId as number),
+  })
+}
+
+/** userId(JWT sub) 파생 — 없으면 ApiError 로 통일. */
+function requireUserId(accessToken: string | null): number {
+  const userId = getUserIdFromToken(accessToken)
+  if (userId == null) {
+    throw new ApiError(null, '사용자 정보를 확인할 수 없습니다. 다시 로그인해 주세요.')
+  }
+  return userId
+}
+
+/**
+ * 사용 계획 생성 (총대). 진행중아님 4004 · 총대아님 4006 은 페이지에서 status 로 분기.
+ * 성공 시 반환된 전체 계획으로 캐시를 갱신한다.
+ */
+export function useCreateBudgets(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<BudgetPlanResponse, ApiError, CreateBudgetRequest>({
+    mutationFn: (body) => eventApi.createBudgets(requireUserId(accessToken), eventId, body),
+    onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
+  })
+}
+
+/** 사용 계획 항목 수정 mutation 변수. */
+type UpdateBudgetVars = { budgetId: number; body: UpdateBudgetRequest }
+
+/**
+ * 사용 계획 항목 수정 (총대). 총대아님 4006 · PENDING아님 4008 · 모금후잠금 4009.
+ * 성공 시 반환된 전체 계획으로 캐시를 갱신한다.
+ */
+export function useUpdateBudget(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<BudgetPlanResponse, ApiError, UpdateBudgetVars>({
+    mutationFn: ({ budgetId, body }) =>
+      eventApi.updateBudget(requireUserId(accessToken), eventId, budgetId, body),
+    onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
+  })
+}
+
+/**
+ * 사용 계획 항목 취소 (총대). CANCELLED soft delete. 총대아님 4006 · PENDING아님 4008.
+ * 성공 시 반환된 전체 계획으로 캐시를 갱신한다.
+ */
+export function useCancelBudget(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<BudgetPlanResponse, ApiError, number>({
+    mutationFn: (budgetId) => eventApi.cancelBudget(requireUserId(accessToken), eventId, budgetId),
+    onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
   })
 }

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, AlertCircle, Heart, Share2, ShieldCheck } from 'lucide-react'
-import { useEventDetail } from '@/hooks/events'
+import { ChevronLeft, AlertCircle, ChevronDown, Heart, Pencil, Share2, ShieldCheck } from 'lucide-react'
+import { useEventBudgets, useEventDetail } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
+import { getUserIdFromToken } from '@/lib/jwt'
 import { ErrorCode } from '@/constants/errorCodes'
 import { categoryMeta } from '@/lib/mapPin'
 import Button from '@/components/ui/Button'
-import type { EventDetailResponse } from '@/types/event'
+import BudgetEditor from '@/components/events/BudgetEditor'
+import type { BudgetItem, BudgetStatus, EventDetailResponse } from '@/types/event'
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
@@ -244,7 +246,7 @@ function EventView({ event, onParticipate }: { event: EventDetailResponse; onPar
         </div>
 
         {tab === 'intro' && <IntroTab event={event} />}
-        {tab === 'budget' && <PlaceholderTab text="사용 계획은 준비 중이에요." />}
+        {tab === 'budget' && <BudgetTab event={event} />}
         {tab === 'board' && <PlaceholderTab text="게시판은 준비 중이에요." />}
       </div>
 
@@ -318,6 +320,316 @@ function InfoLine({ label, value, sub }: { label: string; value: string; sub?: s
         <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>{value}</span>
         {sub && <span style={{ fontSize: 12.5, color: '#adb5bd', letterSpacing: '-0.01em' }}>{sub}</span>}
       </dd>
+    </div>
+  )
+}
+
+/** 사용 계획 항목 상태 → 한글 라벨·색. */
+const BUDGET_STATUS_META: Record<BudgetStatus, { label: string; color: string; bg: string }> = {
+  PENDING: { label: '집행 예정', color: '#6b7684', bg: '#f1f3f5' },
+  EXECUTED: { label: '집행 완료', color: '#12b886', bg: '#e6fcf5' },
+  REFUNDED: { label: '환불됨', color: '#1c7ed6', bg: '#e7f5ff' },
+  CANCELLED: { label: '취소됨', color: '#adb5bd', bg: '#f1f3f5' },
+}
+
+/**
+ * 사용 계획 탭 — 총 목표 금액 + 예상 사용 계획.
+ * 각 항목은 제목·금액만 노출하고, 펼치면 집행예정일·업체·상태·트랜잭션을 보여준다.
+ */
+function BudgetTab({ event }: { event: EventDetailResponse }) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const [editing, setEditing] = useState(false)
+  const { data, isPending, error, refetch, isFetching } = useEventBudgets(event.eventId)
+
+  const isOwner = getUserIdFromToken(accessToken) === event.creatorId
+  const fundingStarted = event.currentAmount > 0
+
+  if (isPending) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8 }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{ height: 56, borderRadius: 12, background: '#eef0f3' }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        message={`${error.message} (${error.status ?? '?'})`}
+        onRetry={() => void refetch()}
+        retrying={isFetching}
+      />
+    )
+  }
+
+  const items = data?.items ?? []
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      {/* 총 목표 금액 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
+          총 목표 금액
+        </span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+          <span
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              color: '#191f28',
+              letterSpacing: '-0.03em',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {event.targetAmount.toLocaleString('ko-KR')}
+          </span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#191f28' }}>원</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+          모금한 금액은 아래와 같은 계획으로 사용할 예정입니다.
+        </p>
+      </div>
+
+      {/* 예상 사용 계획 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
+            예상 사용 계획
+          </span>
+          {isOwner && items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label="사용 계획 편집"
+              style={{
+                all: 'unset',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                cursor: 'pointer',
+                color: '#8b95a1',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <Pencil size={18} />
+            </button>
+          )}
+        </div>
+
+        {items.length === 0 ? (
+          <div
+            style={{
+              background: '#f9fafb',
+              borderRadius: 14,
+              padding: '32px 20px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <span style={{ fontSize: 14, color: '#adb5bd', letterSpacing: '-0.01em' }}>
+              아직 등록된 사용 계획이 없어요.
+            </span>
+            {isOwner && (
+              <Button
+                variant="solid"
+                onClick={() => setEditing(true)}
+                style={{ width: 'auto', padding: '11px 22px', fontSize: 14 }}
+              >
+                사용 계획 추가하기
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {items.map((item) => (
+                <BudgetRow key={item.budgetId} item={item} />
+              ))}
+            </div>
+
+            {/* 총 합계 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 16px',
+                borderTop: '1.5px solid #ededf2',
+                marginTop: 2,
+              }}
+            >
+              <span style={{ fontSize: 14.5, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
+                총 합계
+              </span>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color: '#8B5CF6',
+                  letterSpacing: '-0.01em',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {won(data?.totalAmount ?? 0)}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {editing && (
+        <BudgetEditor
+          eventId={event.eventId}
+          items={items}
+          fundingStarted={fundingStarted}
+          onClose={() => setEditing(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/** 사용 계획 항목 한 줄 — 접힘 상태는 제목·금액만, 펼치면 상세. */
+function BudgetRow({ item }: { item: BudgetItem }) {
+  const [open, setOpen] = useState(false)
+  const cancelled = item.status === 'CANCELLED'
+  const status = BUDGET_STATUS_META[item.status] ?? BUDGET_STATUS_META.PENDING
+
+  return (
+    <div
+      style={{
+        border: '1px solid #ededf2',
+        borderRadius: 12,
+        background: '#fff',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        style={{
+          all: 'unset',
+          boxSizing: 'border-box',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '14px 16px',
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <span
+          style={{
+            flex: 1,
+            fontSize: 14.5,
+            fontWeight: 600,
+            color: cancelled ? '#adb5bd' : '#191f28',
+            letterSpacing: '-0.01em',
+            textDecoration: cancelled ? 'line-through' : 'none',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {item.title}
+        </span>
+        <span
+          style={{
+            fontSize: 14.5,
+            fontWeight: 700,
+            color: cancelled ? '#adb5bd' : '#191f28',
+            letterSpacing: '-0.01em',
+            fontVariantNumeric: 'tabular-nums',
+            textDecoration: cancelled ? 'line-through' : 'none',
+            flexShrink: 0,
+          }}
+        >
+          {won(item.amount)}
+        </span>
+        <ChevronDown
+          size={18}
+          color="#adb5bd"
+          style={{ flexShrink: 0, transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}
+        />
+      </button>
+
+      {open && (
+        <dl
+          style={{
+            margin: 0,
+            padding: '4px 16px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            borderTop: '1px solid #f1f3f5',
+          }}
+        >
+          <BudgetDetail label="상태">
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 700,
+                color: status.color,
+                background: status.bg,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {status.label}
+            </span>
+          </BudgetDetail>
+          <BudgetDetail label="집행 예정일">
+            <span style={budgetValueStyle}>{item.scheduledDate.replaceAll('-', '.')}</span>
+          </BudgetDetail>
+          <BudgetDetail label="업체">
+            <span style={budgetValueStyle}>{item.vendorName || '미정'}</span>
+          </BudgetDetail>
+          {item.txHash && (
+            <BudgetDetail label="트랜잭션">
+              <span
+                style={{
+                  ...budgetValueStyle,
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                  fontSize: 12.5,
+                  wordBreak: 'break-all',
+                }}
+              >
+                {item.txHash}
+              </span>
+            </BudgetDetail>
+          )}
+        </dl>
+      )}
+    </div>
+  )
+}
+
+const budgetValueStyle: React.CSSProperties = {
+  fontSize: 13.5,
+  fontWeight: 600,
+  color: '#3a4149',
+  letterSpacing: '-0.01em',
+  textAlign: 'right',
+}
+
+function BudgetDetail({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <dt style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em', flexShrink: 0 }}>{label}</dt>
+      <dd style={{ margin: 0, minWidth: 0 }}>{children}</dd>
     </div>
   )
 }

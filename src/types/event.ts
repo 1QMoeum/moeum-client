@@ -205,3 +205,53 @@ export interface ParticipateResponse {
   /** 이벤트 에스크로 주소 익스플로러 링크 */
   eventEscrowUrl: string
 }
+
+/** ===== 사용 계획 (예산) — /v1/events/{eventId}/budgets =====
+ *  총대가 모인 돈의 지출 항목을 계획. 집행/환불은 이 계획 기준(M4). */
+
+/** 사용 계획 항목 상태. PENDING(계획) · CANCELLED(취소·기록보존) · EXECUTED(집행) · REFUNDED(환불). */
+export type BudgetStatus = 'PENDING' | 'CANCELLED' | 'EXECUTED' | 'REFUNDED'
+
+/** 사용 계획 항목 한 줄 (조회 응답). vendorAccount 는 응답에서 제외. */
+export interface BudgetItem {
+  budgetId: number
+  /** 지출 항목 제목 */
+  title: string
+  /** 예상 금액(원) */
+  amount: number
+  /** 집행 예정일 (YYYY-MM-DD) */
+  scheduledDate: string
+  /** 업체명 */
+  vendorName: string
+  /** 항목 상태 */
+  status: BudgetStatus
+  /** 집행 트랜잭션 해시 (집행 전엔 비어있음) */
+  txHash: string
+}
+
+/** 사용 계획 전체 (항목 목록 + 합계). 생성/수정/취소 후에도 동일 형태로 반환. */
+export interface BudgetPlanResponse {
+  /** 집행 예정일순 항목 목록 */
+  items: BudgetItem[]
+  /** 항목 금액 합계(원) */
+  totalAmount: number
+}
+
+/** 사용 계획 생성/수정 입력 항목. vendorAccount 는 생성·수정 시에만 전송. */
+export interface BudgetItemInput {
+  title: string
+  amount: number
+  /** 집행 예정일 (YYYY-MM-DD) */
+  scheduledDate: string
+  vendorName: string
+  /** 업체 입금 계좌 (응답에는 노출되지 않음) */
+  vendorAccount: string
+}
+
+/** 사용 계획 생성 요청 — 여러 지출 항목을 한 번에 등록. */
+export interface CreateBudgetRequest {
+  items: BudgetItemInput[]
+}
+
+/** 사용 계획 항목 수정 요청 — 단일 항목. */
+export type UpdateBudgetRequest = BudgetItemInput
