@@ -13,7 +13,7 @@ interface NavItem {
 const ITEMS: NavItem[] = [
   { key: 'home', label: '홈', icon: Home, to: '/main' },
   { key: 'calendar', label: '캘린더', icon: Calendar },
-  { key: 'explore', label: '탐색', icon: Search },
+  { key: 'explore', label: '탐색', icon: Search, to: '/explore' },
   { key: 'map', label: '지도', icon: MapPin, to: '/events' },
 ]
 

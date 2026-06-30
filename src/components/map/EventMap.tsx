@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useKakaoMap } from '@/hooks/useKakaoMap'
 import { useEventMap, useEventMapWithin } from '@/hooks/events'
 import { loadLegalDongFeature } from '@/lib/legalDongGeo'
@@ -9,7 +10,7 @@ import type { EventMapDistrict, MapBounds, ViewportEvent } from '@/types/event'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 
 /** true 면 백엔드 없이 목 데이터로 동작. 실제 API 붙일 땐 false 로. */
-const USE_MOCK = true
+const USE_MOCK = false
 /** 이 레벨 이상이면 줌아웃(법정동 집계), 미만이면 확대(개별 이벤트 핀) */
 const DISTRICT_LEVEL = 7
 
@@ -27,6 +28,7 @@ function inBounds(e: ViewportEvent, b: MapBounds | null): boolean {
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
 export default function EventMap() {
+  const navigate = useNavigate()
   const { containerRef, map, error } = useKakaoMap()
   const [level, setLevel] = useState<number | null>(null)
   const [bounds, setBounds] = useState<MapBounds | null>(null)
@@ -166,6 +168,36 @@ export default function EventMap() {
         {USE_MOCK ? ' · MOCK' : ''}
       </div>
 
+      {!selected && (
+        <button
+          type="button"
+          onClick={() => navigate('/events/new')}
+          aria-label="모금 만들기"
+          style={{
+            position: 'absolute',
+            right: 16,
+            bottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '14px 20px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #5DD9D9 0%, #A78BFA 100%)',
+            color: '#fff',
+            borderRadius: 999,
+            fontSize: 15,
+            fontWeight: 700,
+            letterSpacing: '-0.01em',
+            cursor: 'pointer',
+            boxShadow: '0 6px 20px -4px rgba(167,139,250,0.55)',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1, marginTop: -1 }}>＋</span>
+          모금 만들기
+        </button>
+      )}
+
       {selected && <DetailCard selected={selected} onClose={() => setSelected(null)} />}
     </div>
   )
@@ -173,7 +205,9 @@ export default function EventMap() {
 
 /** 핀 클릭 시 뜨는 상세 카드 (React UI — 지도 위 오버레이) */
 function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; onClose: () => void }) {
+  const navigate = useNavigate()
   const isDistrict = selected.kind === 'district'
+  const eventId = isDistrict ? selected.data.representative.eventId : selected.data.eventId
   const title = isDistrict ? selected.data.representative.title : selected.data.title
   const category = isDistrict ? selected.data.representative.category : selected.data.category
   const fundingRate = selected.data.fundingRate
@@ -227,6 +261,31 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
           {won(current)} / {won(target)}
         </span>
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(`/events/${eventId}`)}
+        style={{
+          all: 'unset',
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          marginTop: 12,
+          padding: '12px 0',
+          background: '#8B5CF6',
+          color: '#fff',
+          borderRadius: 12,
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        참여하러 가기
+      </button>
     </div>
   )
 }
