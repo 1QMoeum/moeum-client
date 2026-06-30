@@ -21,6 +21,12 @@ export const ErrorCode = {
   EVENT_NOT_ACTIVE: 4004,
   /** 모금 참여 — 이미 참여함(1인 1참여) */
   EVENT_ALREADY_PARTICIPATED: 4005,
+  /** 사용 계획 — 총대(생성자)만 등록·수정·취소 가능 */
+  BUDGET_NOT_OWNER: 4006,
+  /** 사용 계획 — PENDING 항목만 수정·취소 가능 */
+  BUDGET_NOT_PENDING: 4008,
+  /** 사용 계획 — 모금 시작 후엔 금액·업체 변경 잠금(수정 불가) */
+  BUDGET_LOCKED_AFTER_FUNDING: 4009,
   /** 이벤트 생성 — selectedVenueId 에 해당하는 venue 없음 */
   VENUE_NOT_FOUND: 5000,
 } as const

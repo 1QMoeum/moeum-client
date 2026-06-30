@@ -1,5 +1,7 @@
 import { apiClient, unwrap } from '@/api/client'
 import type {
+  BudgetPlanResponse,
+  CreateBudgetRequest,
   CreateEventRequest,
   CreateEventResponse,
   EventDetailResponse,
@@ -10,6 +12,7 @@ import type {
   MapBounds,
   ParticipateRequest,
   ParticipateResponse,
+  UpdateBudgetRequest,
 } from '@/types/event'
 
 export const eventApi = {
@@ -42,5 +45,36 @@ export const eventApi = {
   participate: (userId: number, eventId: number, body: ParticipateRequest) =>
     unwrap<ParticipateResponse>(
       apiClient.post(`/v1/events/${eventId}/participate`, body, { params: { userId } }),
+    ),
+
+  /** 사용 계획 조회 — 지출 항목(집행일순) + 합계. vendorAccount 는 응답 제외. */
+  budgets: (eventId: number) =>
+    unwrap<BudgetPlanResponse>(apiClient.get(`/v1/events/${eventId}/budgets`)),
+
+  /**
+   * 사용 계획 생성 — 지출 항목들을 PENDING 으로 등록. 진행중 이벤트만(4004), 총대만(4006).
+   * 변경 후 전체 사용 계획 반환.
+   */
+  createBudgets: (userId: number, eventId: number, body: CreateBudgetRequest) =>
+    unwrap<BudgetPlanResponse>(
+      apiClient.post(`/v1/events/${eventId}/budgets`, body, { params: { userId } }),
+    ),
+
+  /**
+   * 사용 계획 항목 수정 — 총대만(4006) · PENDING만(4008) · 모금 시작 전만(4009).
+   * 변경 후 전체 사용 계획 반환.
+   */
+  updateBudget: (userId: number, eventId: number, budgetId: number, body: UpdateBudgetRequest) =>
+    unwrap<BudgetPlanResponse>(
+      apiClient.patch(`/v1/events/${eventId}/budgets/${budgetId}`, body, { params: { userId } }),
+    ),
+
+  /**
+   * 사용 계획 항목 취소 — CANCELLED 전이(soft delete, 기록 보존). 총대만(4006) · PENDING만(4008).
+   * 모금 후에도 취소 가능. 변경 후 전체 사용 계획 반환.
+   */
+  cancelBudget: (userId: number, eventId: number, budgetId: number) =>
+    unwrap<BudgetPlanResponse>(
+      apiClient.delete(`/v1/events/${eventId}/budgets/${budgetId}`, { params: { userId } }),
     ),
 }
