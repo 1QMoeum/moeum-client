@@ -63,6 +63,7 @@ declare global {
     class Marker {
       constructor(options: MarkerOptions)
       setMap(map: Map | null): void
+      setPosition(latlng: LatLng): void
       getPosition(): LatLng
     }
 
@@ -94,9 +95,79 @@ declare global {
       setPosition(position: LatLng): void
     }
 
+    /** 지도 클릭 등 좌표를 전달하는 마우스 이벤트 */
+    interface MouseEvent {
+      latLng: LatLng
+    }
+
     namespace event {
+      function addListener(target: object, type: 'click', handler: (mouseEvent: MouseEvent) => void): void
       function addListener(target: object, type: string, handler: () => void): void
+      function removeListener(target: object, type: string, handler: (mouseEvent: MouseEvent) => void): void
       function removeListener(target: object, type: string, handler: () => void): void
+    }
+
+    /** 좌표↔주소/행정구역 변환 (libraries=services). */
+    namespace services {
+      const Status: {
+        readonly OK: 'OK'
+        readonly ZERO_RESULT: 'ZERO_RESULT'
+        readonly ERROR: 'ERROR'
+      }
+      type Status = (typeof Status)[keyof typeof Status]
+
+      /** coord2RegionCode 결과 한 줄. region_type 'B'=법정동, 'H'=행정동. */
+      interface RegionCode {
+        region_type: 'B' | 'H'
+        /** 법정동 코드(10자리, region_type 'B') */
+        code: string
+        address_name: string
+        region_1depth_name: string
+        region_2depth_name: string
+        region_3depth_name: string
+        region_4depth_name: string
+        x: number
+        y: number
+      }
+
+      interface Address {
+        address_name: string
+      }
+      interface RoadAddress {
+        address_name: string
+      }
+      interface Coord2AddressResult {
+        address: Address | null
+        road_address: RoadAddress | null
+      }
+
+      /** addressSearch 결과 한 줄. x=경도, y=위도(문자열). */
+      interface AddressSearchResult {
+        address_name: string
+        x: string
+        y: string
+        road_address: { address_name: string } | null
+      }
+
+      class Geocoder {
+        /** 좌표(x=경도, y=위도) → 행정구역. */
+        coord2RegionCode(
+          x: number,
+          y: number,
+          callback: (result: RegionCode[], status: Status) => void,
+        ): void
+        /** 좌표(x=경도, y=위도) → 지번/도로명 주소. */
+        coord2Address(
+          x: number,
+          y: number,
+          callback: (result: Coord2AddressResult[], status: Status) => void,
+        ): void
+        /** 주소 문자열 → 좌표(정방향 지오코딩). */
+        addressSearch(
+          query: string,
+          callback: (result: AddressSearchResult[], status: Status) => void,
+        ): void
+      }
     }
   }
 }

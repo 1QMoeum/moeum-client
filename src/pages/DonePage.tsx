@@ -122,11 +122,47 @@ export default function DonePage() {
         }}
       >
         {account === null && (
-          <Button variant="solid" onClick={() => navigate('/mydata/consent')}>계좌 연동하러 가기</Button>
+          <>
+            <Button variant="solid" onClick={() => navigate('/mydata/consent')}>계좌 연동하러 가기</Button>
+            <button
+              type="button"
+              onClick={() => navigate('/main')}
+              style={{
+                all: 'unset',
+                width: '100%',
+                padding: '12px 0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#6b7684',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              나중에 하고 시작하기
+            </button>
+          </>
         )}
         {isLinked && (
           <>
-            <Button variant="solid" onClick={() => navigate('/wallet')}>내 지갑 보기</Button>
+            <Button variant="solid" onClick={() => navigate('/main')}>시작하기</Button>
+            <button
+              type="button"
+              onClick={() => navigate('/wallet')}
+              style={{
+                all: 'unset',
+                width: '100%',
+                padding: '12px 0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#6b7684',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              내 지갑 보기
+            </button>
             <button
               type="button"
               onClick={() => navigate('/mydata/consent')}

@@ -1,11 +1,18 @@
-import { Bell } from 'lucide-react'
+import { Bell, Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import type { UIEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import MoeumLogo from '@/components/ui/MoeumLogo'
 import BottomNav from '@/components/ui/BottomNav'
 import ProgressRing from '@/components/home/ProgressRing'
+import HanaLogo from '@/components/icons/HanaLogo'
+import { useMyWallet } from '@/hooks/wallet'
+import { useMyAccount, useAccountBalance } from '@/hooks/account'
+import { useAuthStore } from '@/store/auth'
+import { ErrorCode } from '@/constants/errorCodes'
 import { MOCK_PARTICIPATING_EVENTS } from '@/mocks/home'
 import type { ParticipatingEvent } from '@/mocks/home'
+import type { BankAccountResponse, MyDataBalanceResponse } from '@/types/api'
 
 type Tab = 'events' | 'wallet'
 
@@ -138,7 +145,7 @@ export default function MainPage() {
             </div>
           </>
         ) : (
-          <WalletView events={events} />
+          <WalletView />
         )}
       </main>
 
@@ -265,45 +272,236 @@ function Divider() {
   return <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '2px 0' }} />
 }
 
-function WalletView({ events }: { events: ParticipatingEvent[] }) {
-  const total = events.reduce((sum, e) => sum + e.currentAmount, 0)
+const BRAND_GRADIENT = 'linear-gradient(135deg, #5DD9D9 0%, #A78BFA 100%)'
+
+/** 내 지갑 탭 — 실제 예금토큰 잔액 + 연동 계좌(+계좌 변경). */
+function WalletView() {
+  const navigate = useNavigate()
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const { data: wallet, isPending, error } = useMyWallet(!!accessToken)
+  const { data: account } = useMyAccount(!!accessToken)
+  const { data: balance, isPending: balancePending } = useAccountBalance(account?.accountNumber)
+
+  const noWallet = error?.status === ErrorCode.WALLET_NOT_FOUND
+
   return (
-    <div style={{ padding: '32px 24px 0' }}>
-      <div
+    <div style={{ padding: '24px 24px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* 예금토큰 잔액 카드 */}
+      {isPending ? (
+        <div style={{ height: 150, borderRadius: 'var(--radius-xl)', background: '#eef0f3' }} />
+      ) : noWallet ? (
+        <EmptyWalletCard />
+      ) : error ? (
+        <ErrorCard message={`${error.message} (${error.status ?? '?'})`} />
+      ) : wallet ? (
+        <button
+          type="button"
+          onClick={() => navigate('/wallet')}
+          style={{
+            all: 'unset',
+            boxSizing: 'border-box',
+            cursor: 'pointer',
+            background: BRAND_GRADIENT,
+            borderRadius: 'var(--radius-xl)',
+            padding: 24,
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            boxShadow: '0 12px 32px -8px rgba(167,139,250,0.45)',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, opacity: 0.92 }}>
+            <WalletIcon size={18} strokeWidth={2.4} />
+            예금토큰 잔액
+          </span>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
+            <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
+              {won(wallet.tokenBalance)}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 700, opacity: 0.92 }}>원</span>
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, opacity: 0.85, marginTop: 2 }}>
+            지갑 자세히 보기 (충전·전환)
+            <ChevronRight size={14} strokeWidth={2.6} />
+          </span>
+        </button>
+      ) : null}
+
+      {/* 연동(충전) 계좌 + 변경 */}
+      <FundingAccount
+        account={account}
+        balance={balance}
+        balancePending={balancePending}
+        onChange={() => navigate('/mydata/consent')}
+      />
+    </div>
+  )
+}
+
+function EmptyWalletCard() {
+  return (
+    <div
+      style={{
+        background: 'var(--color-surface)',
+        borderRadius: 'var(--radius-xl)',
+        border: '1px solid var(--color-border)',
+        padding: 24,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#191f28' }}>
+        <WalletIcon size={18} strokeWidth={2.2} color="#8B5CF6" />
+        아직 지갑이 없어요
+      </span>
+      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--color-text-secondary)' }}>
+        충전 계좌를 연동하면 커스터디 지갑이 자동으로 만들어져요.
+      </span>
+    </div>
+  )
+}
+
+function ErrorCard({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        background: '#fff5f5',
+        borderRadius: 'var(--radius-xl)',
+        padding: 20,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        color: '#e03e3e',
+        fontSize: 13.5,
+      }}
+    >
+      <AlertCircle size={18} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+      {message}
+    </div>
+  )
+}
+
+/** 연동 계좌 카드 — 미연동이면 연동 유도, 연동됐으면 정보 + "계좌 변경". */
+function FundingAccount({
+  account,
+  balance,
+  balancePending,
+  onChange,
+}: {
+  account: BankAccountResponse | null | undefined
+  balance: MyDataBalanceResponse | undefined
+  balancePending: boolean
+  onChange: () => void
+}) {
+  if (account === undefined) {
+    return <div style={{ height: 92, borderRadius: 'var(--radius-xl)', background: '#eef0f3' }} />
+  }
+
+  if (account === null) {
+    return (
+      <button
+        type="button"
+        onClick={onChange}
         style={{
+          all: 'unset',
+          boxSizing: 'border-box',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '18px 20px',
           background: 'var(--color-surface)',
-          borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--color-border)',
-          padding: 24,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          borderRadius: 'var(--radius-xl)',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>참여중 모금액 합계</p>
-        <p style={{ margin: '10px 0 0', fontSize: 32, fontWeight: 800, color: 'var(--color-text-primary)' }}>
-          {won(total)}원
-        </p>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#191f28' }}>충전 계좌 연동하기</span>
+          <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+            계좌를 연동하면 바로 충전·참여할 수 있어요
+          </span>
+        </span>
+        <ChevronRight size={20} color="#adb5bd" style={{ flexShrink: 0 }} />
+      </button>
+    )
+  }
+
+  const isHana = account.accountType === 'HANA'
+
+  return (
+    <section
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '18px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 500 }}>충전 계좌</span>
+        <button
+          type="button"
+          onClick={onChange}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#8B5CF6',
+            letterSpacing: '-0.01em',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          계좌 변경
+        </button>
       </div>
-      <ul style={{ listStyle: 'none', margin: '16px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {events.map((e) => (
-          <li
-            key={e.eventId}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {isHana ? (
+          <HanaLogo size={40} />
+        ) : (
+          <div
             style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              background: '#0046FF',
+              color: '#fff',
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'var(--color-surface)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border)',
-              padding: '16px 18px',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 12,
+              flexShrink: 0,
             }}
           >
-            <span style={{ fontSize: 15, fontWeight: 600 }}>{e.title}</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-accent)' }}>
-              {won(e.currentAmount)}원
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+            타행
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28' }}>{account.accountHolder}</span>
+          <span style={{ fontSize: 13, color: '#6b7684', fontVariantNumeric: 'tabular-nums' }}>
+            {account.accountNumber}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: 'var(--color-border)' }} />
+
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>출금 가능 금액</span>
+        <span style={{ fontSize: 18, fontWeight: 700, color: '#191f28', fontVariantNumeric: 'tabular-nums' }}>
+          {balancePending ? '조회 중…' : balance ? `${won(balance.available_amt)}원` : '조회 실패'}
+        </span>
+      </div>
+    </section>
   )
 }

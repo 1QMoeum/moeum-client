@@ -12,9 +12,11 @@ export interface CategoryMeta {
 
 const CATEGORY_META: Record<string, CategoryMeta> = {
   CAFE: { emoji: '☕', color: '#b45309' },
-  RESTAURANT: { emoji: '🍽️', color: '#dc2626' },
-  SHOP: { emoji: '🛍️', color: '#7c3aed' },
-  CULTURE: { emoji: '🎭', color: '#2563eb' },
+  SUBWAY: { emoji: '🚇', color: '#2563eb' },
+  DIGITAL_SIGNAGE: { emoji: '📺', color: '#7c3aed' },
+  BUS: { emoji: '🚌', color: '#0d9488' },
+  BANNER: { emoji: '🎌', color: '#dc2626' },
+  ONLINE: { emoji: '💻', color: '#0ea5e9' },
 }
 
 const DEFAULT_META: CategoryMeta = { emoji: '📍', color: '#3b82f6' }

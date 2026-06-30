@@ -21,7 +21,8 @@ export function loadKakaoMaps(): Promise<void> {
     }
 
     const script = document.createElement('script')
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`
+    // libraries=services: 좌표→행정구역/주소 역지오코딩(Geocoder) 사용 (이벤트 생성 위치 직접입력)
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`
     script.async = true
     script.onload = () => window.kakao.maps.load(() => resolve())
     script.onerror = () => reject(new Error('카카오 지도 SDK 스크립트 로드 실패'))

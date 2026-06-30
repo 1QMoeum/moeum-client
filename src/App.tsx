@@ -11,6 +11,10 @@ import MyDataAccountsPage from '@/pages/MyDataAccountsPage'
 import DonePage from '@/pages/DonePage'
 import MapDemoPage from '@/pages/MapDemoPage'
 import EventMapPage from '@/pages/EventMapPage'
+import EventListPage from '@/pages/EventListPage'
+import CreateEventPage from '@/pages/CreateEventPage'
+import EventDetailPage from '@/pages/EventDetailPage'
+import ParticipatePage from '@/pages/ParticipatePage'
 import WalletPage from '@/pages/WalletPage'
 
 export default function App() {
@@ -27,7 +31,11 @@ export default function App() {
         <Route path="/mydata/accounts" element={<MyDataAccountsPage />} />
         <Route path="/done" element={<DonePage />} />
         <Route path="/map" element={<MapDemoPage />} />
+        <Route path="/explore" element={<EventListPage />} />
         <Route path="/events" element={<EventMapPage />} />
+        <Route path="/events/new" element={<CreateEventPage />} />
+        <Route path="/events/:eventId" element={<EventDetailPage />} />
+        <Route path="/events/:eventId/participate" element={<ParticipatePage />} />
         <Route path="/wallet" element={<WalletPage />} />
       </Routes>
     </AuthBootstrap>
