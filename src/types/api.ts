@@ -66,3 +66,21 @@ export interface WalletResponse {
   /** 블록 익스플로러 주소 링크 */
   explorerUrl: string
 }
+
+/** 충전(charge)·전환(withdraw) 공통 요청 본문. idempotencyKey 로 이중 처리를 방지한다. */
+export interface WalletTxRequest {
+  /** 금액(원). charge=발행할 원화, withdraw=소각할 예금토큰 */
+  amount: number
+  /** 멱등키 — 같은 키의 재요청은 한 번만 처리된다 (UUID) */
+  idempotencyKey: string
+}
+
+/** 충전·전환 결과. 갱신된 잔액과 온체인 트랜잭션 정보. */
+export interface WalletTxResponse {
+  /** 처리 후 예금토큰 잔액 */
+  tokenBalance: number
+  /** 온체인 트랜잭션 해시 */
+  txHash: string
+  /** 해당 트랜잭션의 익스플로러 링크 */
+  explorerTxUrl: string
+}
