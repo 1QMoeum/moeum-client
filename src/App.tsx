@@ -3,9 +3,12 @@ import AuthBootstrap from '@/components/auth/AuthBootstrap'
 import HomePage from '@/pages/HomePage'
 import MainPage from '@/pages/MainPage'
 import KycPage from '@/pages/KycPage'
+import KycForeignPage from '@/pages/KycForeignPage'
 import SignupPage from '@/pages/SignupPage'
+import SignupForeignPage from '@/pages/SignupForeignPage'
 import LoginPage from '@/pages/LoginPage'
 import KycLoginPage from '@/pages/KycLoginPage'
+import KycLoginForeignPage from '@/pages/KycLoginForeignPage'
 import MyDataConsentPage from '@/pages/MyDataConsentPage'
 import MyDataAccountsPage from '@/pages/MyDataAccountsPage'
 import DonePage from '@/pages/DonePage'
@@ -24,9 +27,12 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/main" element={<MainPage />} />
         <Route path="/kyc" element={<KycPage />} />
+        <Route path="/kyc/foreign" element={<KycForeignPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/foreign" element={<SignupForeignPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/kyc-login" element={<KycLoginPage />} />
+        <Route path="/kyc-login/foreign" element={<KycLoginForeignPage />} />
         <Route path="/mydata/consent" element={<MyDataConsentPage />} />
         <Route path="/mydata/accounts" element={<MyDataAccountsPage />} />
         <Route path="/done" element={<DonePage />} />
