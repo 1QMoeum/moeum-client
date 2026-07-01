@@ -1,0 +1,57 @@
+{
+  "common": {
+    "continue": "继续",
+    "cancel": "取消",
+    "back": "返回",
+    "loading": "处理中..."
+  },
+  "language": {
+    "label": "语言",
+    "ko": "韩语",
+    "en": "英语",
+    "ja": "日语",
+    "zh": "中文",
+    "vi": "越南语"
+  },
+  "home": {
+    "tagline": "透明共同资金管理的数字保险柜",
+    "ctaStart": "开始",
+    "ctaLogin": "快速登录"
+  },
+  "kycForeign": {
+    "title": "护照认证",
+    "subtitle": "请拍摄或上传护照信息页。",
+    "uploadLabel": "上传护照照片",
+    "retake": "重新选择",
+    "submit": "确认",
+    "processing": "正在分析护照信息...",
+    "korRedirect": {
+      "title": "这是韩国护照",
+      "message": "韩国国民请使用国内身份认证。",
+      "goDomestic": "前往国内身份认证"
+    }
+  },
+  "verifyConfirm": {
+    "title": "信息正确吗？",
+    "name": "姓名",
+    "country": "签发国家",
+    "expiry": "到期日",
+    "continue": "是的，继续"
+  },
+  "signupForeign": {
+    "title": "{{name}}，请设置6位PIN",
+    "subtitle": "下次可以使用此PIN快速登录。",
+    "submit": "完成注册",
+    "submitting": "注册中..."
+  },
+  "kycLoginForeign": {
+    "title": "重新认证",
+    "subtitle": "请重新认证护照并输入PIN。",
+    "submit": "登录",
+    "submitting": "登录中..."
+  },
+  "errors": {
+    "fileRequired": "请上传护照照片。",
+    "pinIncomplete": "请输入完整的6位PIN。"
+  }
+}

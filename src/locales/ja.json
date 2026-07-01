@@ -1,0 +1,57 @@
+{
+  "common": {
+    "continue": "続ける",
+    "cancel": "キャンセル",
+    "back": "戻る",
+    "loading": "処理中..."
+  },
+  "language": {
+    "label": "言語",
+    "ko": "韓国語",
+    "en": "英語",
+    "ja": "日本語",
+    "zh": "中国語",
+    "vi": "ベトナム語"
+  },
+  "home": {
+    "tagline": "透明な共同資金管理のためのデジタル金庫",
+    "ctaStart": "始める",
+    "ctaLogin": "簡単ログイン"
+  },
+  "kycForeign": {
+    "title": "パスポート認証",
+    "subtitle": "パスポートの情報ページを撮影またはアップロードしてください。",
+    "uploadLabel": "パスポート写真をアップロード",
+    "retake": "選び直す",
+    "submit": "確認",
+    "processing": "パスポート情報を解析中...",
+    "korRedirect": {
+      "title": "韓国のパスポートですね",
+      "message": "韓国国民の方は国内本人認証をご利用ください。",
+      "goDomestic": "国内本人認証へ"
+    }
+  },
+  "verifyConfirm": {
+    "title": "情報は正しいですか？",
+    "name": "氏名",
+    "country": "発行国",
+    "expiry": "有効期限",
+    "continue": "はい、続けます"
+  },
+  "signupForeign": {
+    "title": "{{name}}さん、6桁のPINを設定してください",
+    "subtitle": "次回からこのPINで素早くログインできます。",
+    "submit": "登録完了",
+    "submitting": "登録中..."
+  },
+  "kycLoginForeign": {
+    "title": "再認証",
+    "subtitle": "パスポートを再度認証し、PINを入力してください。",
+    "submit": "ログイン",
+    "submitting": "ログイン中..."
+  },
+  "errors": {
+    "fileRequired": "パスポート写真をアップロードしてください。",
+    "pinIncomplete": "6桁のPINをすべて入力してください。"
+  }
+}

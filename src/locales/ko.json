@@ -1,0 +1,57 @@
+{
+  "common": {
+    "continue": "계속",
+    "cancel": "취소",
+    "back": "뒤로",
+    "loading": "처리 중..."
+  },
+  "language": {
+    "label": "언어",
+    "ko": "한국어",
+    "en": "영어",
+    "ja": "일본어",
+    "zh": "중국어",
+    "vi": "베트남어"
+  },
+  "home": {
+    "tagline": "투명한 공동자금 관리를 위한 디지털 시금고",
+    "ctaStart": "시작하기",
+    "ctaLogin": "간편 로그인"
+  },
+  "kycForeign": {
+    "title": "여권 인증",
+    "subtitle": "여권 정보 페이지를 촬영하거나 업로드해주세요.",
+    "uploadLabel": "여권 사진 업로드",
+    "retake": "다시 선택",
+    "submit": "확인",
+    "processing": "여권 정보 분석 중...",
+    "korRedirect": {
+      "title": "한국 여권이시네요",
+      "message": "한국 국민은 국내 본인인증을 이용해주세요.",
+      "goDomestic": "국내 본인인증하러 가기"
+    }
+  },
+  "verifyConfirm": {
+    "title": "정보가 맞나요?",
+    "name": "이름",
+    "country": "발급 국가",
+    "expiry": "만료일",
+    "continue": "맞아요, 계속"
+  },
+  "signupForeign": {
+    "title": "{{name}}님, 6자리 PIN을 설정해주세요",
+    "subtitle": "다음 로그인부터 이 PIN으로 빠르게 들어올 수 있어요.",
+    "submit": "가입 완료",
+    "submitting": "가입 중..."
+  },
+  "kycLoginForeign": {
+    "title": "다시 본인인증",
+    "subtitle": "여권을 다시 인증하고 PIN을 입력해주세요.",
+    "submit": "로그인",
+    "submitting": "로그인 중..."
+  },
+  "errors": {
+    "fileRequired": "여권 사진을 업로드해주세요.",
+    "pinIncomplete": "6자리 PIN을 모두 입력해주세요."
+  }
+}

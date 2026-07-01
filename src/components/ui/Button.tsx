@@ -49,6 +49,8 @@ export default function Button(props: Props) {
         borderRadius: 'var(--radius-lg)',
         fontWeight: 600,
         fontSize: 16,
+        wordBreak: 'keep-all',
+        overflowWrap: 'break-word',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'transform 0.12s ease, filter 0.12s ease, background 0.12s ease',
         transform: pressed ? 'scale(0.98)' : 'scale(1)',

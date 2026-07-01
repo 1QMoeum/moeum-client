@@ -1,0 +1,57 @@
+{
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "back": "Back",
+    "loading": "Processing..."
+  },
+  "language": {
+    "label": "Language",
+    "ko": "Korean",
+    "en": "English",
+    "ja": "Japanese",
+    "zh": "Chinese",
+    "vi": "Vietnamese"
+  },
+  "home": {
+    "tagline": "A digital escrow for transparent group funding",
+    "ctaStart": "Get started",
+    "ctaLogin": "Quick login"
+  },
+  "kycForeign": {
+    "title": "Verify your passport",
+    "subtitle": "Take a photo or upload the information page of your passport.",
+    "uploadLabel": "Upload passport photo",
+    "retake": "Choose again",
+    "submit": "Continue",
+    "processing": "Analyzing passport...",
+    "korRedirect": {
+      "title": "This is a Korean passport",
+      "message": "Korean nationals should use the domestic verification flow.",
+      "goDomestic": "Go to domestic verification"
+    }
+  },
+  "verifyConfirm": {
+    "title": "Is this correct?",
+    "name": "Name",
+    "country": "Issuing country",
+    "expiry": "Expiry date",
+    "continue": "Yes, continue"
+  },
+  "signupForeign": {
+    "title": "{{name}}, please set a 6-digit PIN",
+    "subtitle": "You can use this PIN for quick login next time.",
+    "submit": "Complete signup",
+    "submitting": "Signing up..."
+  },
+  "kycLoginForeign": {
+    "title": "Verify again",
+    "subtitle": "Please verify your passport again and enter your PIN.",
+    "submit": "Login",
+    "submitting": "Logging in..."
+  },
+  "errors": {
+    "fileRequired": "Please upload your passport photo.",
+    "pinIncomplete": "Please enter all 6 digits of your PIN."
+  }
+}
