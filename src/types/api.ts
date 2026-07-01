@@ -13,6 +13,15 @@ export interface KycVerifyResponse {
   name: string
 }
 
+/** 외국인 KYC verify 응답 — 여권 OCR + MRZ 추출 결과. passportNumber 는 응답 미노출. */
+export interface KycForeignVerifyResponse {
+  newUser: boolean
+  name: string
+  passportCountry: string
+  /** ISO date string (YYYY-MM-DD) */
+  expiryAt: string
+}
+
 export interface TokenResponse {
   accessToken: string
   refreshToken: string

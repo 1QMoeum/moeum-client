@@ -3,7 +3,7 @@ import type { ApiError } from '@/api/client'
 import { authApi } from '@/api/auth'
 import { requestKgInicisIdentityVerification } from '@/lib/portone'
 import { useAuthStore } from '@/store/auth'
-import type { KycVerifyResponse, TokenResponse } from '@/types/api'
+import type { KycForeignVerifyResponse, KycVerifyResponse, TokenResponse } from '@/types/api'
 
 /**
  * auth 도메인의 서버 통신을 React Query mutation 으로 감싼 훅 레이어.
@@ -60,5 +60,37 @@ export function useLogout() {
   return useMutation<null, ApiError, string>({
     mutationFn: (refreshToken) => authApi.logout(refreshToken),
     onSettled: () => clearTokens(),
+  })
+}
+
+// ── 외국인 KYC mutation 훅 (여권 multipart) ────────────────────────────
+
+interface ForeignKycPinVars {
+  file: File
+  pin: string
+}
+
+/** Foreign KYC verify — passport upload → OCR + MRZ → extracted info + newUser. */
+export function useVerifyForeignKyc() {
+  return useMutation<KycForeignVerifyResponse, ApiError, File>({
+    mutationFn: (file) => authApi.verifyForeignKyc(file),
+  })
+}
+
+/** Foreign signup — passport + PIN. Saves tokens on success. */
+export function useSignupForeign() {
+  const setTokens = useAuthStore((s) => s.setTokens)
+  return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
+    mutationFn: ({ file, pin }) => authApi.signupForeign(file, pin),
+    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+  })
+}
+
+/** Foreign re-verification login — passport + PIN. Saves tokens on success. */
+export function useKycLoginForeign() {
+  const setTokens = useAuthStore((s) => s.setTokens)
+  return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
+    mutationFn: ({ file, pin }) => authApi.kycLoginForeign(file, pin),
+    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
   })
 }
