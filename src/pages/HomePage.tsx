@@ -1,16 +1,21 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import MoeumLogo from '@/components/ui/MoeumLogo'
 import Button from '@/components/ui/Button'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 /**
- * 시작 화면 (스캐폴드). 디자인 시안 들어오면 갈아낄 자리.
- * - 자동 로그인 정보(refresh) 있으면 → 간편 로그인 화면
- * - 없으면 → KYC 인증 화면
+ * 시작 화면.
+ * - 자동 로그인 정보(refresh) 있으면 → 간편 로그인
+ * - 없으면 → KYC: 현재 언어가 'ko' = 국내(KG이니시스), 그 외 = 외국인(여권 OCR)
  */
 export default function HomePage() {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const hasRefresh = useAuthStore((s) => !!s.refreshToken)
+  const isKorean = (i18n.resolvedLanguage ?? 'ko') === 'ko'
+  const ctaPath = hasRefresh ? '/login' : isKorean ? '/kyc' : '/kyc/foreign'
 
   return (
     <main
@@ -23,6 +28,17 @@ export default function HomePage() {
         flexDirection: 'column',
       }}
     >
+      {/* 상단 — 언어 선택 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          paddingTop: 16,
+        }}
+      >
+        <LanguageSelector />
+      </div>
+
       {/* 중앙 — 로고 + 설명 */}
       <section
         style={{
@@ -44,17 +60,17 @@ export default function HomePage() {
             lineHeight: 1.6,
             maxWidth: 320,
             wordBreak: 'keep-all',
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-line',
           }}
         >
-          투명한 공동자금 관리를 위한
-          <br />
-          디지털 시금고
+          {t('home.tagline')}
         </p>
       </section>
 
       {/* 하단 CTA */}
-      <Button onClick={() => navigate(hasRefresh ? '/login' : '/kyc')}>
-        {hasRefresh ? '간편 로그인' : '시작하기'}
+      <Button onClick={() => navigate(ctaPath)}>
+        {hasRefresh ? t('home.ctaLogin') : t('home.ctaStart')}
       </Button>
     </main>
   )
