@@ -22,9 +22,16 @@
     "title": "Xác minh hộ chiếu",
     "subtitle": "Vui lòng chụp hoặc tải lên trang thông tin hộ chiếu.",
     "uploadLabel": "Tải lên ảnh hộ chiếu",
+    "uploadSelfie": "Tải lên ảnh chân dung",
+    "selfieHint": "Vui lòng chọn ảnh khuôn mặt để so sánh với hộ chiếu.",
     "retake": "Chọn lại",
     "submit": "Xác nhận",
     "processing": "Đang phân tích thông tin hộ chiếu...",
+    "step1Title": "Hộ chiếu",
+    "step2Title": "Ảnh khuôn mặt",
+    "step3Title": "Xác nhận",
+    "confirmSubtitle": "Nếu ảnh hộ chiếu và khuôn mặt đúng, vui lòng nhấn Xác nhận.",
+    "next": "Tiếp",
     "korRedirect": {
       "title": "Đây là hộ chiếu Hàn Quốc",
       "message": "Công dân Hàn Quốc vui lòng sử dụng xác thực trong nước.",
@@ -36,6 +43,7 @@
     "name": "Họ tên",
     "country": "Quốc gia cấp",
     "expiry": "Ngày hết hạn",
+    "faceSimilarity": "Độ khớp khuôn mặt",
     "continue": "Đúng, tiếp tục"
   },
   "signupForeign": {

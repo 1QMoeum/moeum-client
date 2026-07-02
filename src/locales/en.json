@@ -22,9 +22,16 @@
     "title": "Verify your passport",
     "subtitle": "Take a photo or upload the information page of your passport.",
     "uploadLabel": "Upload passport photo",
+    "uploadSelfie": "Upload selfie",
+    "selfieHint": "Select your face photo to compare with the passport.",
     "retake": "Choose again",
     "submit": "Continue",
     "processing": "Analyzing passport...",
+    "step1Title": "Passport",
+    "step2Title": "Selfie",
+    "step3Title": "Review",
+    "confirmSubtitle": "If the passport and selfie look right, tap Confirm.",
+    "next": "Next",
     "korRedirect": {
       "title": "This is a Korean passport",
       "message": "Korean nationals should use the domestic verification flow.",
@@ -36,6 +43,7 @@
     "name": "Name",
     "country": "Issuing country",
     "expiry": "Expiry date",
+    "faceSimilarity": "Face match",
     "continue": "Yes, continue"
   },
   "signupForeign": {

@@ -22,9 +22,16 @@
     "title": "护照认证",
     "subtitle": "请拍摄或上传护照信息页。",
     "uploadLabel": "上传护照照片",
+    "uploadSelfie": "上传本人照片",
+    "selfieHint": "请选择用于与护照比对的本人照片。",
     "retake": "重新选择",
     "submit": "确认",
     "processing": "正在分析护照信息...",
+    "step1Title": "护照照片",
+    "step2Title": "本人照片",
+    "step3Title": "信息确认",
+    "confirmSubtitle": "确认护照和本人照片无误后请点击确认。",
+    "next": "下一步",
     "korRedirect": {
       "title": "这是韩国护照",
       "message": "韩国国民请使用国内身份认证。",
@@ -36,6 +43,7 @@
     "name": "姓名",
     "country": "签发国家",
     "expiry": "到期日",
+    "faceSimilarity": "人脸匹配相似度",
     "continue": "是的，继续"
   },
   "signupForeign": {

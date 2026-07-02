@@ -22,9 +22,16 @@
     "title": "여권 인증",
     "subtitle": "여권 정보 페이지를 촬영하거나 업로드해주세요.",
     "uploadLabel": "여권 사진 업로드",
+    "uploadSelfie": "얼굴 사진 업로드",
+    "selfieHint": "여권 사진과 비교할 본인의 얼굴 사진을 선택해주세요.",
     "retake": "다시 선택",
     "submit": "확인",
     "processing": "여권 정보 분석 중...",
+    "step1Title": "여권 사진",
+    "step2Title": "얼굴 사진",
+    "step3Title": "정보 확인",
+    "confirmSubtitle": "여권과 얼굴 사진이 맞으면 확인을 눌러주세요.",
+    "next": "다음",
     "korRedirect": {
       "title": "한국 여권이시네요",
       "message": "한국 국민은 국내 본인인증을 이용해주세요.",
@@ -36,6 +43,7 @@
     "name": "이름",
     "country": "발급 국가",
     "expiry": "만료일",
+    "faceSimilarity": "얼굴 일치도",
     "continue": "맞아요, 계속"
   },
   "signupForeign": {
