@@ -39,6 +39,16 @@ export function useEventList(query: EventListQuery, enabled = true) {
   })
 }
 
+/** 히스토리 — 종료 이벤트 법정동별 집계(최다 아티스트). 히스토리 모드일 때만 호출. */
+export function useEventHistory(enabled: boolean) {
+  return useQuery({
+    queryKey: ['events', 'history'],
+    enabled,
+    staleTime: 60_000,
+    queryFn: () => eventApi.history(),
+  })
+}
+
 /** 확대 — viewport bounds 의 개별 이벤트. bounds 가 바뀔 때마다(이동/줌) 재조회. */
 export function useEventMapWithin(bounds: MapBounds | null, enabled: boolean) {
   return useQuery({

@@ -5,6 +5,7 @@ import type {
   CreateEventRequest,
   CreateEventResponse,
   EventDetailResponse,
+  EventHistoryResponse,
   EventListQuery,
   EventListResponse,
   EventMapResponse,
@@ -26,6 +27,9 @@ export const eventApi = {
   /** 지도 영역(viewport) 진행중 이벤트 (확대) — 현재 화면 bounds 의 이벤트 전체 */
   within: (bounds: MapBounds) =>
     unwrap<EventMapWithinResponse>(apiClient.get('/v1/events/map/within', { params: bounds })),
+
+  /** 지도 히스토리 — 종료 이벤트를 법정동별 집계 (최다 아티스트 + 프로젝트/참여자 수) */
+  history: () => unwrap<EventHistoryResponse>(apiClient.get('/v1/events/map/history')),
 
   /**
    * 이벤트(모금) 생성 — 생성자=총대. 위치는 selectedVenueId(AI) 또는 lat/lng+행정구역(MANUAL).

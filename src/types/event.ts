@@ -69,6 +69,31 @@ export interface EventMapWithinResponse {
   events: ViewportEvent[]
 }
 
+/** ===== 지도 히스토리 (GET /v1/events/map/history) =====
+ *  종료된 이벤트를 법정동별로 집계 — 최다 개최 아티스트 + 프로젝트/참여자 수. */
+
+/** 법정동에서 가장 많이 열린 아티스트. 아바타는 imageUrl. */
+export interface HistoryTopArtist {
+  artistId: number
+  name: string
+  imageUrl: string
+}
+
+/** 히스토리 — 법정동별 한 줄. 경계 폴리곤은 legalDongCode 로 프론트가 렌더. */
+export interface EventHistoryDistrict {
+  siDo: string
+  siGunGu: string
+  legalDong: string
+  legalDongCode: string
+  artist: HistoryTopArtist
+  projectCount: number
+  participantCount: number
+}
+
+export interface EventHistoryResponse {
+  districts: EventHistoryDistrict[]
+}
+
 /** ===== 이벤트 목록 (GET /v1/events?status&category&page&size) ===== */
 
 /** 목록 카드용 요약 한 줄. */
