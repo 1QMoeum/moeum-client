@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ChevronLeft,
   Copy,
@@ -43,8 +43,14 @@ function shortenAddress(address: string): string {
  */
 export default function WalletPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const accessToken = useAuthStore((s) => s.accessToken)
   const { data: wallet, isPending, error, refetch, isFetching } = useMyWallet(!!accessToken)
+
+  // ?action=charge|withdraw — 메인 등에서 진입 시 해당 바텀시트를 바로 연다.
+  const action = searchParams.get('action')
+  const initialTxMode: TxMode | null =
+    action === 'charge' ? 'charge' : action === 'withdraw' ? 'withdraw' : null
 
   if (!accessToken) {
     return <Navigate to="/" replace />
@@ -117,15 +123,15 @@ export default function WalletPage() {
           <ErrorState message={`${error.message} (${error.status ?? '?'})`} onRetry={() => void refetch()} retrying={isFetching} />
         )}
 
-        {!isPending && wallet && <WalletView wallet={wallet} />}
+        {!isPending && wallet && <WalletView wallet={wallet} initialTxMode={initialTxMode} />}
       </div>
     </main>
   )
 }
 
-function WalletView({ wallet }: { wallet: WalletResponse }) {
+function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initialTxMode: TxMode | null }) {
   const [copied, setCopied] = useState(false)
-  const [txMode, setTxMode] = useState<TxMode | null>(null)
+  const [txMode, setTxMode] = useState<TxMode | null>(initialTxMode)
   const { data: account } = useMyAccount(true)
   const { data: balance, isPending: balancePending } = useAccountBalance(account?.accountNumber)
 

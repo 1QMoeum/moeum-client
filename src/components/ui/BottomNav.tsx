@@ -23,8 +23,8 @@ interface Props {
 }
 
 /**
- * 하단 탭 바. 가운데 보라색 + FAB 를 중심으로 좌2 / 우2 배치.
- * 활성 탭은 현재 경로로 판별, 보라 액센트로 표시.
+ * 하단 탭 바 — 흰색 라운드 카드 위에 홈·캘린더·[+]·탐색·지도.
+ * 활성 탭은 현재 경로로 판별, 아이콘만 보라 액센트(라벨은 검정 유지).
  */
 export default function BottomNav({ onCreate }: Props) {
   const navigate = useNavigate()
@@ -47,17 +47,20 @@ export default function BottomNav({ onCreate }: Props) {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 4,
+          gap: 5,
           background: 'none',
           border: 'none',
-          padding: '8px 0',
+          padding: '6px 0',
           cursor: 'pointer',
-          color: active ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+          color: active ? 'var(--color-accent)' : '#191f28',
           WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <Icon size={24} strokeWidth={active ? 2.4 : 2} fill={active ? 'currentColor' : 'none'} />
-        <span style={{ fontSize: 11, fontWeight: active ? 700 : 500 }}>{item.label}</span>
+        {/* 선형 유지 — 선택된 탭은 선 색만 보라색 */}
+        <Icon size={25} strokeWidth={2} fill="none" />
+        <span style={{ fontSize: 11.5, fontWeight: 500, color: '#191f28', letterSpacing: '-0.01em' }}>
+          {item.label}
+        </span>
       </button>
     )
   }
@@ -71,11 +74,12 @@ export default function BottomNav({ onCreate }: Props) {
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: 480,
-        background: 'var(--color-surface)',
-        borderTop: '1px solid var(--color-border)',
+        background: '#fff',
+        borderRadius: '24px 24px 0 0',
+        boxShadow: '0 -6px 24px rgba(0,0,0,.08)',
         display: 'flex',
         alignItems: 'center',
-        padding: '6px 12px calc(8px + env(safe-area-inset-bottom))',
+        padding: '12px 12px calc(10px + env(safe-area-inset-bottom))',
         zIndex: 10,
       }}
     >
@@ -88,18 +92,18 @@ export default function BottomNav({ onCreate }: Props) {
           onClick={onCreate}
           aria-label="이벤트 만들기"
           style={{
-            width: 56,
-            height: 56,
-            marginTop: -24,
+            width: 58,
+            height: 58,
+            marginTop: -10,
             borderRadius: '50%',
             background: 'var(--color-accent)',
             color: '#fff',
-            border: '4px solid var(--color-surface)',
+            border: 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: '0 6px 16px rgba(124, 111, 240, 0.4)',
+            boxShadow: '0 8px 20px rgba(124, 111, 240, 0.45)',
             WebkitTapHighlightColor: 'transparent',
           }}
         >
