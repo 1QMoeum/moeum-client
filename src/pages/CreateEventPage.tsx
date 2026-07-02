@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation as useRouterLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, AlertCircle, ImagePlus, ChevronDown } from 'lucide-react'
 import { useCreateEvent } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
@@ -8,6 +8,8 @@ import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
 import LocationPicker, { type PickedLocation } from '@/components/map/LocationPicker'
 import { EVENT_CATEGORIES, type CreateEventRequest } from '@/types/event'
+import { venueImageSrc, venueTypeLabel } from '@/types/venue'
+import type { AiPlanVenue } from '@/types/venue'
 
 /** 목표 금액 빠른 선택 (만원 단위) */
 const BUDGET_PRESETS = [50, 100, 300]
@@ -36,16 +38,22 @@ type Step = 1 | 2 | 3
 
 /**
  * 이벤트(모금) 생성 위저드 — 생성자=총대.
- * 01 기본정보 → 02 예산 → 03 장소(MANUAL: 지도 직접입력). 마지막에 한 번에 생성한다.
- * 기간 4002 · 위치없음 4003 · venue없음 5000 은 status 로 분기해 안내.
+ * 01 기본정보 → 02 예산 → 03 장소. 마지막에 한 번에 생성한다.
+ * 장소는 두 경로 — AI 플래너에서 넘어온 venue(state.venue)가 있으면 selectedVenueId(AI),
+ * 없으면 지도 직접 선택(MANUAL). 기간 4002 · 위치없음 4003 · venue없음 5000 은 status 분기.
  */
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const routerState = useRouterLocation().state as { venue?: AiPlanVenue } | null
+  const aiVenue = routerState?.venue ?? null
   const accessToken = useAuthStore((s) => s.accessToken)
   const create = useCreateEvent()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [step, setStep] = useState<Step>(1)
+  /** AI 추천 장소 사용 여부 — 끄면 지도 직접 선택으로 전환 */
+  const [useAiVenue, setUseAiVenue] = useState(true)
+  const aiActive = aiVenue !== null && useAiVenue
 
   // 01 기본정보
   const [title, setTitle] = useState('')
@@ -77,7 +85,7 @@ export default function CreateEventPage() {
     !!endDate &&
     !periodInvalid
   const step2Valid = targetAmount > 0
-  const step3Valid = location !== null
+  const step3Valid = aiActive || location !== null
 
   const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -105,21 +113,30 @@ export default function CreateEventPage() {
   })()
 
   const submit = () => {
-    if (!location) return
-    const body: CreateEventRequest = {
+    const base = {
       title: title.trim(),
       description: description.trim(),
       category,
       startDate,
       endDate,
       targetAmount,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      address: location.address,
-      siDo: location.siDo,
-      siGunGu: location.siGunGu,
-      legalDong: location.legalDong,
-      legalDongCode: location.legalDongCode,
+    }
+    let body: CreateEventRequest
+    if (aiActive && aiVenue) {
+      // AI 경로 — 서버가 venue 위치를 자동 복사(create_type=AI)
+      body = { ...base, selectedVenueId: aiVenue.venueId }
+    } else {
+      if (!location) return
+      body = {
+        ...base,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        address: location.address,
+        siDo: location.siDo,
+        siGunGu: location.siGunGu,
+        legalDong: location.legalDong,
+        legalDongCode: location.legalDongCode,
+      }
     }
     create.mutate(body, {
       onSuccess: (res) => navigate(`/events/${res.eventId}`, { replace: true }),
@@ -210,7 +227,9 @@ export default function CreateEventPage() {
                 ? '이벤트의 기본 정보를\n입력해주세요'
                 : step === 2
                   ? '이벤트의 목표 예산을\n설정해주세요'
-                  : '이벤트가 열릴 장소를\n지정해주세요'
+                  : aiActive
+                    ? 'AI 추천 장소를\n확인해주세요'
+                    : '이벤트가 열릴 장소를\n지정해주세요'
             }
           />
 
@@ -396,7 +415,80 @@ export default function CreateEventPage() {
             </>
           )}
 
-          {step === 3 && (
+          {step === 3 && aiActive && aiVenue && (
+            <Field label="AI 추천 장소">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: 14,
+                  border: '1.5px solid #d9cffb',
+                  background: '#faf9ff',
+                  borderRadius: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 12,
+                    background: '#f1f3f5',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 24,
+                  }}
+                >
+                  {venueImageSrc(aiVenue.imageUrl) ? (
+                    <img src={venueImageSrc(aiVenue.imageUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    '📍'
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: '#191f28',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {aiVenue.title}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: '#6b7684' }}>
+                    {venueTypeLabel(aiVenue.venueType)} · {aiVenue.siDo} {aiVenue.siGunGu}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: '#8b95a1' }}>
+                    예상 비용 {aiVenue.price.toLocaleString('ko-KR')}원
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUseAiVenue(false)}
+                style={{
+                  all: 'unset',
+                  alignSelf: 'flex-start',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: '#8b95a1',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                지도에서 직접 선택하기
+              </button>
+            </Field>
+          )}
+
+          {step === 3 && !aiActive && (
             <Field label="모임 위치">
               <LocationPicker value={location} onChange={setLocation} />
             </Field>
