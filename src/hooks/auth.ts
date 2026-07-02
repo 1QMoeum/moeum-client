@@ -3,7 +3,12 @@ import type { ApiError } from '@/api/client'
 import { authApi } from '@/api/auth'
 import { requestKgInicisIdentityVerification } from '@/lib/portone'
 import { useAuthStore } from '@/store/auth'
-import type { KycForeignVerifyResponse, KycVerifyResponse, TokenResponse } from '@/types/api'
+import type {
+  KycForeignFaceResponse,
+  KycForeignPassportResponse,
+  KycVerifyResponse,
+  TokenResponse,
+} from '@/types/api'
 
 /**
  * auth 도메인의 서버 통신을 React Query mutation 으로 감싼 훅 레이어.
@@ -63,34 +68,45 @@ export function useLogout() {
   })
 }
 
-// ── 외국인 KYC mutation 훅 (여권 multipart) ────────────────────────────
+// ── 외국인 KYC mutation 훅 (2단계 분리) ────────────────────────────
 
-interface ForeignKycPinVars {
-  file: File
+interface ForeignFaceVars {
+  passport: File
+  selfie: File
+}
+
+interface ForeignKycPinVars extends ForeignFaceVars {
   pin: string
 }
 
-/** Foreign KYC verify — passport upload → OCR + MRZ → extracted info + newUser. */
-export function useVerifyForeignKyc() {
-  return useMutation<KycForeignVerifyResponse, ApiError, File>({
-    mutationFn: (file) => authApi.verifyForeignKyc(file),
+/** Step 1 — passport → OCR + MRZ. 한국 여권은 2015 로 거절. */
+export function useVerifyForeignPassport() {
+  return useMutation<KycForeignPassportResponse, ApiError, File>({
+    mutationFn: (passport) => authApi.verifyForeignPassport(passport),
   })
 }
 
-/** Foreign signup — passport + PIN. Saves tokens on success. */
+/** Step 2 — passport + selfie → face similarity. */
+export function useVerifyForeignFace() {
+  return useMutation<KycForeignFaceResponse, ApiError, ForeignFaceVars>({
+    mutationFn: ({ passport, selfie }) => authApi.verifyForeignFace(passport, selfie),
+  })
+}
+
+/** Foreign signup — passport + selfie + PIN. Saves tokens on success. */
 export function useSignupForeign() {
   const setTokens = useAuthStore((s) => s.setTokens)
   return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
-    mutationFn: ({ file, pin }) => authApi.signupForeign(file, pin),
+    mutationFn: ({ passport, selfie, pin }) => authApi.signupForeign(passport, selfie, pin),
     onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
   })
 }
 
-/** Foreign re-verification login — passport + PIN. Saves tokens on success. */
+/** Foreign re-verification login — passport + selfie + PIN. Saves tokens on success. */
 export function useKycLoginForeign() {
   const setTokens = useAuthStore((s) => s.setTokens)
   return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
-    mutationFn: ({ file, pin }) => authApi.kycLoginForeign(file, pin),
+    mutationFn: ({ passport, selfie, pin }) => authApi.kycLoginForeign(passport, selfie, pin),
     onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
   })
 }

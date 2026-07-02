@@ -1,5 +1,10 @@
 import { apiClient, unwrap } from '@/api/client'
-import type { KycForeignVerifyResponse, KycVerifyResponse, TokenResponse } from '@/types/api'
+import type {
+  KycForeignFaceResponse,
+  KycForeignPassportResponse,
+  KycVerifyResponse,
+  TokenResponse,
+} from '@/types/api'
 
 export const authApi = {
   verifyKyc: (identityVerificationId: string) =>
@@ -26,21 +31,34 @@ export const authApi = {
 
   // ── 외국인 KYC (자체 OCR + MRZ. multipart) ──────────────────────────
 
-  /** 외국인 KYC verify — 여권 multipart 업로드 → OCR + MRZ → 정보 추출 + newUser 판별. */
-  verifyForeignKyc: (file: File) => {
+  /** Step 1 — 여권 multipart → OCR + MRZ → 이름·국적·만료 + newUser. 한국 여권은 2015 로 거절. */
+  verifyForeignPassport: (passport: File) => {
     const form = new FormData()
-    form.append('file', file)
-    return unwrap<KycForeignVerifyResponse>(
-      apiClient.post('/v1/auth/kyc/foreign/verify', form, {
+    form.append('passport', passport)
+    return unwrap<KycForeignPassportResponse>(
+      apiClient.post('/v1/auth/kyc/foreign/verify-passport', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     )
   },
 
-  /** 외국인 회원가입 — 여권 multipart + PIN. */
-  signupForeign: (file: File, pin: string) => {
+  /** Step 2 — 여권 + 셀피 multipart → Rekognition CompareFaces → similarity. */
+  verifyForeignFace: (passport: File, selfie: File) => {
     const form = new FormData()
-    form.append('file', file)
+    form.append('passport', passport)
+    form.append('selfie', selfie)
+    return unwrap<KycForeignFaceResponse>(
+      apiClient.post('/v1/auth/kyc/foreign/verify-face', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
+    )
+  },
+
+  /** 외국인 회원가입 — 여권 + 셀피 multipart + PIN. */
+  signupForeign: (passport: File, selfie: File, pin: string) => {
+    const form = new FormData()
+    form.append('passport', passport)
+    form.append('selfie', selfie)
     form.append('pin', pin)
     return unwrap<TokenResponse>(
       apiClient.post('/v1/auth/signup/foreign', form, {
@@ -49,10 +67,11 @@ export const authApi = {
     )
   },
 
-  /** 외국인 재인증 로그인 — 여권 multipart + PIN. */
-  kycLoginForeign: (file: File, pin: string) => {
+  /** 외국인 재인증 로그인 — 여권 + 셀피 multipart + PIN. */
+  kycLoginForeign: (passport: File, selfie: File, pin: string) => {
     const form = new FormData()
-    form.append('file', file)
+    form.append('passport', passport)
+    form.append('selfie', selfie)
     form.append('pin', pin)
     return unwrap<TokenResponse>(
       apiClient.post('/v1/auth/kyc-login/foreign', form, {

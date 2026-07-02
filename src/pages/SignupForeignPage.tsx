@@ -9,12 +9,13 @@ import ErrorBanner from '@/components/ui/ErrorBanner'
 import PinInput from '@/components/auth/PinInput'
 
 interface NavState {
-  file: File
+  passport: File
+  selfie: File
   name: string
 }
 
 /**
- * 외국인 회원가입 — 여권 파일 + PIN. KYC 안 거치고 직접 진입하면 홈으로 돌려보낸다.
+ * 외국인 회원가입 — 여권 + 셀피 + PIN. KYC 안 거치고 직접 진입하면 홈으로 돌려보낸다.
  */
 export default function SignupForeignPage() {
   const navigate = useNavigate()
@@ -24,13 +25,16 @@ export default function SignupForeignPage() {
   const state = location.state as NavState | null
   const [pin, setPin] = useState('')
 
-  if (!state?.file) {
+  if (!state?.passport || !state?.selfie) {
     return <Navigate to="/" replace />
   }
 
   const handleSubmit = () => {
     if (pin.length !== 6) return
-    signup({ file: state.file, pin }, { onSuccess: () => navigate('/', { replace: true }) })
+    signup(
+      { passport: state.passport, selfie: state.selfie, pin },
+      { onSuccess: () => navigate('/', { replace: true }) },
+    )
   }
 
   return (
