@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import AuthBootstrap from '@/components/auth/AuthBootstrap'
+import { useAutoRegisterFcmToken, useForegroundFcmNotifications } from '@/hooks/fcm'
 import HomePage from '@/pages/HomePage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
@@ -25,6 +26,9 @@ import ParticipatePage from '@/pages/ParticipatePage'
 import WalletPage from '@/pages/WalletPage'
 
 export default function App() {
+  useAutoRegisterFcmToken()
+  useForegroundFcmNotifications()
+
   return (
     <AuthBootstrap>
       <Routes>

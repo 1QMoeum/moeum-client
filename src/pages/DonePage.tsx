@@ -5,6 +5,8 @@ import { accountApi } from '@/api/account'
 import { useAuthStore } from '@/store/auth'
 import Button from '@/components/ui/Button'
 import HanaLogo from '@/components/icons/HanaLogo'
+import EnableNotificationModal from '@/components/notification/EnableNotificationModal'
+import { getNotificationPermissionStatus } from '@/lib/firebase'
 import type { BankAccountResponse } from '@/types/api'
 
 /**
@@ -22,6 +24,11 @@ export default function DonePage() {
   const { mutate: logout, isPending } = useLogout()
 
   const [account, setAccount] = useState<BankAccountResponse | null | undefined>(undefined)
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false)
+
+  useEffect(() => {
+    if (getNotificationPermissionStatus() === 'default') setShowNotifPrompt(true)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -202,6 +209,10 @@ export default function DonePage() {
           {isPending ? '로그아웃 중…' : '로그아웃'}
         </button>
       </footer>
+      <EnableNotificationModal
+        open={showNotifPrompt}
+        onDismiss={() => setShowNotifPrompt(false)}
+      />
     </main>
   )
 }
