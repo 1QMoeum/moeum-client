@@ -28,6 +28,10 @@ declare global {
     interface MapOptions {
       center: LatLng
       level: number
+      /** 드래그(팬) 허용 — 기본 true */
+      draggable?: boolean
+      /** 스크롤 휠 줌 허용 — 기본 true */
+      scrollwheel?: boolean
     }
 
     class Map {
@@ -38,6 +42,12 @@ declare global {
       setLevel(level: number): void
       getBounds(): LatLngBounds
       getCenter(): LatLng
+      /** 드래그(팬) 허용 여부 토글 */
+      setDraggable(draggable: boolean): void
+      /** 휠/더블클릭 줌 허용 여부 토글 */
+      setZoomable(zoomable: boolean): void
+      /** 컨테이너 크기 변경 후 지도 레이아웃 재계산 */
+      relayout(): void
     }
 
     interface PolygonOptions {
@@ -166,6 +176,25 @@ declare global {
         addressSearch(
           query: string,
           callback: (result: AddressSearchResult[], status: Status) => void,
+        ): void
+      }
+
+      /** keywordSearch 결과 한 줄(POI). x=경도, y=위도(문자열). */
+      interface PlaceSearchResult {
+        id: string
+        place_name: string
+        address_name: string
+        road_address_name: string
+        category_name: string
+        x: string
+        y: string
+      }
+
+      /** 장소(POI) 키워드 검색 (libraries=services). 상호·역·랜드마크명으로 검색. */
+      class Places {
+        keywordSearch(
+          keyword: string,
+          callback: (result: PlaceSearchResult[], status: Status) => void,
         ): void
       }
     }

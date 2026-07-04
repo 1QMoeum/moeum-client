@@ -21,7 +21,12 @@ export function useKakaoMap(level = 8) {
         const instance = new kakao.maps.Map(containerRef.current, {
           center: new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng),
           level,
+          draggable: true,
+          scrollwheel: true,
         })
+        // 일부 SDK 상태/HMR 잔존으로 드래그가 꺼진 경우를 대비해 명시적으로 켠다
+        instance.setDraggable(true)
+        instance.setZoomable(true)
         setMap(instance)
       })
       .catch((e: unknown) => {

@@ -14,6 +14,14 @@ export interface PickedLocation {
   legalDongCode: string
 }
 
+/** 검색 결과 한 줄 — POI 또는 주소 지오코딩 결과를 정규화 */
+interface SearchResult {
+  name: string
+  address: string
+  lat: number
+  lng: number
+}
+
 interface Props {
   value: PickedLocation | null
   onChange: (loc: PickedLocation) => void
@@ -30,6 +38,7 @@ export default function LocationPicker({ value, onChange }: Props) {
   const [geoError, setGeoError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [results, setResults] = useState<SearchResult[]>([])
 
   // onChange 는 부모 렌더마다 새 참조일 수 있어 ref 로 고정 (지도 리스너 재등록 방지)
   const onChangeRef = useRef(onChange)
@@ -67,19 +76,51 @@ export default function LocationPicker({ value, onChange }: Props) {
     return () => kakao.maps.event.removeListener(map, 'click', handleClick)
   }, [map])
 
+  /** 상호·역·랜드마크(POI) 우선 검색, 없으면 주소로 재시도 → 결과 목록 표시. */
   const runSearch = () => {
     const q = query.trim()
     if (!q) return
     setSearchError(null)
-    const geocoder = new kakao.maps.services.Geocoder()
-    geocoder.addressSearch(q, (result, status) => {
-      if (status !== kakao.maps.services.Status.OK || result.length === 0) {
-        setSearchError('검색 결과가 없어요. 다른 주소로 시도해 주세요.')
+    setResults([])
+
+    const places = new kakao.maps.services.Places()
+    places.keywordSearch(q, (poi, status) => {
+      if (status === kakao.maps.services.Status.OK && poi.length > 0) {
+        setResults(
+          poi.slice(0, 7).map((p) => ({
+            name: p.place_name,
+            address: p.road_address_name || p.address_name,
+            lat: Number(p.y),
+            lng: Number(p.x),
+          })),
+        )
         return
       }
-      const top = result[0]
-      placeRef.current(Number(top.y), Number(top.x), true)
+      // POI 결과가 없으면 주소 지오코딩으로 재시도
+      const geocoder = new kakao.maps.services.Geocoder()
+      geocoder.addressSearch(q, (addr, addrStatus) => {
+        if (addrStatus === kakao.maps.services.Status.OK && addr.length > 0) {
+          setResults(
+            addr.slice(0, 7).map((r) => ({
+              name: r.road_address?.address_name || r.address_name,
+              address: r.address_name,
+              lat: Number(r.y),
+              lng: Number(r.x),
+            })),
+          )
+          return
+        }
+        setSearchError('검색 결과가 없어요. 다른 이름이나 주소로 시도해 주세요.')
+      })
     })
+  }
+
+  /** 검색 결과 선택 → 지도 이동 + 마커 + 역지오코딩 */
+  const selectResult = (r: SearchResult) => {
+    setResults([])
+    setSearchError(null)
+    setQuery(r.name)
+    placeRef.current(r.lat, r.lng, true)
   }
 
   return (
@@ -138,6 +179,42 @@ export default function LocationPicker({ value, onChange }: Props) {
         <span style={{ fontSize: 12, color: '#e03e3e', letterSpacing: '-0.01em' }}>{searchError}</span>
       )}
 
+      {results.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid #f2f4f6',
+            borderRadius: 12,
+            overflow: 'hidden',
+            background: '#fff',
+          }}
+        >
+          {results.map((r, i) => (
+            <button
+              key={`${r.lat},${r.lng},${i}`}
+              type="button"
+              onClick={() => selectResult(r)}
+              style={{
+                all: 'unset',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                padding: '11px 14px',
+                cursor: 'pointer',
+                borderTop: i === 0 ? 'none' : '1px solid #f2f4f6',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
+                {r.name}
+              </span>
+              <span style={{ fontSize: 12.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>{r.address}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         style={{
           position: 'relative',
@@ -148,7 +225,7 @@ export default function LocationPicker({ value, onChange }: Props) {
           border: '1px solid var(--color-border)',
         }}
       >
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+        <div ref={containerRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
         {error && (
           <div
             style={{
