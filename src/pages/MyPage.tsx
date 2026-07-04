@@ -116,20 +116,25 @@ export default function MyPage() {
   )
 }
 
+/** 둥근 모서리 + 가운데 V 노치가 파인 글래스 트레이 마스크 (viewBox 363×123). */
+const TRAY_MASK = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 363 123' preserveAspectRatio='none'><path d='M16 0 H150 L181.5 30 L213 0 H347 Q363 0 363 16 V107 Q363 123 347 123 H16 Q0 123 0 107 V16 Q0 0 16 0 Z'/></svg>",
+)}")`
+
 /** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). */
 function WalletCard({ onCharge, onWithdraw }: { onCharge: () => void; onWithdraw: () => void }) {
-  const trayStyle: CSSProperties & { WebkitBackdropFilter?: string } = {
+  const trayStyle: CSSProperties & { WebkitBackdropFilter?: string; WebkitMaskImage?: string } = {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     height: 123,
-    background: 'rgba(255,255,255,0.35)',
-    backdropFilter: 'blur(6px)',
-    WebkitBackdropFilter: 'blur(6px)',
-    borderRadius: '0 0 12px 12px',
-    clipPath:
-      'polygon(0 18px, calc(50% - 16px) 18px, 50% 0, calc(50% + 16px) 18px, 100% 18px, 100% 100%, 0 100%)',
+    background: 'rgba(255,255,255,0.3)',
+    backdropFilter: 'blur(10px) saturate(1.1)',
+    WebkitBackdropFilter: 'blur(10px) saturate(1.1)',
+    maskImage: TRAY_MASK,
+    WebkitMaskImage: TRAY_MASK,
+    maskSize: '100% 100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
