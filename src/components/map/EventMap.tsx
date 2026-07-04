@@ -13,7 +13,7 @@ import { toKakaoPaths } from '@/lib/geo'
 import { loadLegalDongFeature } from '@/lib/legalDongGeo'
 import { categoryMeta, createFlagElement, createInfoBubbleElement } from '@/lib/mapPin'
 import { reverseGeocode } from '@/lib/reverseGeocode'
-import { EVENT_CATEGORIES } from '@/types/event'
+import { EVENT_CATEGORIES, categoryImage } from '@/types/event'
 import type {
   EventHistoryDistrict,
   EventMapDistrict,
@@ -33,10 +33,9 @@ const SHEET_PEEK = 290
 /** 컨트롤(현위치 버튼) 하단과 접힌 시트 윗변 사이 간격 */
 const CONTROL_SHEET_GAP = 25
 
-type MapMode = 'all' | 'ongoing' | 'history'
+type MapMode = 'ongoing' | 'history'
 
 const MODE_TABS: Array<{ key: MapMode; label: string }> = [
-  { key: 'all', label: '전체' },
   { key: 'ongoing', label: '진행 중' },
   { key: 'history', label: '히스토리' },
 ]
@@ -63,7 +62,7 @@ export default function EventMap() {
   const navigate = useNavigate()
   const { containerRef, map, error: mapError } = useKakaoMap()
 
-  const [mode, setMode] = useState<MapMode>('all')
+  const [mode, setMode] = useState<MapMode>('ongoing')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string | null>(null)
   const [showCategoryRow, setShowCategoryRow] = useState(false)
@@ -75,9 +74,9 @@ export default function EventMap() {
   const [focusEventId, setFocusEventId] = useState<number | null>(null)
 
   const zoomedOut = level === null || level >= DISTRICT_LEVEL
-  // 전체 = 진행중 + 히스토리 함께 표시. 진행중/히스토리는 각각만.
-  const showOngoing = mode !== 'history'
-  const showHistory = mode !== 'ongoing'
+  // 진행중/히스토리 둘 중 하나만 표시.
+  const showOngoing = mode === 'ongoing'
+  const showHistory = mode === 'history'
 
   // idle 마다 줌레벨·bounds 동기화 + 중심좌표 역지오코딩(📍 주변 탭 라벨)
   useEffect(() => {
@@ -330,7 +329,7 @@ export default function EventMap() {
             ? `${detail.siGunGu} ${detail.legalDong}`
             : ''
       content = createInfoBubbleElement({
-        imageUrl: detail?.representativeImageUrl || undefined,
+        imageUrl: detail?.representativeImageUrl || categoryImage(data.category),
         emoji: meta.emoji,
         region,
         title: data.title,
@@ -368,7 +367,7 @@ export default function EventMap() {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
 
       {/* 상단 — 헤더 · 검색 · 필터 칩 */}
       <div
@@ -490,7 +489,8 @@ export default function EventMap() {
             {EVENT_CATEGORIES.map((c) => (
               <CategoryChip
                 key={c.value}
-                label={`${categoryMeta(c.value).emoji} ${c.label}`}
+                label={c.label}
+                img={c.img}
                 active={category === c.value}
                 onClick={() => setCategory(c.value)}
               />
@@ -569,7 +569,17 @@ export default function EventMap() {
   )
 }
 
-function CategoryChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function CategoryChip({
+  label,
+  img,
+  active,
+  onClick,
+}: {
+  label: string
+  img?: string
+  active: boolean
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
@@ -578,7 +588,10 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
       style={{
         all: 'unset',
         flexShrink: 0,
-        padding: '7px 13px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: img ? '6px 13px 6px 8px' : '7px 13px',
         borderRadius: 999,
         fontSize: 12.5,
         fontWeight: 600,
@@ -590,6 +603,7 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
         WebkitTapHighlightColor: 'transparent',
       }}
     >
+      {img && <img src={img} alt="" width={20} height={20} style={{ objectFit: 'contain' }} />}
       {label}
     </button>
   )

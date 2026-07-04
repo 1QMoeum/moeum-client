@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Flame, Heart, MapPin } from 'lucide-react'
-import { categoryMeta } from '@/lib/mapPin'
 import { mapTokens, pillStyle } from '@/components/map/mapStyle'
-import { categoryLabel } from '@/types/event'
+import { reverseGeocode } from '@/lib/reverseGeocode'
+import { categoryImage } from '@/types/event'
 import type { EventListItem, ViewportEvent } from '@/types/event'
 
 type SheetTab = 'nearby' | 'trend'
@@ -14,6 +15,9 @@ interface TopEventCard {
   sub: string
   imageUrl?: string
   category: string
+  /** 주변(viewport) 탭 — 좌표를 역지오코딩해 주소를 표시한다 */
+  lat?: number
+  lng?: number
 }
 
 interface Props {
@@ -116,8 +120,10 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
       return nearby.slice(0, TOP_N).map((e) => ({
         eventId: e.eventId,
         title: e.title,
-        sub: categoryLabel(e.category),
+        sub: '',
         category: e.category,
+        lat: e.latitude,
+        lng: e.longitude,
       }))
     }
     return trending.slice(0, TOP_N).map((e) => ({
@@ -286,7 +292,6 @@ function EventTopCard({
   onToggleLike: () => void
   onClick: () => void
 }) {
-  const meta = categoryMeta(card.category)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <button
@@ -306,14 +311,19 @@ function EventTopCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 34,
           WebkitTapHighlightColor: 'transparent',
         }}
       >
         {card.imageUrl ? (
           <img src={card.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          meta.emoji
+          <img
+            src={categoryImage(card.category) ?? '/categories/gift.png'}
+            alt=""
+            width={52}
+            height={52}
+            style={{ objectFit: 'contain' }}
+          />
         )}
         <span
           style={{
@@ -362,7 +372,7 @@ function EventTopCard({
               whiteSpace: 'nowrap',
             }}
           >
-            {card.sub}
+            <CardSub card={card} />
           </span>
         </div>
         <button
@@ -383,6 +393,29 @@ function EventTopCard({
       </div>
     </div>
   )
+}
+
+/**
+ * 좌표 → "시군구 법정동" 주소 라벨. 소수 4자리(약 11m)로 반올림한 키로 캐시해
+ * 같은 위치의 카드끼리 역지오코딩을 공유한다.
+ */
+function useRegionLabel(lat?: number, lng?: number) {
+  return useQuery({
+    queryKey: ['regionLabel', lat?.toFixed(4), lng?.toFixed(4)],
+    enabled: lat != null && lng != null,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const r = await reverseGeocode(lat as number, lng as number)
+      return `${r.siGunGu} ${r.legalDong}`
+    },
+  })
+}
+
+/** 카드 서브라인 — 주변 탭은 좌표 역지오코딩 주소, 전국 탭은 서버 주소(siDo siGunGu). */
+function CardSub({ card }: { card: TopEventCard }) {
+  const { data } = useRegionLabel(card.lat, card.lng)
+  if (card.lat == null) return <>{card.sub}</>
+  return <>{data ?? '…'}</>
 }
 
 function CardSkeleton() {
