@@ -40,7 +40,7 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { key: 'home', label: '홈', to: '/main' },
-  { key: 'calendar', label: '캘린더' },
+  { key: 'calendar', label: '캘린더', to: '/calendar' },
   { key: 'explore', label: '탐색', to: '/explore' },
   { key: 'map', label: '지도', to: '/events' },
 ]

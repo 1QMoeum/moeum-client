@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import AuthBootstrap from '@/components/auth/AuthBootstrap'
 import HomePage from '@/pages/HomePage'
 import MainPage from '@/pages/MainPage'
+import CalendarPage from '@/pages/CalendarPage'
 import KycPage from '@/pages/KycPage'
 import KycForeignPage from '@/pages/KycForeignPage'
 import SignupPage from '@/pages/SignupPage'
@@ -28,6 +29,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/main" element={<MainPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/kyc" element={<KycPage />} />
         <Route path="/kyc/foreign" element={<KycForeignPage />} />
         <Route path="/signup" element={<SignupPage />} />
