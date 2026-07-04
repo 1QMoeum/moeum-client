@@ -5,8 +5,7 @@ interface Props {
 }
 
 /**
- * 모음 워드마크. public/moeum-logo.png 를 그대로 사용.
- * 디자이너 SVG 받으면 그때 교체.
+ * 모음 워드마크. public/moeum-logo.svg 를 그대로 사용.
  */
 export default function MoeumLogo({ height = 56 }: Props) {
   const imgStyle: CSSProperties & { WebkitUserDrag?: string } = {
@@ -15,5 +14,5 @@ export default function MoeumLogo({ height = 56 }: Props) {
     userSelect: 'none',
     WebkitUserDrag: 'none',
   }
-  return <img src="/moeum-logo.png" alt="moeum" draggable={false} style={imgStyle} />
+  return <img src="/moeum-logo.svg" alt="moeum" draggable={false} style={imgStyle} />
 }
