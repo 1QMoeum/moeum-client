@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X, AlertCircle } from 'lucide-react'
 import { useEventList } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
 import { categoryMeta } from '@/lib/mapPin'
-import { EVENT_CATEGORIES } from '@/types/event'
 import BottomNav from '@/components/ui/BottomNav'
 import type { EventListItem, EventStatus } from '@/types/event'
 
@@ -39,15 +38,23 @@ const REGIONS = ['서울', '경기', '인천', '세종', '대전', '대구', '�
 /** 마감 임박 기준 — 종료일까지 7일 이내 */
 const CLOSING_DAYS = 7
 
-const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  ONGOING: { label: '진행중', color: '#12b886', bg: '#e6f9f2' },
-  COMPLETED: { label: '종료', color: '#868e96', bg: '#f1f3f5' },
-  CANCELLED: { label: '취소', color: '#e03e3e', bg: '#ffecec' },
-  PENDING_DELETION: { label: '삭제 예정', color: '#e03e3e', bg: '#ffecec' },
-}
+/**
+ * 탐색 카테고리 (Figma 시안). server 가 있으면 서버 category 필터,
+ * 없으면 제목 키워드로 클라이언트 필터링한다.
+ */
+const DESIGN_CATEGORIES: Array<{ label: string; img: string; server?: string }> = [
+  { label: '생일카페', img: '/categories/cafe.png', server: 'CAFE' },
+  { label: '광고', img: '/categories/ad.png', server: 'DIGITAL_SIGNAGE' },
+  { label: '선물', img: '/categories/gift.png' },
+  { label: '커피차', img: '/categories/coffeetruck.png' },
+  { label: '굿즈', img: '/categories/goods.png' },
+  { label: '기부금', img: '/categories/donation.png' },
+  { label: '화환', img: '/categories/wreath.png' },
+]
 
-/** 추천 검색어 — 검색 API 가 없어 카테고리·대표 키워드 고정 목록. */
-const SUGGESTED_KEYWORDS = ['생일카페', '카페', '지하철', '전광판', '현수막', '커피차', '버스', '온라인']
+/** 추천 검색어 — 검색 API 가 없어 고정 목록. 접힘 상태에선 앞 7개만 노출. */
+const SUGGESTED_KEYWORDS = ['생일카페', '리나', '지하철 광고', '커피차', '진행중', '성수동 카페', '홍대입구역', '전광판', '현수막', '온라인']
+const SUGGESTED_COLLAPSED = 7
 
 const RECENT_KEY = 'moeum.recentSearches'
 const RECENT_MAX = 10
@@ -66,10 +73,12 @@ function saveRecent(list: string[]) {
   localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)))
 }
 
+const won = (n: number) => n.toLocaleString('ko-KR')
+
 /**
  * 이벤트 탐색(목록). GET /v1/events 를 status·category 로 서버 필터링해 카드로 보여준다.
  * 검색어·지역·정렬은 클라이언트 처리(검색 API 없음). 검색창 탭 → 검색어 입력 화면,
- * 필터 아이콘 → 지역·진행 상태·정렬 바텀시트.
+ * 필터 아이콘 → 지역·진행 상태·정렬 바텀시트, 우하단 AI 코칭 → AI 플래너.
  */
 export default function EventListPage() {
   const navigate = useNavigate()
@@ -78,11 +87,12 @@ export default function EventListPage() {
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [category, setCategory] = useState<string | null>(null)
+  const [categoryLabel, setCategoryLabel] = useState<string | null>(null)
   const [statusKey, setStatusKey] = useState<StatusKey>('all')
   const [sortKey, setSortKey] = useState<SortKey>('latest')
   const [region, setRegion] = useState<string | null>(null)
 
+  const selectedCategory = DESIGN_CATEGORIES.find((c) => c.label === categoryLabel)
   const serverStatus: EventStatus | undefined =
     statusKey === 'ongoing' || statusKey === 'closing'
       ? 'ONGOING'
@@ -90,7 +100,7 @@ export default function EventListPage() {
         ? 'COMPLETED'
         : undefined
   const { data, isPending, error } = useEventList(
-    { status: serverStatus, category: category ?? undefined, size: 50 },
+    { status: serverStatus, category: selectedCategory?.server, size: 50 },
     !!accessToken,
   )
 
@@ -98,6 +108,8 @@ export default function EventListPage() {
     let list = data?.content ?? []
     const q = query.trim().toLowerCase()
     if (q !== '') list = list.filter((e) => e.title.toLowerCase().includes(q))
+    if (selectedCategory && !selectedCategory.server)
+      list = list.filter((e) => e.title.includes(selectedCategory.label))
     if (region) list = list.filter((e) => e.siDo?.startsWith(region))
     if (statusKey === 'closing') {
       const limit = Date.now() + CLOSING_DAYS * 24 * 60 * 60 * 1000
@@ -113,7 +125,7 @@ export default function EventListPage() {
       default:
         return list
     }
-  }, [data, query, region, statusKey, sortKey])
+  }, [data, query, selectedCategory, region, statusKey, sortKey])
 
   if (!accessToken) {
     return <Navigate to="/" replace />
@@ -133,206 +145,226 @@ export default function EventListPage() {
   }
 
   const searching = query.trim() !== ''
-  const filterActive = region !== null || sortKey !== 'latest' || statusKey === 'closing'
 
   return (
-    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
-      <div
+    <div style={{ background: 'var(--color-bg)', minHeight: '100%' }}>
+      <main
         style={{
-          flex: 1,
           maxWidth: 480,
-          width: '100%',
           margin: '0 auto',
-          padding: '8px 20px calc(110px + env(safe-area-inset-bottom))',
+          padding: '0 0 150px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 18,
-          boxSizing: 'border-box',
         }}
       >
-        {/* 상단 바 */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 8 }}>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="뒤로"
-            style={{
-              all: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              cursor: 'pointer',
-              color: '#191f28',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <ChevronLeft size={26} />
-          </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#191f28', letterSpacing: '-0.02em' }}>
-            이벤트 탐색
-          </h1>
-        </header>
-
-        {!searching && (
-          <h2 style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
-            원하는 이벤트를
-            <br />
-            찾아보세요
-          </h2>
-        )}
-
-        {/* 검색바 — 탭하면 검색어 입력 화면 */}
-        <div
-          role="search"
+        {/* 탑바 */}
+        <header
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '13px 16px',
-            background: '#f5f5f7',
-            borderRadius: 999,
+            height: 56,
+            padding: '10px 20px',
+            boxSizing: 'border-box',
           }}
         >
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            aria-label="이벤트 검색"
-            style={{
-              all: 'unset',
-              flex: 1,
-              minWidth: 0,
-              fontSize: 14.5,
-              cursor: 'pointer',
-              color: searching ? '#191f28' : '#adb5bd',
-              letterSpacing: '-0.01em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            {searching ? query : '이벤트명, 아티스트, 키워드 검색'}
-          </button>
-          {searching && (
+          <IconButton label="뒤로가기" onClick={() => navigate(-1)}>
+            <BackCaret />
+          </IconButton>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: '#27282c' }}>
+            이벤트 탐색
+          </h1>
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '22px 20px 0', gap: 32 }}>
+          {/* 히어로 + 검색바 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {!searching && (
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: 24,
+                  fontWeight: 600,
+                  lineHeight: 1.5,
+                  letterSpacing: '-0.02em',
+                  color: '#0c0d0d',
+                }}
+              >
+                원하는 이벤트를
+                <br />
+                찾아보세요
+              </h2>
+            )}
+
             <button
               type="button"
-              onClick={() => setQuery('')}
-              aria-label="검색어 지우기"
+              onClick={() => setSearchOpen(true)}
+              aria-label="이벤트 검색"
               style={{
-                all: 'unset',
-                display: 'flex',
-                cursor: 'pointer',
-                color: '#adb5bd',
-                padding: 2,
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <X size={16} strokeWidth={2.4} />
-            </button>
-          )}
-          <Search size={20} strokeWidth={2.2} color="#adb5bd" style={{ flexShrink: 0 }} />
-        </div>
-
-        {/* 카테고리 — 검색 결과 화면에서는 숨김 */}
-        {!searching && (
-          <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
-              카테고리
-            </span>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              <CategoryCircle label="전체" emoji="✨" active={category === null} onClick={() => setCategory(null)} />
-              {EVENT_CATEGORIES.map((c) => {
-                const meta = categoryMeta(c.value)
-                return (
-                  <CategoryCircle
-                    key={c.value}
-                    label={c.label}
-                    emoji={meta.emoji}
-                    active={category === c.value}
-                    onClick={() => setCategory(c.value)}
-                  />
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* 목록 + 상태 탭 + 필터 */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {!searching && (
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
-              전체 이벤트
-            </span>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {STATUS_TABS.map((t) => {
-              const active = statusKey === t.key || (t.key === 'ongoing' && statusKey === 'closing')
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setStatusKey(t.key)}
-                  aria-pressed={active}
-                  style={{
-                    all: 'unset',
-                    padding: '8px 16px',
-                    borderRadius: 999,
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    letterSpacing: '-0.01em',
-                    cursor: 'pointer',
-                    color: active ? '#fff' : '#8b95a1',
-                    background: active ? '#191f28' : '#f5f5f7',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >
-                  {t.label}
-                </button>
-              )
-            })}
-            <div style={{ flex: 1 }} />
-            <button
-              type="button"
-              onClick={() => setFilterOpen(true)}
-              aria-label="필터"
-              style={{
-                all: 'unset',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                borderRadius: 12,
+                gap: 8,
+                height: 44,
+                padding: '0 12px 0 23px',
+                background: '#fff',
+                border: '1px solid #f6f6fa',
+                borderRadius: 32,
                 cursor: 'pointer',
-                color: filterActive ? '#7c6ff0' : '#4e5968',
+                boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+                boxSizing: 'border-box',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <SlidersHorizontal size={19} strokeWidth={2.2} />
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  textAlign: 'left',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  letterSpacing: '-0.02em',
+                  color: searching ? '#151519' : '#5c5c72',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {searching ? query : '이벤트명, 아티스트, 키워드 검색'}
+              </span>
+              {searching && (
+                <span
+                  role="button"
+                  aria-label="검색어 지우기"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setQuery('')
+                  }}
+                  style={{ display: 'flex', padding: 4, cursor: 'pointer' }}
+                >
+                  <XIcon />
+                </span>
+              )}
+              <SearchIcon />
             </button>
-          </div>
 
-          {isPending && <ListSkeleton />}
+            {/* 검색 결과 모드 — 검색바 바로 아래 상태 칩 */}
+            {searching && (
+              <StatusChipRow statusKey={statusKey} onStatus={setStatusKey} onFilter={() => setFilterOpen(true)} />
+            )}
+          </section>
 
-          {!isPending && error && (
-            <EmptyNote icon={<AlertCircle size={28} color="#e03e3e" />} text={`${error.message} (${error.status ?? '?'})`} />
+          {/* 카테고리 */}
+          {!searching && (
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <SectionTitle label="카테고리" />
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  margin: '0 -20px',
+                  padding: '4px 20px',
+                }}
+              >
+                {DESIGN_CATEGORIES.map((c) => {
+                  const active = categoryLabel === c.label
+                  return (
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={() => setCategoryLabel(active ? null : c.label)}
+                      aria-pressed={active}
+                      style={{
+                        flexShrink: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '10px 18px',
+                        background: '#fff',
+                        border: active ? '1px solid var(--color-accent)' : '1px solid transparent',
+                        borderRadius: 12,
+                        cursor: 'pointer',
+                        boxShadow: '0 0 16px rgba(21,21,21,0.04)',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <img src={c.img} alt="" aria-hidden width={48} height={48} style={{ display: 'block', objectFit: 'contain' }} />
+                      <span
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                          lineHeight: 1.5,
+                          letterSpacing: '-0.02em',
+                          color: active ? 'var(--color-accent)' : '#73787e',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {c.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
           )}
 
-          {!isPending && !error && filtered.length === 0 && (
-            <EmptyNote text={searching ? `'${query}' 검색 결과가 없어요.` : '조건에 맞는 이벤트가 없어요.'} />
-          )}
+          {/* 전체 이벤트 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {!searching && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <SectionTitle label="전체 이벤트" />
+                <StatusChipRow statusKey={statusKey} onStatus={setStatusKey} onFilter={() => setFilterOpen(true)} />
+              </div>
+            )}
 
-          {!isPending &&
-            !error &&
-            filtered.map((e) => (
-              <EventCard key={e.eventId} event={e} onClick={() => navigate(`/events/${e.eventId}`)} />
-            ))}
-        </section>
-      </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {isPending &&
+                [0, 1, 2].map((i) => (
+                  <div key={i} style={{ height: 96, borderRadius: 12, background: '#fff', boxShadow: '0 0 8px rgba(21,21,21,0.04)' }} />
+                ))}
+
+              {!isPending && error && (
+                <EmptyNote text={`${error.message} (${error.status ?? '?'})`} />
+              )}
+
+              {!isPending && !error && filtered.length === 0 && (
+                <EmptyNote text={searching ? `'${query}' 검색 결과가 없어요.` : '조건에 맞는 이벤트가 없어요.'} />
+              )}
+
+              {!isPending &&
+                !error &&
+                filtered.map((e) => (
+                  <EventCard key={e.eventId} event={e} onClick={() => navigate(`/events/${e.eventId}`)} />
+                ))}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* AI 코칭 플로팅 버튼 */}
+      <button
+        type="button"
+        onClick={() => navigate('/events/new/ai')}
+        aria-label="AI 코칭"
+        style={{
+          position: 'fixed',
+          right: 'max(20px, calc(50% - 220px))',
+          bottom: 'calc(104px + env(safe-area-inset-bottom))',
+          width: 72,
+          height: 72,
+          borderRadius: '50%',
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          zIndex: 9,
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {/* SVG 에셋에 흰 원형 배경·그림자가 포함돼 있어 (108×108, 원 72px) 18px씩 밖으로 흘린다 */}
+        <img src="/ai-mascot.svg" alt="" aria-hidden width={108} height={108} style={{ display: 'block', margin: -18, maxWidth: 'none' }} />
+      </button>
 
       {filterOpen && (
         <FilterSheet
@@ -347,8 +379,149 @@ export default function EventListPage() {
       )}
 
       <BottomNav onCreate={() => navigate('/events/new')} />
-    </main>
+    </div>
   )
+}
+
+/** 상태 칩(전체/진행중/히스토리) + 필터 아이콘 한 줄. */
+function StatusChipRow({
+  statusKey,
+  onStatus,
+  onFilter,
+}: {
+  statusKey: StatusKey
+  onStatus: (s: StatusKey) => void
+  onFilter: () => void
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {STATUS_TABS.map((t) => {
+          const active = statusKey === t.key || (t.key === 'ongoing' && statusKey === 'closing')
+          return (
+            <Pill key={t.key} label={t.label} active={active} size="xs" onClick={() => onStatus(t.key)} />
+          )
+        })}
+      </div>
+      <IconButton label="필터" onClick={onFilter}>
+        <FilterIcon />
+      </IconButton>
+    </div>
+  )
+}
+
+function EventCard({ event, onClick }: { event: EventListItem; onClick: () => void }) {
+  const pill = statusPill(event)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: 12,
+        background: '#fff',
+        border: 'none',
+        borderRadius: 12,
+        cursor: 'pointer',
+        textAlign: 'left',
+        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {event.representativeImageUrl ? (
+        <img
+          src={event.representativeImageUrl}
+          alt=""
+          aria-hidden
+          style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+        />
+      ) : (
+        <span
+          aria-hidden
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 8,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 26,
+            background: 'linear-gradient(135deg, #ffe1ec 0%, #dcd6f7 100%)',
+          }}
+        >
+          {categoryMeta(event.category).emoji}
+        </span>
+      )}
+
+      <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+            <span
+              style={{
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: 24,
+                background: pill.bg,
+                color: pill.color,
+                fontSize: 14,
+                fontWeight: 500,
+                lineHeight: 1.5,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.dot }} />
+              {pill.label}
+            </span>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 500,
+                lineHeight: 1.5,
+                letterSpacing: '-0.02em',
+                color: '#0c0d0d',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {event.title}
+            </span>
+          </span>
+          <RightCaret />
+        </span>
+        <span style={{ display: 'flex', gap: 13, fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em' }}>
+          <span style={{ display: 'flex', gap: 4 }}>
+            <span style={{ color: 'var(--color-accent)' }}>{Math.round(event.fundingRate)}%</span>
+            <span style={{ color: '#5c5c72' }}>달성</span>
+          </span>
+          <span style={{ display: 'flex', gap: 4, minWidth: 0 }}>
+            <span style={{ color: 'var(--color-accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {won(event.currentAmount)}원
+            </span>
+            <span style={{ color: '#5c5c72', flexShrink: 0 }}>모금</span>
+          </span>
+        </span>
+      </span>
+    </button>
+  )
+}
+
+/** 카드 상태 필: 진행중(보라) · 마감임박(연보라) · 완료(회색) · 취소(회색+빨강). */
+function statusPill(e: EventListItem): { label: string; bg: string; color: string; dot: string } {
+  if (e.status === 'ONGOING') {
+    const closing = new Date(e.endDate).getTime() <= Date.now() + CLOSING_DAYS * 24 * 60 * 60 * 1000
+    return closing
+      ? { label: '마감 임박', bg: '#e3e1ff', color: 'var(--color-accent)', dot: 'var(--color-accent)' }
+      : { label: '진행중', bg: 'var(--color-accent)', color: '#fff', dot: '#fff' }
+  }
+  if (e.status === 'COMPLETED') return { label: '완료', bg: '#f6f6fa', color: '#a4a4bd', dot: '#a4a4bd' }
+  return { label: '취소', bg: '#f6f6fa', color: '#e03e3e', dot: '#e03e3e' }
 }
 
 /** 검색어 입력 화면 — 최근 검색어(localStorage) + 추천 검색어. */
@@ -363,6 +536,7 @@ function SearchScreen({
 }) {
   const [text, setText] = useState(initial)
   const [recent, setRecent] = useState<string[]>(loadRecent)
+  const [expanded, setExpanded] = useState(false)
 
   const submit = (raw: string) => {
     const q = raw.trim()
@@ -384,54 +558,35 @@ function SearchScreen({
     saveRecent([])
   }
 
+  const suggested = expanded ? SUGGESTED_KEYWORDS : SUGGESTED_KEYWORDS.slice(0, SUGGESTED_COLLAPSED)
+
   return (
-    <main style={{ minHeight: '100vh', background: '#fff' }}>
-      <div
-        style={{
-          maxWidth: 480,
-          margin: '0 auto',
-          padding: '8px 20px 40px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
-          boxSizing: 'border-box',
-        }}
-      >
+    <div style={{ background: 'var(--color-bg)', minHeight: '100%' }}>
+      <main style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px 40px', boxSizing: 'border-box' }}>
         {/* 검색 입력 */}
         <form
           onSubmit={(e) => {
             e.preventDefault()
             submit(text)
           }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 8 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="뒤로"
-            style={{
-              all: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              cursor: 'pointer',
-              color: '#191f28',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <ChevronLeft size={25} />
-          </button>
+          <IconButton label="뒤로가기" onClick={onClose}>
+            <BackCaret />
+          </IconButton>
           <div
             style={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              padding: '12px 16px',
-              background: '#f5f5f7',
-              borderRadius: 999,
+              height: 44,
+              padding: '0 12px 0 23px',
+              background: '#fff',
+              border: '1px solid #f6f6fa',
+              borderRadius: 32,
+              boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+              boxSizing: 'border-box',
             }}
           >
             <input
@@ -445,114 +600,133 @@ function SearchScreen({
                 border: 'none',
                 outline: 'none',
                 background: 'transparent',
-                fontSize: 14.5,
-                color: '#191f28',
-                letterSpacing: '-0.01em',
+                fontSize: 14,
+                letterSpacing: '-0.02em',
+                color: '#151519',
               }}
             />
             <button
               type="submit"
               aria-label="검색"
-              style={{ all: 'unset', display: 'flex', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+              style={{ background: 'none', border: 'none', padding: 0, display: 'flex', cursor: 'pointer' }}
             >
-              <Search size={20} strokeWidth={2.2} color="#adb5bd" />
+              <SearchIcon />
             </button>
           </div>
         </form>
 
-        {/* 최근 검색어 */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
-              최근 검색어
-            </span>
-            {recent.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 56, paddingTop: 25 }}>
+          {/* 최근 검색어 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#222229' }}>
+                최근 검색어
+              </span>
               <button
                 type="button"
                 onClick={clearRecent}
                 style={{
-                  all: 'unset',
-                  fontSize: 13,
-                  color: '#8b95a1',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  letterSpacing: '-0.02em',
+                  color: '#27282c',
                   cursor: 'pointer',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
                 전체삭제
               </button>
-            )}
-          </div>
-          {recent.length === 0 ? (
-            <span style={{ fontSize: 13.5, color: '#adb5bd', textAlign: 'center', padding: '8px 0' }}>
-              최근 검색어가 없습니다.
-            </span>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {recent.map((word) => (
-                <span
-                  key={word}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '7px 12px',
-                    borderRadius: 999,
-                    border: '1px solid #ececf0',
-                    fontSize: 13,
-                    color: '#4e5968',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => submit(word)}
-                    style={{ all: 'unset', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    {word}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeRecent(word)}
-                    aria-label={`${word} 삭제`}
-                    style={{ all: 'unset', display: 'flex', cursor: 'pointer', color: '#c5c8ce', WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <X size={13} strokeWidth={2.4} />
-                  </button>
-                </span>
-              ))}
             </div>
-          )}
-        </section>
+            {recent.length === 0 ? (
+              <span style={{ fontSize: 16, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#27282c', textAlign: 'center' }}>
+                최근 검색어가 없습니다.
+              </span>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {recent.map((word) => (
+                  <span
+                    key={word}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 14px 8px 20px',
+                      borderRadius: 24,
+                      background: '#fff',
+                      boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      letterSpacing: '-0.02em',
+                      color: '#5c5c72',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => submit(word)}
+                      style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      {word}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeRecent(word)}
+                      aria-label={`${word} 삭제`}
+                      style={{ background: 'none', border: 'none', padding: 0, display: 'flex', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <XIcon />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
 
-        {/* 추천 검색어 */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
-            추천 검색어
-          </span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {SUGGESTED_KEYWORDS.map((word) => (
+          {/* 추천 검색어 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#222229' }}>
+              추천 검색어
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              {suggested.map((word) => (
+                <Pill key={word} label={word} active={false} size="sm" onClick={() => submit(word)} />
+              ))}
               <button
-                key={word}
                 type="button"
-                onClick={() => submit(word)}
+                onClick={() => setExpanded((v) => !v)}
+                aria-label={expanded ? '추천 검색어 접기' : '추천 검색어 더 보기'}
+                aria-expanded={expanded}
                 style={{
-                  all: 'unset',
-                  padding: '8px 14px',
-                  borderRadius: 999,
-                  background: '#f5f5f7',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#4e5968',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: '#f6f6fa',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   cursor: 'pointer',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                {word}
+                <svg
+                  width={19}
+                  height={19}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                  style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+                >
+                  <path d="M7 10l5 5 5-5" stroke="#5c5c72" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
   )
 }
 
@@ -574,30 +748,6 @@ function FilterSheet({
   onSort: (s: SortKey) => void
   onClose: () => void
 }) {
-  const chip = (label: string, active: boolean, onClick: () => void) => (
-    <button
-      key={label}
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      style={{
-        all: 'unset',
-        flexShrink: 0,
-        padding: '8px 15px',
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 500,
-        letterSpacing: '-0.01em',
-        cursor: 'pointer',
-        color: active ? '#fff' : '#8b95a1',
-        background: active ? '#191f28' : '#f5f5f7',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {label}
-    </button>
-  )
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 40 }}>
       {/* 딤 배경 */}
@@ -606,10 +756,11 @@ function FilterSheet({
         onClick={onClose}
         aria-label="필터 닫기"
         style={{
-          all: 'unset',
           position: 'absolute',
           inset: 0,
           background: 'rgba(0,0,0,.4)',
+          border: 'none',
+          padding: 0,
           cursor: 'pointer',
         }}
       />
@@ -623,12 +774,13 @@ function FilterSheet({
           width: '100%',
           maxWidth: 480,
           background: '#fff',
-          borderRadius: '24px 24px 0 0',
-          padding: '10px 24px calc(28px + env(safe-area-inset-bottom))',
+          borderRadius: '32px 32px 0 0',
+          padding: '12px 20px calc(40px + env(safe-area-inset-bottom))',
           display: 'flex',
           flexDirection: 'column',
-          gap: 22,
+          gap: 24,
           boxSizing: 'border-box',
+          boxShadow: '0 0 16px rgba(63,63,63,0.04)',
         }}
       >
         <button
@@ -636,7 +788,8 @@ function FilterSheet({
           onClick={onClose}
           aria-label="시트 닫기"
           style={{
-            all: 'unset',
+            background: 'none',
+            border: 'none',
             display: 'flex',
             justifyContent: 'center',
             padding: '2px 0 0',
@@ -644,247 +797,235 @@ function FilterSheet({
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <span style={{ width: 40, height: 4, borderRadius: 999, background: '#e0e2e6' }} />
+          <span style={{ width: 42, height: 4, borderRadius: 999, background: 'var(--color-track)' }} />
         </button>
 
-        <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#474c52' }}>
           필터
         </h2>
 
         {/* 지역 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28' }}>지역</span>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-            {chip('전체', region === null, () => onRegion(null))}
-            {REGIONS.map((r) => chip(r, region === r, () => onRegion(r)))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <SectionTitle label="지역" />
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '4px 20px' }}>
+            <Pill label="전체" active={region === null} size="sm" onClick={() => onRegion(null)} />
+            {REGIONS.map((r) => (
+              <Pill key={r} label={r} active={region === r} size="sm" onClick={() => onRegion(r)} />
+            ))}
           </div>
         </div>
+
+        <Divider />
 
         {/* 진행 상태 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28' }}>진행 상태</span>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-            {SHEET_STATUS.map((s) => chip(s.label, statusKey === s.key, () => onStatus(s.key)))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <SectionTitle label="진행 상태" />
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', margin: '0 -20px', padding: '4px 20px' }}>
+            {SHEET_STATUS.map((s) => (
+              <Pill key={s.key} label={s.label} active={statusKey === s.key} size="sm" onClick={() => onStatus(s.key)} />
+            ))}
           </div>
         </div>
 
-        <div style={{ height: 1, background: '#f0f0f3' }} />
+        <Divider />
 
         {/* 정렬 기준 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28', marginBottom: 8 }}>정렬 기준</span>
-          {SORT_OPTIONS.map((opt) => {
-            const active = sortKey === opt.key
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => onSort(opt.key)}
-                role="radio"
-                aria-checked={active}
-                style={{
-                  all: 'unset',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '9px 0',
-                  cursor: 'pointer',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                <span
-                  aria-hidden
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#222229' }}>
+            정렬 기준
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {SORT_OPTIONS.map((opt) => {
+              const active = sortKey === opt.key
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => onSort(opt.key)}
+                  role="radio"
+                  aria-checked={active}
                   style={{
-                    width: 19,
-                    height: 19,
-                    borderRadius: '50%',
-                    border: active ? '6px solid #7c6ff0' : '1.5px solid #d5d8dd',
-                    background: '#fff',
-                    boxSizing: 'border-box',
-                    flexShrink: 0,
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 15,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
                   }}
-                />
-                <span style={{ width: 88, fontSize: 14.5, fontWeight: active ? 600 : 500, color: '#191f28' }}>
-                  {opt.label}
-                </span>
-                <span style={{ fontSize: 13, color: '#a5a1d1' }}>{opt.desc}</span>
-              </button>
-            )
-          })}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      border: active ? '1.5px solid var(--color-accent)' : '1.5px solid #d5d8dd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxSizing: 'border-box',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {active && <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--color-accent)' }} />}
+                  </span>
+                  <span style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#5c5c72' }}>
+                      {opt.label}
+                    </span>
+                    <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#a4a4bd' }}>
+                      {opt.desc}
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </section>
     </div>
   )
 }
 
-function CategoryCircle({
+/* ---------- 공용 소품 ---------- */
+
+/** 알약 버튼. size sm(px20 py8) / xs(px12 py4). 활성 시 보라 채움. */
+function Pill({
   label,
-  emoji,
   active,
+  size,
   onClick,
 }: {
   label: string
-  emoji: string
   active: boolean
+  size: 'sm' | 'xs'
   onClick: () => void
 }) {
+  const style: CSSProperties = {
+    flexShrink: 0,
+    padding: size === 'sm' ? '8px 20px' : '4px 12px',
+    borderRadius: 24,
+    border: 'none',
+    fontSize: 14,
+    fontWeight: 500,
+    lineHeight: 1.5,
+    letterSpacing: '-0.02em',
+    cursor: 'pointer',
+    background: active ? 'var(--color-accent)' : '#fff',
+    color: active ? '#fff' : '#5c5c72',
+    boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+    WebkitTapHighlightColor: 'transparent',
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        all: 'unset',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
-        cursor: 'pointer',
-        flexShrink: 0,
-        width: 64,
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      <span
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 24,
-          background: active ? '#f3f0ff' : '#f1f3f5',
-          border: `2px solid ${active ? '#8B5CF6' : 'transparent'}`,
-        }}
-      >
-        {emoji}
-      </span>
-      <span
-        style={{
-          fontSize: 12,
-          fontWeight: active ? 600 : 500,
-          color: active ? '#191f28' : '#6b7684',
-          letterSpacing: '-0.01em',
-          maxWidth: 64,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
+    <button type="button" onClick={onClick} aria-pressed={active} style={style}>
+      {label}
+    </button>
+  )
+}
+
+function SectionTitle({ label }: { label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#222229' }}>
         {label}
       </span>
-    </button>
-  )
-}
-
-function EventCard({ event, onClick }: { event: EventListItem; onClick: () => void }) {
-  const meta = categoryMeta(event.category)
-  const badge = STATUS_BADGE[event.status] ?? { label: event.status, color: '#868e96', bg: '#f1f3f5' }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        all: 'unset',
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: 12,
-        border: '1px solid #ededf2',
-        borderRadius: 16,
-        cursor: 'pointer',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 12,
-          background: '#f1f3f5',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 24,
-          flexShrink: 0,
-          overflow: 'hidden',
-        }}
-      >
-        {event.representativeImageUrl ? (
-          <img src={event.representativeImageUrl} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          meta.emoji
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '3px 8px',
-              borderRadius: 999,
-              background: badge.bg,
-              color: badge.color,
-              fontSize: 11.5,
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: badge.color }} />
-            {badge.label}
-          </span>
-          <span
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: '#191f28',
-              letterSpacing: '-0.01em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {event.title}
-          </span>
-        </span>
-        <span style={{ fontSize: 13, color: '#6b7684', letterSpacing: '-0.01em' }}>
-          <b style={{ color: '#191f28', fontWeight: 600 }}>{event.fundingRate}% 달성</b>
-          {' · '}
-          {event.siDo} {event.siGunGu}
-        </span>
-      </div>
-      <ChevronRight size={20} color="#c5c8ce" style={{ flexShrink: 0 }} />
-    </button>
-  )
-}
-
-function ListSkeleton() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {[0, 1, 2].map((i) => (
-        <div key={i} style={{ height: 90, borderRadius: 16, background: '#f1f3f5' }} />
-      ))}
+      <RightCaret />
     </div>
   )
 }
 
-function EmptyNote({ text, icon }: { text: string; icon?: React.ReactNode }) {
+function Divider() {
+  return <div style={{ height: 1, background: '#e0e0ed' }} />
+}
+
+function EmptyNote({ text }: { text: string }) {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 10,
+        background: '#fff',
+        borderRadius: 12,
+        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
         padding: '40px 20px',
         textAlign: 'center',
+        fontSize: 14,
+        letterSpacing: '-0.02em',
+        color: '#86869f',
       }}
     >
-      {icon}
-      <span style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>{text}</span>
+      {text}
     </div>
+  )
+}
+
+function IconButton({ label, onClick, children }: { label: string; onClick?: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        display: 'flex',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function BackCaret() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M14.5 6.5 9 12l5.5 5.5" stroke="#27282c" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function RightCaret() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="#5c5c72" aria-hidden style={{ flexShrink: 0, transform: 'scaleX(-1)' }}>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M14.0303 7.46967C14.3232 7.76256 14.3232 8.23744 14.0303 8.53033L10.5607 12L14.0303 15.4697C14.3232 15.7626 14.3232 16.2374 14.0303 16.5303C13.7374 16.8232 13.2626 16.8232 12.9697 16.5303L8.96967 12.5303C8.67678 12.2374 8.67678 11.7626 8.96967 11.4697L12.9697 7.46967C13.2626 7.17678 13.7374 7.17678 14.0303 7.46967Z"
+      />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="#5c5c72" aria-hidden style={{ flexShrink: 0 }}>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M14.3851 15.4457C11.7348 17.5684 7.85537 17.4013 5.39858 14.9445C2.76254 12.3085 2.76254 8.03464 5.39858 5.3986C8.03462 2.76256 12.3085 2.76256 14.9445 5.3986C17.4013 7.85538 17.5684 11.7348 15.4457 14.3851L20.6014 19.5407C20.8943 19.8336 20.8943 20.3085 20.6014 20.6014C20.3085 20.8943 19.8336 20.8943 19.5407 20.6014L14.3851 15.4457ZM6.45924 13.8839C4.40899 11.8336 4.40899 8.50951 6.45924 6.45926C8.50949 4.40901 11.8336 4.40901 13.8839 6.45926C15.9326 8.50801 15.9341 11.8287 13.8884 13.8794C13.8869 13.8809 13.8854 13.8823 13.8838 13.8839C13.8823 13.8854 13.8808 13.8869 13.8794 13.8884C11.8287 15.9341 8.50799 15.9326 6.45924 13.8839Z"
+      />
+    </svg>
+  )
+}
+
+/** Settings-adjust (필터) 아이콘 — 두 개의 슬라이더 바. */
+function FilterIcon() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 8h9M17 8h3M4 16h3M11 16h9" stroke="#474c52" strokeWidth={1.8} strokeLinecap="round" />
+      <circle cx={15} cy={8} r={2.2} stroke="#474c52" strokeWidth={1.8} />
+      <circle cx={9} cy={16} r={2.2} stroke="#474c52" strokeWidth={1.8} />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" stroke="#a4a4bd" strokeWidth={2.2} strokeLinecap="round" />
+    </svg>
   )
 }

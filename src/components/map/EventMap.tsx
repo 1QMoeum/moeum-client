@@ -31,7 +31,7 @@ const HISTORY_COLOR = '#8b5cf6'
 /** 하단 네비게이션 높이 — 시트/카드/컨트롤의 bottom 오프셋 기준 */
 const NAV_HEIGHT = 72
 /** 바텀시트 접힘 시 네비 위로 보이는 높이 (MapBottomSheet PEEK 와 동일) */
-const SHEET_PEEK = 280
+const SHEET_PEEK = 290
 
 type MapMode = 'all' | 'ongoing' | 'history'
 
@@ -510,7 +510,7 @@ export default function EventMap() {
         )}
       </div>
 
-      {/* 우측 — 줌 · 현위치 */}
+      {/* 우측 — 확대 · 축소 · 현위치 (각 25px 간격) */}
       <div
         style={{
           position: 'absolute',
@@ -519,39 +519,19 @@ export default function EventMap() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 10,
+          gap: 25,
           zIndex: 5,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#fff',
-            borderRadius: 12,
-            boxShadow: '0 2px 10px rgba(0,0,0,.12)',
-            overflow: 'hidden',
-          }}
-        >
-          <MapIconButton label="확대" onClick={() => zoom(-1)}>
-            <Plus size={18} strokeWidth={2.4} />
-          </MapIconButton>
-          <div style={{ height: 1, background: '#f0f0f3' }} />
-          <MapIconButton label="축소" onClick={() => zoom(1)}>
-            <Minus size={18} strokeWidth={2.4} />
-          </MapIconButton>
-        </div>
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: '50%',
-            boxShadow: '0 2px 10px rgba(0,0,0,.12)',
-          }}
-        >
-          <MapIconButton label="현재 위치로" onClick={locate}>
-            <LocateFixed size={18} strokeWidth={2.2} />
-          </MapIconButton>
-        </div>
+        <MapRoundButton label="확대" onClick={() => zoom(-1)}>
+          <Plus size={18} strokeWidth={2.4} />
+        </MapRoundButton>
+        <MapRoundButton label="축소" onClick={() => zoom(1)}>
+          <Minus size={18} strokeWidth={2.4} />
+        </MapRoundButton>
+        <MapRoundButton label="현재 위치로" onClick={locate}>
+          <LocateFixed size={18} strokeWidth={2.2} />
+        </MapRoundButton>
       </div>
 
       {/* 하단 — TOP 10 바텀시트 (깃발 선택 요약은 지도 위 팝업으로 표시) */}
@@ -603,7 +583,8 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
   )
 }
 
-function MapIconButton({
+/** 지도 우측 원형 컨트롤 버튼 (흰 배경 + 그림자) */
+function MapRoundButton({
   label,
   onClick,
   children,
@@ -624,6 +605,9 @@ function MapIconButton({
         justifyContent: 'center',
         width: 40,
         height: 40,
+        borderRadius: '50%',
+        background: '#fff',
+        boxShadow: '0 2px 10px rgba(0,0,0,.12)',
         cursor: 'pointer',
         color: '#333d4b',
         WebkitTapHighlightColor: 'transparent',
