@@ -107,18 +107,22 @@ export function createFlagElement({ color, selected = false, onClick }: FlagOpti
 }
 
 interface InfoBubbleOptions {
-  /** 대표 이미지 (없으면 카테고리 이모지) */
+  /** 대표/아티스트 이미지 (없으면 이모지) */
   imageUrl?: string
   emoji: string
   /** 상단 회색 줄 — 동네 이름 등 */
   region: string
   title: string
-  /** 하단 강조 줄 — "82% 달성" 등 */
+  /** 하단 회색 줄 — "1,128명 참여" · "82% 달성" 등 */
   subtitle: string
-  onClick: () => void
+  /** 주면 우측 화살표 노출 + 클릭 시 상세 이동. 없으면 화살표 숨김·비클릭 */
+  onClick?: () => void
 }
 
-/** 깃발 클릭 시 핀 위에 뜨는 말풍선 카드. CustomOverlay content 로 사용. */
+/**
+ * 깃발 선택 시 핀 근처에 뜨는 팝업 카드 (Figma "지도 - 깃발 클릭 시").
+ * 원형 아바타 + 지역/제목/서브 3줄 + 우측 화살표. CustomOverlay content 로 사용.
+ */
 export function createInfoBubbleElement({
   imageUrl,
   emoji,
@@ -128,23 +132,21 @@ export function createInfoBubbleElement({
   onClick,
 }: InfoBubbleOptions): HTMLElement {
   const wrap = document.createElement('div')
-  wrap.style.cssText = 'position:relative;cursor:pointer;'
-
-  const body = document.createElement('div')
-  body.style.cssText = [
+  wrap.style.cssText = [
     'display:flex',
     'align-items:center',
-    'gap:10px',
-    'background:rgba(255,255,255,.96)',
-    'border-radius:14px',
-    'padding:9px 14px 9px 9px',
-    'box-shadow:0 4px 16px rgba(0,0,0,.18)',
-    'max-width:230px',
+    'gap:14px',
+    'background:#fff',
+    'border-radius:24px',
+    'padding:12px 18px 12px 12px',
+    'box-shadow:0 6px 24px rgba(0,0,0,.16)',
+    'max-width:270px',
+    onClick ? 'cursor:pointer' : 'cursor:default',
   ].join(';')
 
   const thumb = document.createElement('div')
   thumb.style.cssText =
-    'width:46px;height:46px;border-radius:10px;background:#f1f3f5;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;'
+    'width:56px;height:56px;border-radius:50%;background:#f1f3f5;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;'
   if (imageUrl) {
     const img = document.createElement('img')
     img.src = imageUrl
@@ -160,30 +162,23 @@ export function createInfoBubbleElement({
   const line = (text: string, css: string) => {
     const el = document.createElement('div')
     el.textContent = text
-    el.style.cssText = `white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${css}`
+    el.style.cssText = `white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;${css}`
     col.appendChild(el)
   }
-  if (region) line(region, 'font-size:11px;color:#8b95a1;font-weight:400;')
-  line(title, 'font-size:13.5px;color:#191f28;font-weight:600;')
-  line(subtitle, 'font-size:12px;color:#6b7684;font-weight:500;')
+  if (region) line(region, 'font-size:14px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
+  line(title, 'font-size:16px;color:#0c0d0d;font-weight:600;letter-spacing:-.02em;')
+  line(subtitle, 'font-size:14px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
 
-  const tail = document.createElement('div')
-  tail.style.cssText = [
-    'position:absolute',
-    'left:50%',
-    'top:100%',
-    'transform:translateX(-50%)',
-    'width:0',
-    'height:0',
-    'border-left:7px solid transparent',
-    'border-right:7px solid transparent',
-    'border-top:8px solid rgba(255,255,255,.96)',
-  ].join(';')
+  wrap.appendChild(thumb)
+  wrap.appendChild(col)
 
-  body.appendChild(thumb)
-  body.appendChild(col)
-  wrap.appendChild(body)
-  wrap.appendChild(tail)
-  wrap.addEventListener('click', onClick)
+  if (onClick) {
+    const caret = document.createElement('div')
+    caret.style.cssText = 'flex-shrink:0;display:flex;color:#86869f;'
+    caret.innerHTML =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    wrap.appendChild(caret)
+    wrap.addEventListener('click', onClick)
+  }
   return wrap
 }

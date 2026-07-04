@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Flame, Heart, MapPin } from 'lucide-react'
 import { categoryMeta } from '@/lib/mapPin'
+import { mapTokens, pillStyle } from '@/components/map/mapStyle'
 import { categoryLabel } from '@/types/event'
 import type { EventListItem, ViewportEvent } from '@/types/event'
 
@@ -27,22 +28,89 @@ interface Props {
 }
 
 const TOP_N = 10
-/** 하단 네비 높이 — 시트가 네비 뒤까지 내려가므로 그만큼 높이/패딩을 더한다 */
+/** 하단 네비 높이 — 시트가 네비 뒤까지 내려가므로 그만큼 콘텐츠 여백을 더한다 */
 const NAV_CLEARANCE = 'calc(72px + env(safe-area-inset-bottom))'
-/** 접힘 상태에서 네비 위로 보이는 높이 */
-const PEEK = 306
+/** 접힘 상태에서 화면 하단부터 보이는 시트 높이(px) — 핸들+토글+타이틀+첫 줄 살짝 */
+const PEEK = 336
+/** 펼침 상태 시트 높이 (뷰포트 비율) */
+const EXPANDED_RATIO = 0.86
+/** 드래그로 인식하기 시작하는 최소 이동량(px) — 이보다 작으면 칩 탭으로 취급 */
+const DRAG_THRESHOLD = 4
+
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
 
 /**
  * 지도 하단 TOP 10 바텀시트.
- * 접힘: 탭 + 가로 스크롤 카드 / 펼침: 2열 그리드 리스트. 핸들 탭·스와이프로 전환.
+ * 콘텐츠는 접힘/펼침 모두 2열 그리드로 동일하고, 핸들·헤더를 잡아 손가락을 따라
+ * 부드럽게 드래그한다(translateY). 놓으면 위치·속도로 접힘/펼침에 스냅한다.
  */
 export default function MapBottomSheet({ areaLabel, nearby, trending, pending, onSelectEvent }: Props) {
   const [tab, setTab] = useState<SheetTab>('nearby')
   const [expanded, setExpanded] = useState(false)
   const [liked, setLiked] = useState<Set<number>>(new Set())
-  const touchStartY = useRef<number | null>(null)
 
-  // 달성률(%)은 카드에 노출하지 않는다 — 누르면 지도 선택 카드/말풍선에서 확인.
+  // 뷰포트 높이 → 펼침 높이·접힘 오프셋 계산 (회전/리사이즈 대응)
+  const [vh, setVh] = useState(() => (typeof window === 'undefined' ? 800 : window.innerHeight))
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const expandedH = Math.round(vh * EXPANDED_RATIO)
+  const collapsedY = Math.max(0, expandedH - PEEK)
+
+  // 드래그 중 실시간 translateY (null 이면 스냅 상태 = 트랜지션 on)
+  const [dragY, setDragY] = useState<number | null>(null)
+  const drag = useRef<{ startPointer: number; base: number; active: boolean; lastY: number; lastT: number; v: number } | null>(null)
+
+  const targetY = expanded ? 0 : collapsedY
+  const displayY = dragY ?? targetY
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = {
+      startPointer: e.clientY,
+      base: targetY,
+      active: false,
+      lastY: e.clientY,
+      lastT: e.timeStamp,
+      v: 0,
+    }
+  }
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current
+    if (!d) return
+    const delta = e.clientY - d.startPointer
+    if (!d.active) {
+      if (Math.abs(delta) < DRAG_THRESHOLD) return // 아직 탭인지 드래그인지 미정
+      d.active = true
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    // 순간 속도(px/ms) — 놓을 때 플릭 판정용
+    const dt = e.timeStamp - d.lastT
+    if (dt > 0) d.v = (e.clientY - d.lastY) / dt
+    d.lastY = e.clientY
+    d.lastT = e.timeStamp
+    setDragY(clamp(d.base + delta, 0, collapsedY))
+  }
+  const endDrag = () => {
+    const d = drag.current
+    drag.current = null
+    if (!d || !d.active || dragY === null) {
+      setDragY(null)
+      return
+    }
+    // 플릭(빠른 스와이프)이면 방향 우선, 아니면 위치 절반 기준 스냅
+    let next: boolean
+    if (d.v < -0.45) next = true
+    else if (d.v > 0.45) next = false
+    else next = dragY < collapsedY * 0.5
+    setExpanded(next)
+    setDragY(null)
+  }
+
+  const dragging = dragY !== null
+
+  // 달성률(%)은 카드에 노출하지 않는다 — 누르면 지도 핀 팝업에서 확인.
   const cards: TopEventCard[] = useMemo(() => {
     if (tab === 'nearby') {
       return nearby.slice(0, TOP_N).map((e) => ({
@@ -80,33 +148,30 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
         left: 0,
         right: 0,
         bottom: 0,
-        height: expanded ? '84dvh' : `calc(${PEEK}px + ${NAV_CLEARANCE})`,
-        background: '#fff',
+        height: expandedH,
+        transform: `translateY(${displayY}px)`,
+        transition: dragging ? 'none' : 'transform .34s cubic-bezier(.22,1,.36,1)',
+        background: mapTokens.white,
         borderRadius: '24px 24px 0 0',
-        boxShadow: '0 -4px 20px rgba(0,0,0,.12)',
+        boxShadow: mapTokens.sheetShadow,
         display: 'flex',
         flexDirection: 'column',
-        transition: 'height .28s ease',
         pointerEvents: 'auto',
+        willChange: 'transform',
+        touchAction: 'none',
       }}
     >
-      {/* 핸들 + 탭 — 탭/스와이프로 펼침 전환 */}
+      {/* 핸들 + 토글 — 이 영역을 잡아 드래그 (탭은 펼침 토글) */}
       <div
-        onTouchStart={(e) => {
-          touchStartY.current = e.touches[0].clientY
-        }}
-        onTouchEnd={(e) => {
-          const start = touchStartY.current
-          touchStartY.current = null
-          if (start === null) return
-          const delta = e.changedTouches[0].clientY - start
-          if (delta < -30) setExpanded(true)
-          else if (delta > 30) setExpanded(false)
-        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        style={{ flexShrink: 0, touchAction: 'none' }}
       >
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => !dragging && setExpanded((v) => !v)}
           aria-label={expanded ? '시트 접기' : '시트 펼치기'}
           aria-expanded={expanded}
           style={{
@@ -114,23 +179,23 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
             display: 'flex',
             justifyContent: 'center',
             width: '100%',
-            padding: '10px 0 6px',
-            cursor: 'pointer',
+            padding: '12px 0 8px',
+            cursor: 'grab',
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <span style={{ width: 40, height: 4, borderRadius: 999, background: '#e0e2e6' }} />
+          <span style={{ width: 42, height: 4, borderRadius: 999, background: '#e5e5ec' }} />
         </button>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '4px 20px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '4px 20px 2px' }}>
           <TabChip
-            icon={<MapPin size={13} strokeWidth={2.4} />}
+            icon={<MapPin size={14} strokeWidth={2.4} />}
             label={areaLabel}
             active={tab === 'nearby'}
             onClick={() => setTab('nearby')}
           />
           <TabChip
-            icon={<Flame size={13} strokeWidth={2.4} />}
+            icon={<Flame size={14} strokeWidth={2.4} />}
             label="전국 트렌드"
             active={tab === 'trend'}
             onClick={() => setTab('trend')}
@@ -140,34 +205,36 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
 
       <h2
         style={{
-          margin: '14px 20px 12px',
-          fontSize: 15.5,
+          flexShrink: 0,
+          margin: '16px 20px 12px',
+          fontSize: 16,
           fontWeight: 700,
-          color: '#191f28',
-          letterSpacing: '-0.01em',
+          color: mapTokens.gray900,
+          letterSpacing: '-0.02em',
         }}
       >
         {title}
       </h2>
 
-      {/* 접힘: 가로 스크롤 / 펼침: 2열 그리드 */}
+      {/* 2열 그리드 — 펼침일 때만 스크롤 (접힘 상태 스크롤/드래그 충돌 방지) */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
-          overflowY: expanded ? 'auto' : 'hidden',
-          overflowX: expanded ? 'hidden' : 'auto',
-          padding: expanded ? `0 20px calc(16px + ${NAV_CLEARANCE})` : `0 20px calc(12px + ${NAV_CLEARANCE})`,
-          display: expanded ? 'grid' : 'flex',
-          gridTemplateColumns: expanded ? 'repeat(2, 1fr)' : undefined,
-          gap: expanded ? '22px 16px' : 12,
-          alignContent: expanded ? 'start' : undefined,
+          overflowY: expanded && !dragging ? 'auto' : 'hidden',
+          overflowX: 'hidden',
+          padding: `0 20px calc(20px + ${NAV_CLEARANCE})`,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '22px 16px',
+          alignContent: 'start',
+          touchAction: expanded ? 'pan-y' : 'none',
         }}
       >
-        {pending && cards.length === 0 && [0, 1, 2].map((i) => <CardSkeleton key={i} expanded={expanded} />)}
+        {pending && cards.length === 0 && [0, 1, 2, 3].map((i) => <CardSkeleton key={i} />)}
 
         {!pending && cards.length === 0 && (
-          <span style={{ fontSize: 13.5, color: '#8b95a1', padding: '8px 0' }}>
+          <span style={{ gridColumn: '1 / -1', fontSize: 14, color: mapTokens.gray500, padding: '8px 0' }}>
             아직 인기 이벤트가 없어요.
           </span>
         )}
@@ -177,7 +244,6 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
             key={card.eventId}
             rank={i + 1}
             card={card}
-            expanded={expanded}
             liked={liked.has(card.eventId)}
             onToggleLike={() => toggleLike(card.eventId)}
             onClick={() => onSelectEvent(card.eventId)}
@@ -200,28 +266,7 @@ function TabChip({
   onClick: () => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      style={{
-        all: 'unset',
-        boxSizing: 'border-box',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: '9px 15px',
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 600,
-        letterSpacing: '-0.01em',
-        cursor: 'pointer',
-        color: active ? '#fff' : '#333d4b',
-        background: active ? '#5b6270' : '#fff',
-        border: `1px solid ${active ? '#5b6270' : '#ececf0'}`,
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
+    <button type="button" onClick={onClick} aria-pressed={active} style={pillStyle(active)}>
       {icon}
       {label}
     </button>
@@ -231,21 +276,19 @@ function TabChip({
 function EventTopCard({
   rank,
   card,
-  expanded,
   liked,
   onToggleLike,
   onClick,
 }: {
   rank: number
   card: TopEventCard
-  expanded: boolean
   liked: boolean
   onToggleLike: () => void
   onClick: () => void
 }) {
   const meta = categoryMeta(card.category)
   return (
-    <div style={{ width: expanded ? 'auto' : 148, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <button
         type="button"
         onClick={onClick}
@@ -256,8 +299,8 @@ function EventTopCard({
           position: 'relative',
           width: '100%',
           aspectRatio: '1 / 1',
-          borderRadius: 12,
-          background: '#f1f3f5',
+          borderRadius: 16,
+          background: mapTokens.gray100,
           overflow: 'hidden',
           cursor: 'pointer',
           display: 'flex',
@@ -268,11 +311,7 @@ function EventTopCard({
         }}
       >
         {card.imageUrl ? (
-          <img
-            src={card.imageUrl}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <img src={card.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           meta.emoji
         )}
@@ -284,14 +323,14 @@ function EventTopCard({
             width: 28,
             height: 28,
             borderRadius: '50%',
-            background: '#fff',
-            border: '1px solid #e5e7eb',
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 13.5,
-            fontWeight: 600,
-            color: '#191f28',
+            fontSize: 14,
+            fontWeight: 700,
+            color: mapTokens.gray900,
           }}
         >
           {rank}
@@ -302,10 +341,10 @@ function EventTopCard({
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span
             style={{
-              fontSize: expanded ? 15 : 13.5,
+              fontSize: 15,
               fontWeight: 600,
-              color: '#191f28',
-              letterSpacing: '-0.01em',
+              color: mapTokens.gray900,
+              letterSpacing: '-0.02em',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -315,8 +354,9 @@ function EventTopCard({
           </span>
           <span
             style={{
-              fontSize: expanded ? 13 : 12,
-              color: '#8b95a1',
+              fontSize: 13,
+              color: mapTokens.gray500,
+              letterSpacing: '-0.02em',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -334,22 +374,22 @@ function EventTopCard({
             all: 'unset',
             cursor: 'pointer',
             padding: 2,
-            color: liked ? '#ff4d6d' : '#191f28',
+            color: liked ? '#ff4d6d' : mapTokens.gray500,
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <Heart size={expanded ? 20 : 17} strokeWidth={2} fill={liked ? 'currentColor' : 'none'} />
+          <Heart size={20} strokeWidth={2} fill={liked ? 'currentColor' : 'none'} />
         </button>
       </div>
     </div>
   )
 }
 
-function CardSkeleton({ expanded }: { expanded: boolean }) {
+function CardSkeleton() {
   return (
-    <div style={{ width: expanded ? 'auto' : 148, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: 12, background: '#f1f3f5' }} />
-      <div style={{ height: 14, width: '70%', borderRadius: 6, background: '#f1f3f5' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: 16, background: mapTokens.gray100 }} />
+      <div style={{ height: 14, width: '70%', borderRadius: 6, background: mapTokens.gray100 }} />
     </div>
   )
 }

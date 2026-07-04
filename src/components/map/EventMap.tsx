@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ChevronLeft,
-  ChevronRight,
-  LocateFixed,
-  Minus,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  X,
-} from 'lucide-react'
+import { ChevronLeft, LocateFixed, Minus, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import {
   useEventDetail,
   useEventHistory,
@@ -24,7 +15,6 @@ import { categoryMeta, createFlagElement, createInfoBubbleElement } from '@/lib/
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { EVENT_CATEGORIES } from '@/types/event'
 import type {
-  EventDetailResponse,
   EventHistoryDistrict,
   EventMapDistrict,
   MapBounds,
@@ -32,6 +22,7 @@ import type {
 } from '@/types/event'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import MapBottomSheet from '@/components/map/MapBottomSheet'
+import { mapTokens, pillStyle } from '@/components/map/mapStyle'
 
 /** 이 레벨 이상이면 줌아웃(법정동 집계), 미만이면 확대(개별 이벤트 핀) */
 const DISTRICT_LEVEL = 7
@@ -42,9 +33,10 @@ const NAV_HEIGHT = 72
 /** 바텀시트 접힘 시 네비 위로 보이는 높이 (MapBottomSheet PEEK 와 동일) */
 const SHEET_PEEK = 306
 
-type MapMode = 'ongoing' | 'history'
+type MapMode = 'all' | 'ongoing' | 'history'
 
 const MODE_TABS: Array<{ key: MapMode; label: string }> = [
+  { key: 'all', label: '전체' },
   { key: 'ongoing', label: '진행 중' },
   { key: 'history', label: '히스토리' },
 ]
@@ -52,10 +44,8 @@ const MODE_TABS: Array<{ key: MapMode; label: string }> = [
 type Selected =
   | { kind: 'district'; data: EventMapDistrict }
   | { kind: 'event'; data: ViewportEvent }
-  | { kind: 'history'; data: EventHistoryDistrict }
+  | { kind: 'history'; data: EventHistoryDistrict; position: { lat: number; lng: number } }
   | null
-
-const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 
 /** 폴리곤 링의 무게중심(평균점) — 히스토리 아바타 핀 위치용 */
 function ringCentroid(ring: Array<{ lat: number; lng: number }>): { lat: number; lng: number } {
@@ -73,7 +63,7 @@ export default function EventMap() {
   const navigate = useNavigate()
   const { containerRef, map, error: mapError } = useKakaoMap()
 
-  const [mode, setMode] = useState<MapMode>('ongoing')
+  const [mode, setMode] = useState<MapMode>('all')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string | null>(null)
   const [showCategoryRow, setShowCategoryRow] = useState(false)
@@ -85,8 +75,9 @@ export default function EventMap() {
   const [focusEventId, setFocusEventId] = useState<number | null>(null)
 
   const zoomedOut = level === null || level >= DISTRICT_LEVEL
-  const showOngoing = mode === 'ongoing'
-  const showHistory = mode === 'history'
+  // 전체 = 진행중 + 히스토리 함께 표시. 진행중/히스토리는 각각만.
+  const showOngoing = mode !== 'history'
+  const showHistory = mode !== 'ongoing'
 
   // idle 마다 줌레벨·bounds 동기화 + 중심좌표 역지오코딩(📍 주변 탭 라벨)
   useEffect(() => {
@@ -290,7 +281,7 @@ export default function EventMap() {
           const flag = createFlagElement({
             color: HISTORY_COLOR,
             selected: selected?.kind === 'history' && selected.data.legalDongCode === d.legalDongCode,
-            onClick: () => setSelected({ kind: 'history', data: d }),
+            onClick: () => setSelected({ kind: 'history', data: d, position: center }),
           })
           overlays.push(
             new kakao.maps.CustomOverlay({
@@ -312,29 +303,48 @@ export default function EventMap() {
     }
   }, [map, showHistory, historyDistricts, selected])
 
-  // 깃발 선택 시 핀 위 말풍선
+  // 깃발 선택 시 핀 근처 팝업 카드 (원형 아바타 + 지역/제목/서브 + 화살표)
   useEffect(() => {
-    if (!map || !selected || selected.kind === 'history') return
-    const data = selected.kind === 'event' ? selected.data : selected.data.representative
-    const meta = categoryMeta(data.category)
-    const region =
-      selected.kind === 'district'
-        ? `${selected.data.siGunGu} ${selected.data.legalDong}`
-        : (detail ? `${detail.siGunGu} ${detail.legalDong}` : '')
-    const rate = selected.kind === 'district' ? selected.data.fundingRate : selected.data.fundingRate
-    const bubble = createInfoBubbleElement({
-      imageUrl: detail?.representativeImageUrl || undefined,
-      emoji: meta.emoji,
-      region,
-      title: data.title,
-      subtitle: `${rate}% 달성 · ${won(data.currentAmount)} 모금`,
-      onClick: () => navigate(`/events/${data.eventId}`),
-    })
+    if (!map || !selected) return
+    let content: HTMLElement
+    let position: kakao.maps.LatLng
+
+    if (selected.kind === 'history') {
+      const d = selected.data
+      content = createInfoBubbleElement({
+        imageUrl: d.artist.imageUrl || undefined,
+        emoji: '🎤',
+        region: `${d.siGunGu} ${d.legalDong}`,
+        title: d.artist.name,
+        subtitle: `이벤트 ${d.projectCount}개 · ${d.participantCount.toLocaleString('ko-KR')}명 참여`,
+      })
+      position = new kakao.maps.LatLng(selected.position.lat, selected.position.lng)
+    } else {
+      const data = selected.kind === 'event' ? selected.data : selected.data.representative
+      const rate = selected.kind === 'event' ? selected.data.fundingRate : selected.data.fundingRate
+      const meta = categoryMeta(data.category)
+      const region =
+        selected.kind === 'district'
+          ? `${selected.data.siGunGu} ${selected.data.legalDong}`
+          : detail
+            ? `${detail.siGunGu} ${detail.legalDong}`
+            : ''
+      content = createInfoBubbleElement({
+        imageUrl: detail?.representativeImageUrl || undefined,
+        emoji: meta.emoji,
+        region,
+        title: data.title,
+        subtitle: `${rate}% 달성`,
+        onClick: () => navigate(`/events/${data.eventId}`),
+      })
+      position = new kakao.maps.LatLng(data.latitude, data.longitude)
+    }
+
     const overlay = new kakao.maps.CustomOverlay({
-      position: new kakao.maps.LatLng(data.latitude, data.longitude),
-      content: bubble,
+      position,
+      content,
       xAnchor: 0.5,
-      yAnchor: 1.45,
+      yAnchor: 1.5,
       zIndex: 30,
       clickable: true,
       map,
@@ -430,32 +440,17 @@ export default function EventMap() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
-          {MODE_TABS.map((t) => {
-            const active = mode === t.key
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setMode(t.key)}
-                aria-pressed={active}
-                style={{
-                  all: 'unset',
-                  padding: '8px 15px',
-                  borderRadius: 999,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                  cursor: 'pointer',
-                  color: active ? '#fff' : '#4e5968',
-                  background: active ? '#191f28' : '#fff',
-                  boxShadow: '0 2px 8px rgba(0,0,0,.08)',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                {t.label}
-              </button>
-            )
-          })}
+          {MODE_TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setMode(t.key)}
+              aria-pressed={mode === t.key}
+              style={pillStyle(mode === t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
           <div style={{ flex: 1 }} />
           <button
             type="button"
@@ -467,17 +462,17 @@ export default function EventMap() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: category !== null ? '#191f28' : '#fff',
-              color: category !== null ? '#fff' : '#4e5968',
-              boxShadow: '0 2px 8px rgba(0,0,0,.08)',
+              width: 40,
+              height: 40,
+              borderRadius: mapTokens.radiusCard,
+              background: category !== null ? mapTokens.violet : mapTokens.white,
+              color: category !== null ? mapTokens.white : mapTokens.gray600,
+              boxShadow: mapTokens.chipShadow,
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <SlidersHorizontal size={17} strokeWidth={2.2} />
+            <SlidersHorizontal size={18} strokeWidth={2.2} />
           </button>
         </div>
 
@@ -559,44 +554,25 @@ export default function EventMap() {
         </div>
       </div>
 
-      {/* 하단 — 선택 카드 또는 TOP 10 바텀시트 */}
-      {selected ? (
-        <div
-          style={{
-            position: 'absolute',
-            left: 12,
-            right: 12,
-            bottom: `calc(${NAV_HEIGHT + 14}px + env(safe-area-inset-bottom))`,
-            zIndex: 5,
-          }}
-        >
-          <SelectedCard
-            selected={selected}
-            detail={detail}
-            onClose={() => setSelected(null)}
-            onGo={(eventId) => navigate(`/events/${eventId}`)}
-          />
-        </div>
-      ) : (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0, // 시트가 네비 뒤까지 내려가 지도가 비치지 않는다
-            pointerEvents: 'none',
-            zIndex: 5,
-          }}
-        >
-          <MapBottomSheet
-            areaLabel={areaLabel}
-            nearby={events}
-            trending={trending}
-            pending={withinQ.isPending && trendQ.isPending}
-            onSelectEvent={setFocusEventId}
-          />
-        </div>
-      )}
+      {/* 하단 — TOP 10 바텀시트 (깃발 선택 요약은 지도 위 팝업으로 표시) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0, // 시트가 네비 뒤까지 내려가 지도가 비치지 않는다
+          pointerEvents: 'none',
+          zIndex: 5,
+        }}
+      >
+        <MapBottomSheet
+          areaLabel={areaLabel}
+          nearby={events}
+          trending={trending}
+          pending={withinQ.isPending && trendQ.isPending}
+          onSelectEvent={setFocusEventId}
+        />
+      </div>
     </div>
   )
 }
@@ -616,9 +592,9 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
         fontWeight: 600,
         letterSpacing: '-0.01em',
         cursor: 'pointer',
-        color: active ? '#fff' : '#4e5968',
-        background: active ? '#191f28' : '#fff',
-        boxShadow: '0 2px 8px rgba(0,0,0,.08)',
+        color: active ? mapTokens.white : mapTokens.gray600,
+        background: active ? mapTokens.violet : mapTokens.white,
+        boxShadow: mapTokens.chipShadow,
         WebkitTapHighlightColor: 'transparent',
       }}
     >
@@ -655,160 +631,5 @@ function MapIconButton({
     >
       {children}
     </button>
-  )
-}
-
-/** 깃발/영역 클릭 시 하단 요약 카드 — 진행중 배지 + 달성률, 탭하면 상세로 */
-function SelectedCard({
-  selected,
-  detail,
-  onClose,
-  onGo,
-}: {
-  selected: NonNullable<Selected>
-  detail: EventDetailResponse | null
-  onClose: () => void
-  onGo: (eventId: number) => void
-}) {
-  const isHistory = selected.kind === 'history'
-
-  const thumb = (imageUrl: string | undefined, emoji: string) => (
-    <div
-      style={{
-        width: 56,
-        height: 56,
-        borderRadius: 12,
-        background: '#f1f3f5',
-        overflow: 'hidden',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 24,
-      }}
-    >
-      {imageUrl ? (
-        <img src={imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        emoji
-      )}
-    </div>
-  )
-
-  return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        background: '#fff',
-        borderRadius: 16,
-        padding: 14,
-        boxShadow: '0 4px 20px rgba(0,0,0,.16)',
-      }}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="닫기"
-        style={{
-          all: 'unset',
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          padding: 4,
-          cursor: 'pointer',
-          color: '#c5c8ce',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <X size={16} strokeWidth={2.4} />
-      </button>
-
-      {isHistory ? (
-        <>
-          {thumb(selected.data.artist.imageUrl || undefined, '🎤')}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: HISTORY_COLOR }}>
-              {selected.data.siGunGu} {selected.data.legalDong} 최다 아티스트
-            </span>
-            <span style={{ fontSize: 15.5, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-              {selected.data.artist.name}
-            </span>
-            <span style={{ fontSize: 13, color: '#6b7684' }}>
-              프로젝트 {selected.data.projectCount}개 ·{' '}
-              {selected.data.participantCount.toLocaleString('ko-KR')}명 참여
-            </span>
-          </div>
-        </>
-      ) : (
-        (() => {
-          const data = selected.kind === 'event' ? selected.data : selected.data.representative
-          const rate = selected.kind === 'district' ? selected.data.fundingRate : selected.data.fundingRate
-          const meta = categoryMeta(data.category)
-          return (
-            <>
-              {thumb(detail?.representativeImageUrl || undefined, meta.emoji)}
-              <button
-                type="button"
-                onClick={() => onGo(data.eventId)}
-                style={{
-                  all: 'unset',
-                  flex: 1,
-                  minWidth: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: 15.5,
-                      fontWeight: 700,
-                      color: '#191f28',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        padding: '3px 8px',
-                        borderRadius: 999,
-                        background: '#e6f9f2',
-                        color: '#12b886',
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#12b886' }} />
-                      진행중
-                    </span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {data.title}
-                    </span>
-                  </span>
-                  <span style={{ fontSize: 13.5, color: '#6b7684' }}>
-                    <b style={{ color: '#191f28' }}>{rate}% 달성</b> · {won(data.currentAmount)} 모금
-                    {selected.kind === 'district' && ` · ${selected.data.eventCount}건`}
-                  </span>
-                </div>
-                <ChevronRight size={20} color="#c5c8ce" style={{ flexShrink: 0 }} />
-              </button>
-            </>
-          )
-        })()
-      )}
-    </div>
   )
 }
