@@ -31,7 +31,7 @@ const HISTORY_COLOR = '#8b5cf6'
 /** 하단 네비게이션 높이 — 시트/카드/컨트롤의 bottom 오프셋 기준 */
 const NAV_HEIGHT = 72
 /** 바텀시트 접힘 시 네비 위로 보이는 높이 (MapBottomSheet PEEK 와 동일) */
-const SHEET_PEEK = 250
+const SHEET_PEEK = 280
 
 type MapMode = 'all' | 'ongoing' | 'history'
 
