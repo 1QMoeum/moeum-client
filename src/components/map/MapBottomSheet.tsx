@@ -30,8 +30,8 @@ interface Props {
 const TOP_N = 10
 /** 하단 네비 높이 — 시트가 네비 뒤까지 내려가므로 그만큼 콘텐츠 여백을 더한다 */
 const NAV_CLEARANCE = 'calc(72px + env(safe-area-inset-bottom))'
-/** 접힘 상태에서 화면 하단부터 보이는 시트 높이(px) — 핸들+토글+타이틀+첫 줄 살짝 */
-const PEEK = 336
+/** 접힘 상태에서 화면 하단부터 보이는 시트 높이(px) — 핸들+토글+타이틀+카드 상단 살짝 */
+const PEEK = 250
 /** 펼침 상태 시트 높이 (뷰포트 비율) */
 const EXPANDED_RATIO = 0.86
 /** 드래그로 인식하기 시작하는 최소 이동량(px) — 이보다 작으면 칩 탭으로 취급 */
