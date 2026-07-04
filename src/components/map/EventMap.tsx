@@ -28,10 +28,10 @@ import { mapTokens, pillStyle } from '@/components/map/mapStyle'
 const DISTRICT_LEVEL = 7
 /** 히스토리 영역 색 (아티스트 아바타 핀과 함께) */
 const HISTORY_COLOR = '#8b5cf6'
-/** 하단 네비게이션 높이 — 시트/카드/컨트롤의 bottom 오프셋 기준 */
-const NAV_HEIGHT = 72
-/** 바텀시트 접힘 시 네비 위로 보이는 높이 (MapBottomSheet PEEK 와 동일) */
+/** 바텀시트 접힘 시 화면 하단부터 보이는 높이 (MapBottomSheet PEEK 와 동일) */
 const SHEET_PEEK = 290
+/** 컨트롤(현위치 버튼) 하단과 접힌 시트 윗변 사이 간격 */
+const CONTROL_SHEET_GAP = 25
 
 type MapMode = 'all' | 'ongoing' | 'history'
 
@@ -510,28 +510,40 @@ export default function EventMap() {
         )}
       </div>
 
-      {/* 우측 — 확대 · 축소 · 현위치 (각 25px 간격) */}
+      {/* 우측 — 확대/축소 pill + 현위치 (Figma 글래스 컨트롤, 간격 16) */}
       <div
         style={{
           position: 'absolute',
           right: 12,
-          bottom: `calc(${NAV_HEIGHT + SHEET_PEEK + 16}px + env(safe-area-inset-bottom))`,
+          bottom: `calc(${SHEET_PEEK + CONTROL_SHEET_GAP}px + env(safe-area-inset-bottom))`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 25,
+          gap: 16,
           zIndex: 5,
         }}
       >
-        <MapRoundButton label="확대" onClick={() => zoom(-1)}>
-          <Plus size={18} strokeWidth={2.4} />
-        </MapRoundButton>
-        <MapRoundButton label="축소" onClick={() => zoom(1)}>
-          <Minus size={18} strokeWidth={2.4} />
-        </MapRoundButton>
-        <MapRoundButton label="현재 위치로" onClick={locate}>
-          <LocateFixed size={18} strokeWidth={2.2} />
-        </MapRoundButton>
+        <div
+          style={{
+            ...glassControl,
+            height: 89,
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            padding: '12px 0',
+          }}
+        >
+          <GlassIconButton label="확대" onClick={() => zoom(-1)}>
+            <Plus size={20} strokeWidth={2.4} />
+          </GlassIconButton>
+          <GlassIconButton label="축소" onClick={() => zoom(1)}>
+            <Minus size={20} strokeWidth={2.4} />
+          </GlassIconButton>
+        </div>
+        <div style={{ ...glassControl, width: 48, height: 48 }}>
+          <GlassIconButton label="현재 위치로" onClick={locate}>
+            <LocateFixed size={20} strokeWidth={2.2} />
+          </GlassIconButton>
+        </div>
       </div>
 
       {/* 하단 — TOP 10 바텀시트 (깃발 선택 요약은 지도 위 팝업으로 표시) */}
@@ -583,8 +595,21 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
   )
 }
 
-/** 지도 우측 원형 컨트롤 버튼 (흰 배경 + 그림자) */
-function MapRoundButton({
+/** 지도 우측 컨트롤 글래스 컨테이너 공통 스타일 (Figma glass — rgba white .25 + blur 12) */
+const glassControl: React.CSSProperties & { WebkitBackdropFilter?: string } = {
+  width: 48,
+  borderRadius: 24,
+  background: 'rgba(255,255,255,0.25)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}
+
+/** 글래스 컨테이너 안의 투명 아이콘 버튼 (탭 타깃) */
+function GlassIconButton({
   label,
   onClick,
   children,
@@ -604,12 +629,9 @@ function MapRoundButton({
         alignItems: 'center',
         justifyContent: 'center',
         width: 40,
-        height: 40,
-        borderRadius: '50%',
-        background: '#fff',
-        boxShadow: '0 2px 10px rgba(0,0,0,.12)',
+        height: 32,
         cursor: 'pointer',
-        color: '#333d4b',
+        color: '#33404f',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
