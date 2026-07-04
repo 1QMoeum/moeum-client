@@ -280,3 +280,31 @@ export interface CreateBudgetRequest {
 
 /** 사용 계획 항목 수정 요청 — 단일 항목. */
 export type UpdateBudgetRequest = BudgetItemInput
+
+/** ===== 참여중인 이벤트 (GET /v1/events/participating) =====
+ *  홈 캐러셀 — 내가 참여 확정(ACTIVE)한 이벤트, 마감 임박순. 환불·삭제 제외. */
+export interface ParticipatingEvent {
+  eventId: number
+  title: string
+  category: EventCategory
+  status: EventStatus
+  /** 대표 이미지 (없으면 플레이스홀더 표시) */
+  representativeImageUrl: string | null
+  targetAmount: number
+  currentAmount: number
+  /** 달성률(%) — 서버 계산값 */
+  fundingRate: number
+  participantCount: number
+  /** 내 참여 금액(원) */
+  myAmount: number
+  /** 모금 시작일 (YYYY-MM-DD) */
+  startDate: string
+  /** 마감일 (YYYY-MM-DD) */
+  endDate: string
+  /** 마감까지 남은 일수 (D-n) */
+  dDay: number
+}
+
+export interface ParticipatingEventsResponse {
+  content: ParticipatingEvent[]
+}

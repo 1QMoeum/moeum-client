@@ -7,20 +7,24 @@ import BottomNav from '@/components/ui/BottomNav'
 import ProgressRing from '@/components/home/ProgressRing'
 import { useMyWallet } from '@/hooks/wallet'
 import { useMyAccount } from '@/hooks/account'
+import { useParticipatingEvents } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
-import { MOCK_PARTICIPATING_EVENTS } from '@/mocks/home'
-import type { ParticipatingEvent } from '@/mocks/home'
+import type { ParticipatingEvent } from '@/types/event'
 
 type Tab = 'events' | 'wallet'
 
 const won = (n: number) => n.toLocaleString('ko-KR')
 
+/** 서버 날짜(YYYY-MM-DD) → 화면 표기(YY.MM.DD) */
+const shortDate = (iso: string) => iso.slice(2).replaceAll('-', '.')
+
 export default function MainPage() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('events')
   const [index, setIndex] = useState(0)
-  const events = MOCK_PARTICIPATING_EVENTS
+  const { data, isLoading, error } = useParticipatingEvents()
+  const events = data?.content ?? []
   const active = events[index] ?? events[0]
 
   const onScroll = (e: UIEvent<HTMLDivElement>) => {
@@ -88,7 +92,15 @@ export default function MainPage() {
         </div>
 
         {tab === 'events' ? (
-          events.length === 0 ? (
+          isLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '160px 24px 0' }}>
+              <div style={{ width: 240, height: 240, borderRadius: '50%', background: '#eef0f3' }} />
+            </div>
+          ) : error ? (
+            <div style={{ padding: '24px 24px 0' }}>
+              <ErrorCard message={`${error.message} (${error.status ?? '?'})`} />
+            </div>
+          ) : events.length === 0 ? (
             <EmptyEvents onExplore={() => navigate('/explore')} />
           ) : (
           <>
@@ -138,12 +150,9 @@ export default function MainPage() {
               >
                 <Stat label="참여자" value={`${won(active.participantCount)}명`} />
                 <Divider />
-                <Stat
-                  label="달성률"
-                  value={`${Math.round((active.currentAmount / active.targetAmount) * 100)}%`}
-                />
+                <Stat label="달성률" value={`${Math.round(active.fundingRate)}%`} />
                 <Divider />
-                <Stat label="마감일" value={active.deadline} />
+                <Stat label="마감일" value={shortDate(active.endDate)} />
               </div>
             </div>
           </>
@@ -194,7 +203,7 @@ function SegmentButton({
 }
 
 function EventSlide({ event, active }: { event: ParticipatingEvent; active: boolean }) {
-  const percent = (event.currentAmount / event.targetAmount) * 100
+  const percent = event.fundingRate
   return (
     <section
       style={{
@@ -231,7 +240,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
             letterSpacing: '-0.02em',
           }}
         >
-          {`D-${event.daysLeft}`}
+          {`D-${event.dDay}`}
         </span>
         <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#86869f' }}>
           {`목표 ${won(event.targetAmount)}원`}
@@ -261,10 +270,10 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
 }
 
 function EventImage({ event }: { event: ParticipatingEvent }) {
-  if (event.imageUrl) {
+  if (event.representativeImageUrl) {
     return (
       <img
-        src={event.imageUrl}
+        src={event.representativeImageUrl}
         alt={event.title}
         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
       />

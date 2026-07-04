@@ -13,8 +13,24 @@ import type {
   EventListResponse,
   MapBounds,
   ParticipateResponse,
+  ParticipatingEventsResponse,
   UpdateBudgetRequest,
 } from '@/types/event'
+
+/**
+ * 홈 — 내가 참여 확정(ACTIVE)한 이벤트 (마감 임박순).
+ * userId 는 accessToken(JWT sub)에서 파생하므로 로그인 전에는 비활성화된다.
+ */
+export function useParticipatingEvents(enabled = true) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const userId = getUserIdFromToken(accessToken)
+  return useQuery<ParticipatingEventsResponse, ApiError>({
+    queryKey: ['events', 'participating', userId],
+    enabled: enabled && userId != null,
+    staleTime: 30_000,
+    queryFn: () => eventApi.participating(userId as number),
+  })
+}
 
 /** 줌아웃 — 법정동별 집계. 줌아웃 상태일 때만 호출. */
 export function useEventMap(enabled: boolean) {

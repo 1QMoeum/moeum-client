@@ -13,6 +13,7 @@ import type {
   MapBounds,
   ParticipateRequest,
   ParticipateResponse,
+  ParticipatingEventsResponse,
   UpdateBudgetRequest,
 } from '@/types/event'
 
@@ -20,6 +21,12 @@ export const eventApi = {
   /** 이벤트 목록(최신순 페이징). status·category 미지정 시 전체. */
   list: (query: EventListQuery = {}) =>
     unwrap<EventListResponse>(apiClient.get('/v1/events', { params: query })),
+
+  /** 참여중인 이벤트 (홈 캐러셀) — 참여 확정(ACTIVE) 이벤트를 마감 임박순으로. 환불·삭제 제외. */
+  participating: (userId: number) =>
+    unwrap<ParticipatingEventsResponse>(
+      apiClient.get('/v1/events/participating', { params: { userId } }),
+    ),
 
   /** 지도 이벤트 집계 (줌아웃) — 진행중 이벤트를 법정동별로 집계 */
   map: () => unwrap<EventMapResponse>(apiClient.get('/v1/events/map')),
