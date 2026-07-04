@@ -3,6 +3,7 @@ import AuthBootstrap from '@/components/auth/AuthBootstrap'
 import HomePage from '@/pages/HomePage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
+import MyPage from '@/pages/MyPage'
 import KycPage from '@/pages/KycPage'
 import KycForeignPage from '@/pages/KycForeignPage'
 import SignupPage from '@/pages/SignupPage'
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/main" element={<MainPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/mypage" element={<MyPage />} />
         <Route path="/kyc" element={<KycPage />} />
         <Route path="/kyc/foreign" element={<KycForeignPage />} />
         <Route path="/signup" element={<SignupPage />} />
