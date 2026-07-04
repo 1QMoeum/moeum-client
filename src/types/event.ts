@@ -4,25 +4,34 @@
 export type EventCategory = string
 
 /** 이벤트 상태 (서버 enum). */
-export type EventStatus = 'ONGOING' | 'COMPLETED' | 'CANCELLED' | 'PENDING_DELETION'
+export type EventStatus = 'ONGOING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
 
-/** 생성/필터에 쓰는 알려진 카테고리 + 한글 라벨. */
-export const EVENT_CATEGORIES: Array<{ value: string; label: string }> = [
-  { value: 'CAFE', label: '카페' },
-  { value: 'SUBWAY', label: '지하철' },
-  { value: 'DIGITAL_SIGNAGE', label: '전광판' },
-  { value: 'BUS', label: '버스' },
-  { value: 'BANNER', label: '현수막' },
-  { value: 'ONLINE', label: '온라인' },
+/** 생성/필터에 쓰는 서버 카테고리 enum + 한글 라벨 + 아이콘 이미지. (GET /v1/events category) */
+export const EVENT_CATEGORIES: Array<{ value: string; label: string; img: string }> = [
+  { value: 'BIRTHDAY_CAFE', label: '생일카페', img: '/categories/cafe.png' },
+  { value: 'AD', label: '광고', img: '/categories/ad.png' },
+  { value: 'GIFT', label: '선물', img: '/categories/gift.png' },
+  { value: 'COFFEE_TRUCK', label: '커피차', img: '/categories/coffeetruck.png' },
+  { value: 'GOODS', label: '굿즈', img: '/categories/goods.png' },
+  { value: 'DONATION', label: '기부금', img: '/categories/donation.png' },
+  { value: 'WREATH', label: '화환', img: '/categories/wreath.png' },
 ]
 
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   EVENT_CATEGORIES.map((c) => [c.value, c.label]),
 )
+const CATEGORY_IMAGES: Record<string, string> = Object.fromEntries(
+  EVENT_CATEGORIES.map((c) => [c.value, c.img]),
+)
 
 /** 카테고리 코드 → 한글 라벨 (모르면 코드 그대로). */
 export function categoryLabel(category: string): string {
   return CATEGORY_LABELS[category] ?? category
+}
+
+/** 카테고리 코드 → 아이콘 이미지 경로 (모르는 코드는 undefined). */
+export function categoryImage(category: string): string | undefined {
+  return CATEGORY_IMAGES[category]
 }
 
 /** 줌아웃 집계 — 법정동 대표 이벤트 */

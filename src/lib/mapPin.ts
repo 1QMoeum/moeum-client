@@ -11,15 +11,16 @@ export interface CategoryMeta {
 }
 
 const CATEGORY_META: Record<string, CategoryMeta> = {
-  CAFE: { emoji: '☕', color: '#b45309' },
-  SUBWAY: { emoji: '🚇', color: '#2563eb' },
-  DIGITAL_SIGNAGE: { emoji: '📺', color: '#7c3aed' },
-  BUS: { emoji: '🚌', color: '#0d9488' },
-  BANNER: { emoji: '🎌', color: '#dc2626' },
-  ONLINE: { emoji: '💻', color: '#0ea5e9' },
+  BIRTHDAY_CAFE: { emoji: '☕', color: '#b45309' },
+  AD: { emoji: '📺', color: '#7c3aed' },
+  GIFT: { emoji: '🎁', color: '#e64980' },
+  COFFEE_TRUCK: { emoji: '🚚', color: '#0d9488' },
+  GOODS: { emoji: '🛍️', color: '#2563eb' },
+  DONATION: { emoji: '💗', color: '#f03e3e' },
+  WREATH: { emoji: '💐', color: '#12b886' },
 }
 
-const DEFAULT_META: CategoryMeta = { emoji: '📍', color: '#3b82f6' }
+const DEFAULT_META: CategoryMeta = { emoji: '📍', color: '#665bf7' }
 
 /** 카테고리 → 이모지·색상 (알 수 없는 값은 기본 핀) */
 export function categoryMeta(category: string): CategoryMeta {
