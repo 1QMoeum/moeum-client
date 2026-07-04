@@ -1,12 +1,13 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { useState } from 'react'
 
-type Variant = 'brand' | 'solid'
+type Variant = 'brand' | 'solid' | 'ghost'
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * - `brand` (디폴트): 모음 BI 그라데이션(cyan→purple). 홈·랜딩·진입 강조용.
    * - `solid`: 보라 단색. 본인인증·계좌 연동 등 in-flow critical action 용.
+   * - `ghost`: 테두리만 있는 투명 버튼. 파일 업로드·뒤로가기 등 보조 액션 용.
    */
   variant?: Variant
 }
@@ -17,6 +18,10 @@ export default function Button(props: Props) {
   const [pressed, setPressed] = useState(false)
 
   const bg = (() => {
+    if (variant === 'ghost') {
+      if (disabled) return 'transparent'
+      return pressed ? 'var(--color-muted)' : 'var(--color-surface)'
+    }
     if (disabled) return '#e5e7eb'
     if (variant === 'solid') return pressed ? '#7C3AED' : '#8B5CF6'
     return pressed
@@ -24,11 +29,12 @@ export default function Button(props: Props) {
       : 'linear-gradient(135deg, #5DD9D9 0%, #A78BFA 100%)'
   })()
 
-  const shadow = disabled
-    ? 'none'
-    : variant === 'solid'
-      ? '0 4px 14px 0 rgba(139, 92, 246, 0.30)'
-      : '0 4px 14px 0 rgba(167, 139, 250, 0.25)'
+  const shadow =
+    disabled || variant === 'ghost'
+      ? 'none'
+      : variant === 'solid'
+        ? '0 4px 14px 0 rgba(139, 92, 246, 0.30)'
+        : '0 4px 14px 0 rgba(167, 139, 250, 0.25)'
 
   return (
     <button
@@ -44,8 +50,8 @@ export default function Button(props: Props) {
         width: '100%',
         padding: '16px 24px',
         background: bg,
-        color: disabled ? '#9ca3af' : '#ffffff',
-        border: 'none',
+        color: disabled ? '#9ca3af' : variant === 'ghost' ? 'var(--color-text-primary)' : '#ffffff',
+        border: variant === 'ghost' ? '1px solid var(--color-border)' : 'none',
         borderRadius: 'var(--radius-lg)',
         fontWeight: 600,
         fontSize: 16,
