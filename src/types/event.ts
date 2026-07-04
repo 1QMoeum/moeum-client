@@ -290,6 +290,41 @@ export interface CreateBudgetRequest {
 /** 사용 계획 항목 수정 요청 — 단일 항목. */
 export type UpdateBudgetRequest = BudgetItemInput
 
+/** ===== 이벤트 공지 (EventPost) — /v1/events/{eventId}/posts =====
+ *  총대가 남기는 소식(카페 계약·영수증 등). 참여자에게 알림 발송. */
+
+/** 공지 한 건. imageUrls 는 첨부 이미지(없으면 빈 배열). */
+export interface EventPost {
+  postId: number
+  eventId: number
+  /** 작성자(총대) id */
+  creatorId: number
+  title: string
+  content: string
+  /** 첨부 이미지 URL 목록 */
+  imageUrls: string[]
+  /** 첨부 이미지 fileId 목록 (imageUrls 와 같은 순서). 수정 시 기존 이미지 유지에 사용. */
+  imageFileIds?: number[]
+  /** 작성 시각 (ISO 8601) */
+  createdAt: string
+  /** 수정 시각 (ISO 8601) */
+  updatedAt: string
+}
+
+/** 공지 목록 — 최신순 Slice 페이징(다음 페이지 존재 여부만). */
+export interface EventPostSlice {
+  content: EventPost[]
+  hasNext: boolean
+}
+
+/** 공지 작성/수정 요청. fileIds 는 사전에 /v1/files 로 업로드된 TEMP 파일 id. */
+export interface PostInput {
+  title: string
+  content: string
+  /** 첨부 이미지 fileId 목록 (수정 시 완전 교체) */
+  fileIds: number[]
+}
+
 /** ===== 참여중인 이벤트 (GET /v1/events/participating) =====
  *  홈 캐러셀 — 내가 참여 확정(ACTIVE)한 이벤트, 마감 임박순. 환불·삭제 제외. */
 export interface ParticipatingEvent {

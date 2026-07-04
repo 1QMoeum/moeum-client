@@ -11,9 +11,12 @@ import type {
   EventDetailResponse,
   EventListQuery,
   EventListResponse,
+  EventPost,
+  EventPostSlice,
   MapBounds,
   ParticipateResponse,
   ParticipatingEventsResponse,
+  PostInput,
   UpdateBudgetRequest,
 } from '@/types/event'
 
@@ -203,5 +206,54 @@ export function useCancelBudget(eventId: number) {
   return useMutation<BudgetPlanResponse, ApiError, number>({
     mutationFn: (budgetId) => eventApi.cancelBudget(requireUserId(accessToken), eventId, budgetId),
     onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
+  })
+}
+
+/* ===== 이벤트 공지 (EventPost) ===== */
+
+/** 공지 쿼리 키. 작성/수정/삭제 후 무효화 대상. */
+const postsKey = (eventId: number) => ['events', 'posts', eventId] as const
+
+/** 공지 목록 조회 (최신순). 첫 페이지만 노출(간단 목록). */
+export function useEventPosts(eventId: number | null) {
+  return useQuery<EventPostSlice, ApiError>({
+    queryKey: postsKey(eventId ?? -1),
+    enabled: eventId !== null,
+    staleTime: 30_000,
+    queryFn: () => eventApi.posts(eventId as number),
+  })
+}
+
+/** 공지 작성 (총대). 성공 시 공지 목록을 무효화한다. */
+export function useCreatePost(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<EventPost, ApiError, PostInput>({
+    mutationFn: (body) => eventApi.createPost(requireUserId(accessToken), eventId, body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: postsKey(eventId) }),
+  })
+}
+
+/** 공지 수정 mutation 변수. */
+type UpdatePostVars = { postId: number; body: PostInput }
+
+/** 공지 수정 (총대·작성자). 성공 시 공지 목록을 무효화한다. */
+export function useUpdatePost(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<EventPost, ApiError, UpdatePostVars>({
+    mutationFn: ({ postId, body }) =>
+      eventApi.updatePost(requireUserId(accessToken), eventId, postId, body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: postsKey(eventId) }),
+  })
+}
+
+/** 공지 삭제 (총대·작성자, soft delete). 성공 시 공지 목록을 무효화한다. */
+export function useDeletePost(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<string, ApiError, number>({
+    mutationFn: (postId) => eventApi.deletePost(requireUserId(accessToken), eventId, postId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: postsKey(eventId) }),
   })
 }

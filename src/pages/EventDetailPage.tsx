@@ -1,16 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, AlertCircle, ChevronDown, Heart, Pencil, Share2, ShieldCheck } from 'lucide-react'
-import { useEventBudgets, useEventDetail } from '@/hooks/events'
+import {
+  AlertCircle,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  MapPin,
+  MoreVertical,
+  Pencil,
+  Share2,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react'
+import { useDeletePost, useEventBudgets, useEventDetail, useEventPosts } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
 import { getUserIdFromToken } from '@/lib/jwt'
 import { ErrorCode } from '@/constants/errorCodes'
-import { categoryMeta } from '@/lib/mapPin'
 import Button from '@/components/ui/Button'
 import BudgetEditor from '@/components/events/BudgetEditor'
-import type { BudgetItem, BudgetStatus, EventDetailResponse } from '@/types/event'
+import NoticeComposer from '@/components/events/NoticeComposer'
+import type { BudgetItem, BudgetStatus, EventDetailResponse, EventPost } from '@/types/event'
+
+/* ===== 디자인 토큰 (Figma: 금사빠_moeum) ===== */
+const BG = '#fafafa'
+const VIOLET = '#665bf7'
+const VIOLET_BG = '#e3e1ff'
+const AQUA = '#15beb4'
+const INK900 = '#151519'
+const INK800 = '#27282c'
+const INK700 = '#2f2f3b'
+const GRAY600 = '#5c5c72'
+const GRAY500 = '#86869f'
+const GRAY300 = '#c9c9df'
+const GRAY50 = '#f6f6fa'
+const LINE = '#eaebed'
+const CARD_SHADOW = '0 2px 12px rgba(21, 21, 21, 0.05)'
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
+/** 2026-06-24 → 26.06.24 */
+const shortDate = (d: string) => d.replaceAll('-', '.').slice(2)
+/** 2026-06-24 → 2026.06.24 */
+const dotDate = (d: string) => d.replaceAll('-', '.')
 
 /** endDate(YYYY-MM-DD)까지 남은 일수. 지났으면 0. */
 function daysLeft(endDate: string): number {
@@ -19,11 +51,18 @@ function daysLeft(endDate: string): number {
   return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000))
 }
 
-type Tab = 'intro' | 'budget' | 'board'
+type Tab = 'intro' | 'budget' | 'notice' | 'settlement'
+
+const TABS: Array<{ key: Tab; label: string }> = [
+  { key: 'intro', label: '이벤트 소개' },
+  { key: 'budget', label: '사용 계획' },
+  { key: 'notice', label: '공지' },
+  { key: 'settlement', label: '정산 내역' },
+]
 
 /**
- * 이벤트 단건 상세(참여 전). 원형 진행률 + 통계 + 탭(소개/사용계획/게시판).
- * 없으면(4000) 빈 상태. 하단 "프로젝트 참여하기" → 참여 화면으로 이동.
+ * 이벤트 상세 (참여 전/후 공용). 상단 공통 헤더(진행률 링·통계) + 4개 탭.
+ * 총대(생성자)는 우상단 메뉴로 수정/공유/삭제, 사용 계획 편집이 가능하다.
  */
 export default function EventDetailPage() {
   const navigate = useNavigate()
@@ -41,184 +80,205 @@ export default function EventDetailPage() {
   const notFound = !validId || error?.status === ErrorCode.EVENT_NOT_FOUND
 
   return (
-    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,
           maxWidth: 480,
           width: '100%',
           margin: '0 auto',
-          padding: event && !notFound ? '8px 0 0' : '8px 20px 0',
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
+          position: 'relative',
         }}
       >
-        {/* 상단 바 */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 8, padding: '8px 20px 0' }}>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="뒤로"
-            style={{
-              all: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              cursor: 'pointer',
-              color: '#191f28',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <ChevronLeft size={26} />
-          </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
-            이벤트 상세
-          </h1>
-        </header>
-
-        {isPending && validId && <DetailSkeleton />}
-
-        {notFound && <NotFound onBack={() => navigate('/explore')} />}
-
-        {!notFound && error && (
-          <div style={{ padding: '0 20px' }}>
-            <ErrorState
-              message={`${error.message} (${error.status ?? '?'})`}
-              onRetry={() => void refetch()}
-              retrying={isFetching}
-            />
-          </div>
+        {!notFound && event ? (
+          <EventView
+            event={event}
+            onBack={() => navigate(-1)}
+            onParticipate={() => navigate(`/events/${event.eventId}/participate`)}
+          />
+        ) : (
+          <>
+            <TopBar onBack={() => navigate(-1)} />
+            {isPending && validId && <DetailSkeleton />}
+            {notFound && <NotFound onBack={() => navigate('/explore')} />}
+            {!notFound && error && (
+              <div style={{ padding: '0 20px' }}>
+                <ErrorState
+                  message={`${error.message} (${error.status ?? '?'})`}
+                  onRetry={() => void refetch()}
+                  retrying={isFetching}
+                />
+              </div>
+            )}
+          </>
         )}
-
-        {!notFound && event && <EventView event={event} onParticipate={() => navigate(`/events/${event.eventId}/participate`)} />}
       </div>
     </main>
   )
 }
 
-function EventView({ event, onParticipate }: { event: EventDetailResponse; onParticipate: () => void }) {
+/* ===== 상단 바 ===== */
+function TopBar({ onBack, right }: { onBack: () => void; right?: ReactNode }) {
+  return (
+    <header
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '10px 16px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 20,
+        background: BG,
+      }}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label="뒤로"
+        style={iconBtnStyle}
+      >
+        <ChevronLeft size={26} color={INK800} />
+      </button>
+      <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: INK800, letterSpacing: '-0.02em' }}>
+        이벤트 상세
+      </h1>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>{right}</div>
+    </header>
+  )
+}
+
+/* ===== 로드된 상세 (헤더 + 탭 + 콘텐츠) ===== */
+function EventView({
+  event,
+  onBack,
+  onParticipate,
+}: {
+  event: EventDetailResponse
+  onBack: () => void
+  onParticipate: () => void
+}) {
+  const accessToken = useAuthStore((s) => s.accessToken)
   const [tab, setTab] = useState<Tab>('intro')
   const [liked, setLiked] = useState(false)
-  const meta = categoryMeta(event.category)
-  const rate = Math.min(event.fundingRate, 100)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const isOwner = getUserIdFromToken(accessToken) === event.creatorId
   const ongoing = event.status === 'ONGOING'
   const dday = daysLeft(event.endDate)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = window.setTimeout(() => setToast(null), 2200)
+    return () => window.clearTimeout(t)
+  }, [toast])
 
   const share = async () => {
     try {
       if (navigator.share) await navigator.share({ title: event.title, url: window.location.href })
+      else {
+        await navigator.clipboard?.writeText(window.location.href)
+        setToast('링크를 복사했어요')
+      }
     } catch {
       /* 사용자 취소/미지원 — 무시 */
     }
   }
 
+  const startEdit = () => {
+    setMenuOpen(false)
+    setTab('budget')
+    setEditing(true)
+  }
+
   return (
     <>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 18, padding: '12px 20px 120px' }}>
-        {/* 타이틀 + 금액 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em' }}>
-            {event.title}
-          </h2>
-          <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
-            {ongoing ? `D-${dday} · ` : ''}목표 {won(event.targetAmount)}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 2 }}>
-            <span
-              style={{
-                fontSize: 32,
-                fontWeight: 800,
-                color: '#191f28',
-                letterSpacing: '-0.03em',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {event.currentAmount.toLocaleString('ko-KR')}
-            </span>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#191f28' }}>원</span>
-          </div>
-        </div>
+      <TopBar
+        onBack={onBack}
+        right={
+          <>
+            <button type="button" aria-label="알림" style={iconBtnStyle}>
+              <Bell size={22} color={INK800} fill={INK800} />
+            </button>
+            {isOwner && (
+              <button
+                type="button"
+                aria-label="더보기"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((v) => !v)}
+                style={iconBtnStyle}
+              >
+                <MoreVertical size={22} color={INK800} />
+              </button>
+            )}
+          </>
+        }
+      />
 
-        {/* 원형 진행률 + 대표 이미지 */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
+      {/* 총대 메뉴 (수정/공유/삭제) */}
+      {menuOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setMenuOpen(false)} />
           <div
+            role="menu"
             style={{
-              width: 220,
-              height: 220,
-              borderRadius: '50%',
-              background: `conic-gradient(${meta.color} ${rate * 3.6}deg, #ededf2 0deg)`,
-              padding: 8,
-              boxSizing: 'border-box',
+              position: 'absolute',
+              top: 56,
+              right: 12,
+              zIndex: 31,
+              minWidth: 176,
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 8px 28px rgba(21,21,21,0.14)',
+              padding: 6,
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                overflow: 'hidden',
-                background: '#f1f3f5',
-                border: '4px solid #fff',
+            <MenuItem icon={<Pencil size={18} />} label="수정하기" onClick={startEdit} />
+            <MenuItem
+              icon={<Share2 size={18} />}
+              label="공유하기"
+              onClick={() => {
+                setMenuOpen(false)
+                void share()
               }}
-            >
-              {event.representativeImageUrl && (
-                <img
-                  src={event.representativeImageUrl}
-                  alt={event.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              )}
-            </div>
+            />
+            <MenuItem
+              icon={<Trash2 size={18} color="#fa5252" />}
+              label="삭제하기"
+              danger
+              onClick={() => {
+                setMenuOpen(false)
+                setToast('삭제 기능은 곧 제공될 예정이에요')
+              }}
+            />
           </div>
-        </div>
+        </>
+      )}
 
-        {event.creatorHanaVerified && (
-          <span
-            style={{
-              alignSelf: 'center',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: '#12b886',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            <ShieldCheck size={15} strokeWidth={2.4} />
-            하나은행 본인인증 총대
-          </span>
-        )}
-
-        {/* 통계 카드 */}
-        <section
-          style={{
-            display: 'flex',
-            background: '#f9fafb',
-            borderRadius: 18,
-            padding: '16px 8px',
-          }}
-        >
-          <Stat label="달성률" value={`${event.fundingRate}%`} highlight color={meta.color} />
-          <Divider />
-          <Stat label="목표 금액" value={won(event.targetAmount)} />
-          <Divider />
-          <Stat label="진행일" value={event.startDate.replaceAll('-', '.').slice(2)} />
-        </section>
+      <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 108 }}>
+        <Header event={event} dday={dday} ongoing={ongoing} />
 
         {/* 탭 */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #ededf2' }}>
-          {(
-            [
-              { key: 'intro', label: '이벤트 소개' },
-              { key: 'budget', label: '사용 계획' },
-              { key: 'board', label: '게시판' },
-            ] as Array<{ key: Tab; label: string }>
-          ).map((t) => {
+        <nav
+          style={{
+            display: 'flex',
+            position: 'sticky',
+            top: 52,
+            zIndex: 10,
+            background: BG,
+            borderBottom: `1px solid ${LINE}`,
+            margin: '4px 0 20px',
+          }}
+        >
+          {TABS.map((t) => {
             const active = tab === t.key
             return (
               <button
@@ -229,13 +289,14 @@ function EventView({ event, onParticipate }: { event: EventDetailResponse; onPar
                   all: 'unset',
                   flex: 1,
                   textAlign: 'center',
-                  padding: '12px 0',
-                  fontSize: 14.5,
-                  fontWeight: active ? 700 : 500,
-                  color: active ? '#191f28' : '#adb5bd',
-                  borderBottom: `2px solid ${active ? '#8B5CF6' : 'transparent'}`,
+                  padding: '15px 0',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: active ? INK900 : GRAY300,
+                  borderBottom: `2px solid ${active ? INK900 : 'transparent'}`,
                   marginBottom: -1,
                   cursor: 'pointer',
+                  letterSpacing: '-0.02em',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
@@ -243,14 +304,19 @@ function EventView({ event, onParticipate }: { event: EventDetailResponse; onPar
               </button>
             )
           })}
-        </div>
+        </nav>
 
-        {tab === 'intro' && <IntroTab event={event} />}
-        {tab === 'budget' && <BudgetTab event={event} />}
-        {tab === 'board' && <PlaceholderTab text="게시판은 준비 중이에요." />}
+        <div style={{ padding: '0 20px' }}>
+          {tab === 'intro' && <IntroTab event={event} />}
+          {tab === 'budget' && (
+            <BudgetTab event={event} isOwner={isOwner} onEdit={() => setEditing(true)} />
+          )}
+          {tab === 'notice' && <NoticeTab event={event} isOwner={isOwner} />}
+          {tab === 'settlement' && <SettlementTab event={event} />}
+        </div>
       </div>
 
-      {/* 하단 고정 바 */}
+      {/* 하단 고정 액션 바 */}
       <div
         style={{
           position: 'fixed',
@@ -260,93 +326,325 @@ function EventView({ event, onParticipate }: { event: EventDetailResponse; onPar
           width: '100%',
           maxWidth: 480,
           background: '#fff',
-          borderTop: '1px solid #ededf2',
+          borderTop: `1px solid ${LINE}`,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           padding: '12px 20px calc(14px + env(safe-area-inset-bottom))',
           boxSizing: 'border-box',
+          zIndex: 15,
         }}
       >
         <IconBtn label="찜" onClick={() => setLiked((v) => !v)}>
-          <Heart size={22} strokeWidth={2.2} color={liked ? '#fa5252' : '#8b95a1'} fill={liked ? '#fa5252' : 'none'} />
+          <Heart size={22} strokeWidth={2.2} color={liked ? '#fa5252' : GRAY500} fill={liked ? '#fa5252' : 'none'} />
         </IconBtn>
         <IconBtn label="공유" onClick={() => void share()}>
-          <Share2 size={21} strokeWidth={2.2} color="#8b95a1" />
+          <Share2 size={21} strokeWidth={2.2} color={GRAY500} />
         </IconBtn>
-        <Button variant="solid" onClick={onParticipate} disabled={!ongoing} style={{ flex: 1 }}>
-          {ongoing ? '프로젝트 참여하기' : '진행 중인 모금이 아니에요'}
+        <Button
+          variant="solid"
+          onClick={onParticipate}
+          disabled={!ongoing}
+          style={{ flex: 1, background: ongoing ? VIOLET : undefined, borderRadius: 32 }}
+        >
+          {ongoing ? '이벤트 참여하기' : '진행 중인 모금이 아니에요'}
         </Button>
       </div>
+
+      {editing && (
+        <BudgetEditorGate event={event} onClose={() => setEditing(false)} />
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed',
+            bottom: 96,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 40,
+            background: 'rgba(21,21,25,0.92)',
+            color: '#fff',
+            fontSize: 13.5,
+            fontWeight: 500,
+            padding: '11px 18px',
+            borderRadius: 999,
+            letterSpacing: '-0.01em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {toast}
+        </div>
+      )}
     </>
   )
 }
 
-function IntroTab({ event }: { event: EventDetailResponse }) {
+function MenuItem({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: ReactNode
+  label: string
+  onClick: () => void
+  danger?: boolean
+}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <span style={{ fontSize: 16, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-        이벤트 소개
-      </span>
-      {event.representativeImageUrl && (
-        <img
-          src={event.representativeImageUrl}
-          alt={event.title}
-          style={{ width: '100%', borderRadius: 16, display: 'block' }}
-        />
-      )}
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        all: 'unset',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        padding: '11px 12px',
+        borderRadius: 10,
+        cursor: 'pointer',
+        color: danger ? '#fa5252' : INK800,
+        fontSize: 15,
+        fontWeight: 500,
+        letterSpacing: '-0.01em',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ display: 'flex', color: danger ? '#fa5252' : GRAY500 }}>{icon}</span>
+    </button>
+  )
+}
+
+/* ===== 공통 헤더 (진행률 링 + 통계) ===== */
+function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: number; ongoing: boolean }) {
+  const rate = Math.min(event.fundingRate, 100)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
+      {/* 타이틀 + 금액 */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', textAlign: 'center' }}>
+          {event.title}
+        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {ongoing && <Chip>{`D-${dday}`}</Chip>}
+          <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+            목표 {won(event.targetAmount)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 2 }}>
+          <span
+            style={{
+              fontSize: 36,
+              fontWeight: 800,
+              color: '#0c0d0d',
+              letterSpacing: '-0.03em',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {event.currentAmount.toLocaleString('ko-KR')}
+          </span>
+          <span style={{ fontSize: 24, fontWeight: 500, color: INK800 }}>원</span>
+        </div>
+      </div>
+
+      {/* 진행률 링 + 대표 이미지 */}
+      <div
+        style={{
+          width: 216,
+          height: 216,
+          borderRadius: '50%',
+          background: `conic-gradient(${VIOLET} ${rate * 3.6}deg, #ececf4 0deg)`,
+          padding: 9,
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            background: '#f1f3f5',
+            border: `5px solid ${BG}`,
+            boxSizing: 'border-box',
+          }}
+        >
+          {event.representativeImageUrl && (
+            <img
+              src={event.representativeImageUrl}
+              alt={event.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 원 아래 소개 문구 */}
       {event.description && (
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#3a4149', letterSpacing: '-0.01em', whiteSpace: 'pre-wrap' }}>
+        <p
+          style={{
+            margin: 0,
+            maxWidth: 220,
+            textAlign: 'center',
+            fontSize: 14,
+            color: GRAY600,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.5,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
           {event.description}
         </p>
       )}
 
-      <div style={{ height: 1, background: '#f1f3f5' }} />
+      {event.creatorHanaVerified && (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: '#12b886',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          <ShieldCheck size={15} strokeWidth={2.4} />
+          하나은행 본인인증 총대
+        </span>
+      )}
 
-      <dl style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <InfoLine label="목표금액" value={won(event.targetAmount)} />
-        <InfoLine label="날짜" value={`${event.startDate} ~ ${event.endDate}`} />
-        <InfoLine label="장소" value={`${event.siDo} ${event.siGunGu} ${event.legalDong}`} sub={event.address} />
-      </dl>
+      {/* 통계 카드 */}
+      <section
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          background: '#fff',
+          borderRadius: 24,
+          boxShadow: CARD_SHADOW,
+          padding: '16px 8px',
+        }}
+      >
+        <Stat label="달성률" value={`${event.fundingRate}%`} />
+        <StatDivider />
+        <Stat label="목표 금액" value={won(event.targetAmount)} />
+        <StatDivider />
+        <Stat label="마감일" value={shortDate(event.endDate)} />
+      </section>
     </div>
   )
 }
 
-function InfoLine({ label, value, sub }: { label: string; value: string; sub?: string }) {
+/* ===== 이벤트 소개 탭 ===== */
+function IntroTab({ event }: { event: EventDetailResponse }) {
   return (
-    <div style={{ display: 'flex', gap: 16 }}>
-      <dt style={{ width: 64, flexShrink: 0, fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>{label}</dt>
-      <dd style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>{value}</span>
-        {sub && <span style={{ fontSize: 12.5, color: '#adb5bd', letterSpacing: '-0.01em' }}>{sub}</span>}
-      </dd>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <SectionTitle>이벤트 소개</SectionTitle>
+      <Card gap={24}>
+        {event.representativeImageUrl && (
+          <img
+            src={event.representativeImageUrl}
+            alt={event.title}
+            style={{ width: '100%', borderRadius: 8, display: 'block' }}
+          />
+        )}
+        {event.description && (
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: '#474c52', letterSpacing: '-0.01em', whiteSpace: 'pre-wrap' }}>
+            {event.description}
+          </p>
+        )}
+
+        <Hr />
+        <InfoBlock label="이벤트 날짜" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
+
+        <Hr />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <span style={infoLabelStyle}>진행 장소</span>
+          <LocationBlock event={event} />
+        </div>
+      </Card>
     </div>
   )
 }
 
-/** 사용 계획 항목 상태 → 한글 라벨·색. */
-const BUDGET_STATUS_META: Record<BudgetStatus, { label: string; color: string; bg: string }> = {
-  PENDING: { label: '집행 예정', color: '#6b7684', bg: '#f1f3f5' },
-  EXECUTED: { label: '집행 완료', color: '#12b886', bg: '#e6fcf5' },
-  REFUNDED: { label: '환불됨', color: '#1c7ed6', bg: '#e7f5ff' },
-  CANCELLED: { label: '취소됨', color: '#adb5bd', bg: '#f1f3f5' },
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={infoLabelStyle}>{label}</span>
+      <span style={{ fontSize: 15, color: '#6a717d', letterSpacing: '-0.01em' }}>{value}</span>
+    </div>
+  )
 }
 
-/**
- * 사용 계획 탭 — 총 목표 금액 + 예상 사용 계획.
- * 각 항목은 제목·금액만 노출하고, 펼치면 집행예정일·업체·상태·트랜잭션을 보여준다.
- */
-function BudgetTab({ event }: { event: EventDetailResponse }) {
-  const accessToken = useAuthStore((s) => s.accessToken)
-  const [editing, setEditing] = useState(false)
-  const { data, isPending, error, refetch, isFetching } = useEventBudgets(event.eventId)
+function LocationBlock({ event }: { event: EventDetailResponse }) {
+  const region = [event.siDo, event.siGunGu, event.legalDong].filter(Boolean).join(' ')
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+        background: GRAY50,
+        borderRadius: 12,
+        padding: '14px 16px',
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: VIOLET_BG,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <MapPin size={18} color={VIOLET} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{ fontSize: 14.5, fontWeight: 600, color: INK700, letterSpacing: '-0.01em' }}>{region || '장소 미정'}</span>
+        {event.address && (
+          <span style={{ fontSize: 13, color: GRAY500, letterSpacing: '-0.01em' }}>{event.address}</span>
+        )}
+      </div>
+    </div>
+  )
+}
 
-  const isOwner = getUserIdFromToken(accessToken) === event.creatorId
-  const fundingStarted = event.currentAmount > 0
+/* ===== 사용 계획 탭 ===== */
+/** 사용 계획 항목 상태 → 집행 내역 칩(라벨·색). */
+const EXEC_CHIP: Record<BudgetStatus, { label: string; color: string; bg: string }> = {
+  EXECUTED: { label: '증빙완료', color: VIOLET, bg: VIOLET_BG },
+  PENDING: { label: '승인대기', color: GRAY500, bg: GRAY50 },
+  REFUNDED: { label: '환불완료', color: AQUA, bg: '#e3f8f6' },
+  CANCELLED: { label: '취소', color: GRAY300, bg: GRAY50 },
+}
+
+function BudgetTab({
+  event,
+  isOwner,
+  onEdit,
+}: {
+  event: EventDetailResponse
+  isOwner: boolean
+  onEdit: () => void
+}) {
+  const { data, isPending, error, refetch, isFetching } = useEventBudgets(event.eventId)
 
   if (isPending) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[0, 1, 2].map((i) => (
           <div key={i} style={{ height: 56, borderRadius: 12, background: '#eef0f3' }} />
         ))}
@@ -365,317 +663,564 @@ function BudgetTab({ event }: { event: EventDetailResponse }) {
   }
 
   const items = data?.items ?? []
+  const totalAmount = data?.totalAmount ?? 0
+  const executed = items.filter((i) => i.status !== 'CANCELLED')
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* 총 목표 금액 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-          총 목표 금액
-        </span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span
-            style={{
-              fontSize: 30,
-              fontWeight: 800,
-              color: '#191f28',
-              letterSpacing: '-0.03em',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {event.targetAmount.toLocaleString('ko-KR')}
-          </span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#191f28' }}>원</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <SectionTitle>총 목표 금액</SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: INK800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+              {event.targetAmount.toLocaleString('ko-KR')}
+            </span>
+            <span style={{ fontSize: 16, fontWeight: 500, color: GRAY600 }}>원</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, color: INK700, letterSpacing: '-0.01em' }}>
+            모금한 금액은 아래와 같은 계획으로 사용할 예정입니다.
+          </p>
         </div>
-        <p style={{ margin: 0, fontSize: 13.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>
-          모금한 금액은 아래와 같은 계획으로 사용할 예정입니다.
-        </p>
       </div>
 
       {/* 예상 사용 계획 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Card gap={20} radius={20}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-            예상 사용 계획
-          </span>
-          {isOwner && items.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              aria-label="사용 계획 편집"
-              style={{
-                all: 'unset',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                cursor: 'pointer',
-                color: '#8b95a1',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <Pencil size={18} />
+          <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}>예상 사용 계획</span>
+          {isOwner && (
+            <button type="button" onClick={onEdit} aria-label="사용 계획 편집" style={{ ...iconBtnStyle, width: 28, height: 28 }}>
+              <Pencil size={20} color={INK800} />
             </button>
           )}
         </div>
 
         {items.length === 0 ? (
-          <div
-            style={{
-              background: '#f9fafb',
-              borderRadius: 14,
-              padding: '32px 20px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 14,
-            }}
-          >
-            <span style={{ fontSize: 14, color: '#adb5bd', letterSpacing: '-0.01em' }}>
-              아직 등록된 사용 계획이 없어요.
-            </span>
-            {isOwner && (
-              <Button
-                variant="solid"
-                onClick={() => setEditing(true)}
-                style={{ width: 'auto', padding: '11px 22px', fontSize: 14 }}
-              >
-                사용 계획 추가하기
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            text="아직 등록된 사용 계획이 없어요."
+            action={
+              isOwner ? (
+                <Button variant="solid" onClick={onEdit} style={{ width: 'auto', padding: '11px 22px', fontSize: 14, background: VIOLET, borderRadius: 24 }}>
+                  사용 계획 추가하기
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {items.map((item) => (
-                <BudgetRow key={item.budgetId} item={item} />
-              ))}
-            </div>
-
-            {/* 총 합계 */}
+            {/* 표 헤더 */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '14px 16px',
-                borderTop: '1.5px solid #ededf2',
-                marginTop: 2,
+                background: GRAY50,
+                borderRadius: 6,
+                padding: '5px 12px',
               }}
             >
-              <span style={{ fontSize: 14.5, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-                총 합계
-              </span>
-              <span
-                style={{
-                  fontSize: 16,
-                  fontWeight: 800,
-                  color: '#8B5CF6',
-                  letterSpacing: '-0.01em',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {won(data?.totalAmount ?? 0)}
+              <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>항목</span>
+              <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>예상 금액 (원)</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '0 4px' }}>
+              {items.map((item, i) => (
+                <div key={item.budgetId}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px' }}>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        color: item.status === 'CANCELLED' ? GRAY300 : INK900,
+                        letterSpacing: '-0.01em',
+                        textDecoration: item.status === 'CANCELLED' ? 'line-through' : 'none',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginRight: 12,
+                      }}
+                    >
+                      {item.title}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: '#0c0d0d', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+                        {item.amount.toLocaleString('ko-KR')}
+                      </span>
+                      <span style={{ fontSize: 14, color: INK700 }}>원</span>
+                    </span>
+                  </div>
+                  {i < items.length - 1 && <div style={{ height: 1, background: LINE }} />}
+                </div>
+              ))}
+            </div>
+
+            {/* 총 합계 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}>총 합계</span>
+              <span style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 600, color: VIOLET, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                  {totalAmount.toLocaleString('ko-KR')}
+                </span>
+                <span style={{ fontSize: 14, color: INK700 }}>원</span>
               </span>
             </div>
           </>
         )}
-      </div>
+      </Card>
 
-      {editing && (
-        <BudgetEditor
-          eventId={event.eventId}
-          items={items}
-          fundingStarted={fundingStarted}
-          onClose={() => setEditing(false)}
-        />
+      {/* 집행 내역 */}
+      {executed.length > 0 && (
+        <Card gap={20} radius={12}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}>집행 내역</span>
+            <span style={{ fontSize: 14, color: INK800, letterSpacing: '-0.01em' }}>총 {executed.length}건</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {executed.map((item, i) => (
+              <div key={item.budgetId}>
+                <ExecutionRow item={item} />
+                {i < executed.length - 1 && <div style={{ height: 1, background: LINE, margin: '20px 0' }} />}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   )
 }
 
-/** 사용 계획 항목 한 줄 — 접힘 상태는 제목·금액만, 펼치면 상세. */
-function BudgetRow({ item }: { item: BudgetItem }) {
-  const [open, setOpen] = useState(false)
-  const cancelled = item.status === 'CANCELLED'
-  const status = BUDGET_STATUS_META[item.status] ?? BUDGET_STATUS_META.PENDING
+function ExecutionRow({ item }: { item: BudgetItem }) {
+  const chip = EXEC_CHIP[item.status] ?? EXEC_CHIP.PENDING
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {item.title}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>{dotDate(item.scheduledDate)}</span>
+          <span style={{ width: 1, height: 12, background: LINE }} />
+          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}>{won(item.amount)}</span>
+        </div>
+      </div>
+      <span
+        style={{
+          flexShrink: 0,
+          padding: '2px 8px',
+          borderRadius: 4,
+          fontSize: 14,
+          fontWeight: 500,
+          color: chip.color,
+          background: chip.bg,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {chip.label}
+      </span>
+    </div>
+  )
+}
 
+/* ===== 공지 탭 ===== */
+/** ISO 8601 → "6월 24일" */
+function monthDay(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`
+}
+
+function NoticeTab({ event, isOwner }: { event: EventDetailResponse; isOwner: boolean }) {
+  const [composing, setComposing] = useState(false)
+  const [editing, setEditing] = useState<EventPost | null>(null)
+  const { data, isPending, error, refetch, isFetching } = useEventPosts(event.eventId)
+  const deleteMut = useDeletePost(event.eventId)
+
+  const posts = data?.content ?? []
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <SectionTitle>공지</SectionTitle>
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setComposing(true)}
+            style={{
+              all: 'unset',
+              background: VIOLET,
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 500,
+              padding: '4px 12px',
+              borderRadius: 24,
+              cursor: 'pointer',
+              letterSpacing: '-0.01em',
+              boxShadow: '0 2px 8px rgba(102,91,247,0.25)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            글쓰기
+          </button>
+        )}
+      </div>
+
+      {isPending ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[0, 1].map((i) => (
+            <div key={i} style={{ height: 132, borderRadius: 20, background: '#eef0f3' }} />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState
+          message={`${error.message} (${error.status ?? '?'})`}
+          onRetry={() => void refetch()}
+          retrying={isFetching}
+        />
+      ) : posts.length === 0 ? (
+        <Card gap={12} radius={20}>
+          <EmptyState text="아직 등록된 공지가 없어요." sub="총대가 카페 계약·영수증 등 소식을 이곳에 남깁니다." />
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {posts.map((post) => (
+            <NoticeCard
+              key={post.postId}
+              post={post}
+              isOwner={isOwner}
+              onEdit={() => setEditing(post)}
+              onDelete={() => {
+                if (window.confirm('이 공지를 삭제할까요?')) deleteMut.mutate(post.postId)
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {composing && <NoticeComposer eventId={event.eventId} onClose={() => setComposing(false)} />}
+      {editing && (
+        <NoticeComposer eventId={event.eventId} post={editing} onClose={() => setEditing(null)} />
+      )}
+    </div>
+  )
+}
+
+function NoticeCard({
+  post,
+  isOwner,
+  onEdit,
+  onDelete,
+}: {
+  post: EventPost
+  isOwner: boolean
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const imgs = post.imageUrls ?? []
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 20, boxShadow: CARD_SHADOW, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* 작성자 헤더 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: `linear-gradient(135deg, ${VIOLET} 0%, #9b93ff 100%)`,
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              총
+            </div>
+            <span style={{ fontSize: 14, color: INK800, letterSpacing: '-0.01em' }}>총대</span>
+            <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{monthDay(post.createdAt)}</span>
+          </div>
+          {isOwner && (
+            <div style={{ position: 'relative' }}>
+              <button type="button" aria-label="공지 메뉴" onClick={() => setMenuOpen((v) => !v)} style={{ ...iconBtnStyle, width: 28, height: 28 }}>
+                <MoreVertical size={20} color={GRAY500} />
+              </button>
+              {menuOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setMenuOpen(false)} />
+                  <div
+                    role="menu"
+                    style={{
+                      position: 'absolute',
+                      top: 30,
+                      right: 0,
+                      zIndex: 31,
+                      minWidth: 128,
+                      background: '#fff',
+                      borderRadius: 12,
+                      boxShadow: '0 8px 28px rgba(21,21,21,0.14)',
+                      padding: 6,
+                    }}
+                  >
+                    <MenuItem
+                      icon={<Pencil size={17} />}
+                      label="수정하기"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onEdit()
+                      }}
+                    />
+                    <MenuItem
+                      icon={<Trash2 size={17} color="#fa5252" />}
+                      label="삭제하기"
+                      danger
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onDelete()
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 제목 + 내용 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>{post.title}</span>
+          <p style={{ margin: 0, fontSize: 14, color: GRAY600, letterSpacing: '-0.01em', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+            {post.content}
+          </p>
+        </div>
+      </div>
+
+      {/* 첨부 이미지 */}
+      {imgs.length > 0 && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: imgs.length === 1 ? '1fr' : '1fr 1fr',
+            gap: 12,
+          }}
+        >
+          {imgs.map((url, i) => (
+            <img
+              key={`${url}-${i}`}
+              src={url}
+              alt=""
+              style={{
+                width: '100%',
+                aspectRatio: imgs.length === 1 ? '337 / 180' : '1 / 1',
+                objectFit: 'cover',
+                borderRadius: 12,
+                display: 'block',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ===== 정산 내역 탭 ===== */
+type SettleFilter = 'all' | 'in' | 'out'
+
+function SettlementTab({ event }: { event: EventDetailResponse }) {
+  const [filter, setFilter] = useState<SettleFilter>('all')
+  const { data } = useEventBudgets(event.eventId)
+
+  const items = data?.items ?? []
+  const executed = items.filter((i) => i.status === 'EXECUTED').reduce((s, i) => s + i.amount, 0)
+  const refund = items.filter((i) => i.status === 'REFUNDED').reduce((s, i) => s + i.amount, 0)
+  const raised = event.currentAmount
+  const remaining = Math.max(0, raised - executed - refund)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 전체 요약 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <SectionTitle>전체 요약</SectionTitle>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <SummaryCard label="총 모금액" value={won(raised)} />
+          <SummaryCard label="총 집행액" value={won(executed)} />
+          <SummaryCard label="환불 예정액" value={won(refund)} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>잔여 금액</span>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#0c0d0d', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+              {remaining.toLocaleString('ko-KR')}
+            </span>
+            <span style={{ fontSize: 14, color: INK700 }}>원</span>
+          </span>
+        </div>
+      </div>
+
+      {/* 필터 토글 */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: '#fff',
+            borderRadius: 24,
+            boxShadow: CARD_SHADOW,
+            padding: 4,
+          }}
+        >
+          {([
+            { key: 'all', label: '전체' },
+            { key: 'in', label: '입금' },
+            { key: 'out', label: '출금' },
+          ] as Array<{ key: SettleFilter; label: string }>).map((f) => {
+            const active = filter === f.key
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                style={{
+                  all: 'unset',
+                  padding: '8px 20px',
+                  borderRadius: 24,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  letterSpacing: '-0.01em',
+                  color: active ? '#fff' : INK700,
+                  background: active ? VIOLET : 'transparent',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* 월 헤더 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 18, fontWeight: 600, color: INK800, letterSpacing: '-0.02em' }}>
+          {dotDate(event.startDate).slice(0, 7)}
+        </span>
+        <ChevronRight size={22} color={GRAY500} />
+      </div>
+
+      <Card gap={12} radius={20}>
+        <EmptyState
+          text="거래 내역이 아직 없어요."
+          sub="모금 참여(입금)와 집행(출금) 내역이 이곳에 표시됩니다."
+        />
+      </Card>
+    </div>
+  )
+}
+
+function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div
       style={{
-        border: '1px solid #ededf2',
-        borderRadius: 12,
+        flex: 1,
         background: '#fff',
-        overflow: 'hidden',
+        borderRadius: 12,
+        boxShadow: CARD_SHADOW,
+        padding: '16px 6px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        textAlign: 'center',
       }}
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        style={{
-          all: 'unset',
-          boxSizing: 'border-box',
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '14px 16px',
-          cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <span
-          style={{
-            flex: 1,
-            fontSize: 14.5,
-            fontWeight: 600,
-            color: cancelled ? '#adb5bd' : '#191f28',
-            letterSpacing: '-0.01em',
-            textDecoration: cancelled ? 'line-through' : 'none',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {item.title}
-        </span>
-        <span
-          style={{
-            fontSize: 14.5,
-            fontWeight: 700,
-            color: cancelled ? '#adb5bd' : '#191f28',
-            letterSpacing: '-0.01em',
-            fontVariantNumeric: 'tabular-nums',
-            textDecoration: cancelled ? 'line-through' : 'none',
-            flexShrink: 0,
-          }}
-        >
-          {won(item.amount)}
-        </span>
-        <ChevronDown
-          size={18}
-          color="#adb5bd"
-          style={{ flexShrink: 0, transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}
-        />
-      </button>
-
-      {open && (
-        <dl
-          style={{
-            margin: 0,
-            padding: '4px 16px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            borderTop: '1px solid #f1f3f5',
-          }}
-        >
-          <BudgetDetail label="상태">
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '3px 10px',
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 700,
-                color: status.color,
-                background: status.bg,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {status.label}
-            </span>
-          </BudgetDetail>
-          <BudgetDetail label="집행 예정일">
-            <span style={budgetValueStyle}>{item.scheduledDate.replaceAll('-', '.')}</span>
-          </BudgetDetail>
-          <BudgetDetail label="업체">
-            <span style={budgetValueStyle}>{item.vendorName || '미정'}</span>
-          </BudgetDetail>
-          {item.txHash && (
-            <BudgetDetail label="트랜잭션">
-              <span
-                style={{
-                  ...budgetValueStyle,
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                  fontSize: 12.5,
-                  wordBreak: 'break-all',
-                }}
-              >
-                {item.txHash}
-              </span>
-            </BudgetDetail>
-          )}
-        </dl>
-      )}
-    </div>
-  )
-}
-
-const budgetValueStyle: React.CSSProperties = {
-  fontSize: 13.5,
-  fontWeight: 600,
-  color: '#3a4149',
-  letterSpacing: '-0.01em',
-  textAlign: 'right',
-}
-
-function BudgetDetail({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-      <dt style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em', flexShrink: 0 }}>{label}</dt>
-      <dd style={{ margin: 0, minWidth: 0 }}>{children}</dd>
-    </div>
-  )
-}
-
-function PlaceholderTab({ text }: { text: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 20px', color: '#adb5bd', fontSize: 14 }}>
-      {text}
-    </div>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  highlight,
-  color,
-}: {
-  label: string
-  value: string
-  highlight?: boolean
-  color?: string
-}) {
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-      <span style={{ fontSize: 12.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>{label}</span>
-      <span
-        style={{
-          fontSize: 15,
-          fontWeight: 800,
-          color: highlight ? color : '#191f28',
-          letterSpacing: '-0.01em',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+      <span style={{ fontSize: 13, color: GRAY600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ fontSize: 14.5, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {value}
       </span>
     </div>
   )
 }
 
-function Divider() {
-  return <div style={{ width: 1, alignSelf: 'stretch', background: '#ededf2', margin: '2px 0' }} />
+/* ===== 재사용 프리미티브 ===== */
+function Chip({ children }: { children: ReactNode }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        background: VIOLET_BG,
+        color: VIOLET,
+        fontSize: 14,
+        fontWeight: 500,
+        padding: '0 8px',
+        borderRadius: 4,
+        letterSpacing: '-0.01em',
+        lineHeight: 1.5,
+      }}
+    >
+      {children}
+    </span>
+  )
 }
 
-function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function Card({ children, gap = 16, radius = 12 }: { children: ReactNode; gap?: number; radius?: number }) {
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: radius,
+        boxShadow: CARD_SHADOW,
+        padding: '24px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return <span style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}>{children}</span>
+}
+
+function Hr() {
+  return <div style={{ height: 1, background: LINE }} />
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function StatDivider() {
+  return <div style={{ width: 1, height: 24, background: LINE }} />
+}
+
+function EmptyState({ text, sub, action }: { text: string; sub?: string; action?: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '24px 12px', textAlign: 'center' }}>
+      <span style={{ fontSize: 14.5, color: GRAY500, letterSpacing: '-0.01em' }}>{text}</span>
+      {sub && <span style={{ fontSize: 12.5, color: GRAY300, letterSpacing: '-0.01em', lineHeight: 1.5 }}>{sub}</span>}
+      {action}
+    </div>
+  )
+}
+
+function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -699,13 +1244,46 @@ function IconBtn({ label, onClick, children }: { label: string; onClick: () => v
   )
 }
 
+const iconBtnStyle: CSSProperties = {
+  all: 'unset',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 40,
+  height: 40,
+  borderRadius: 12,
+  cursor: 'pointer',
+  WebkitTapHighlightColor: 'transparent',
+}
+
+const infoLabelStyle: CSSProperties = {
+  fontSize: 16,
+  fontWeight: 500,
+  color: INK800,
+  letterSpacing: '-0.01em',
+}
+
+/** 사용 계획 편집 모달 — 모금 시작 여부(currentAmount>0)를 넘겨 잠금 규칙을 적용한다. */
+function BudgetEditorGate({ event, onClose }: { event: EventDetailResponse; onClose: () => void }) {
+  const { data } = useEventBudgets(event.eventId)
+  return (
+    <BudgetEditor
+      eventId={event.eventId}
+      items={data?.items ?? []}
+      fundingStarted={event.currentAmount > 0}
+      onClose={onClose}
+    />
+  )
+}
+
+/* ===== 상태 화면 ===== */
 function DetailSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 20px' }}>
       <div style={{ height: 22, width: '60%', borderRadius: 8, background: '#eef0f3' }} />
       <div style={{ height: 32, width: '50%', borderRadius: 8, background: '#eef0f3' }} />
-      <div style={{ width: 220, height: 220, borderRadius: '50%', background: '#eef0f3' }} />
-      <div style={{ height: 72, width: '100%', borderRadius: 18, background: '#eef0f3' }} />
+      <div style={{ width: 216, height: 216, borderRadius: '50%', background: '#eef0f3' }} />
+      <div style={{ height: 72, width: '100%', borderRadius: 24, background: '#eef0f3' }} />
     </div>
   )
 }
@@ -714,9 +1292,10 @@ function NotFound({ onBack }: { onBack: () => void }) {
   return (
     <div
       style={{
-        margin: '24px 0',
-        background: '#f9fafb',
+        margin: '24px 20px',
+        background: '#fff',
         borderRadius: 20,
+        boxShadow: CARD_SHADOW,
         padding: '40px 24px',
         display: 'flex',
         flexDirection: 'column',
@@ -725,35 +1304,24 @@ function NotFound({ onBack }: { onBack: () => void }) {
         textAlign: 'center',
       }}
     >
-      <AlertCircle size={36} strokeWidth={2} color="#adb5bd" />
-      <div style={{ fontSize: 17, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
-        이벤트를 찾을 수 없어요
-      </div>
-      <p style={{ margin: 0, fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>
-        삭제되었거나 잘못된 주소예요.
-      </p>
-      <Button variant="solid" onClick={onBack} style={{ width: 'auto', padding: '12px 28px', marginTop: 4 }}>
+      <AlertCircle size={36} strokeWidth={2} color={GRAY300} />
+      <div style={{ fontSize: 17, fontWeight: 700, color: INK900, letterSpacing: '-0.02em' }}>이벤트를 찾을 수 없어요</div>
+      <p style={{ margin: 0, fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>삭제되었거나 잘못된 주소예요.</p>
+      <Button variant="solid" onClick={onBack} style={{ width: 'auto', padding: '12px 28px', marginTop: 4, background: VIOLET, borderRadius: 24 }}>
         탐색으로 가기
       </Button>
     </div>
   )
 }
 
-function ErrorState({
-  message,
-  onRetry,
-  retrying,
-}: {
-  message: string
-  onRetry: () => void
-  retrying: boolean
-}) {
+function ErrorState({ message, onRetry, retrying }: { message: string; onRetry: () => void; retrying: boolean }) {
   return (
     <div
       style={{
         margin: '24px 0',
-        background: '#f9fafb',
+        background: '#fff',
         borderRadius: 20,
+        boxShadow: CARD_SHADOW,
         padding: '32px 24px',
         display: 'flex',
         flexDirection: 'column',
@@ -763,10 +1331,8 @@ function ErrorState({
       }}
     >
       <AlertCircle size={36} strokeWidth={2} color="#e03e3e" />
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: '#6b7684', letterSpacing: '-0.01em' }}>
-        {message}
-      </p>
-      <Button variant="solid" onClick={onRetry} disabled={retrying} style={{ width: 'auto', padding: '12px 28px' }}>
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: GRAY600, letterSpacing: '-0.01em' }}>{message}</p>
+      <Button variant="solid" onClick={onRetry} disabled={retrying} style={{ width: 'auto', padding: '12px 28px', background: VIOLET, borderRadius: 24 }}>
         {retrying ? '불러오는 중…' : '다시 시도'}
       </Button>
     </div>

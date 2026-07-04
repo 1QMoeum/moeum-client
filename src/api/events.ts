@@ -10,10 +10,13 @@ import type {
   EventListResponse,
   EventMapResponse,
   EventMapWithinResponse,
+  EventPost,
+  EventPostSlice,
   MapBounds,
   ParticipateRequest,
   ParticipateResponse,
   ParticipatingEventsResponse,
+  PostInput,
   UpdateBudgetRequest,
 } from '@/types/event'
 
@@ -88,4 +91,24 @@ export const eventApi = {
     unwrap<BudgetPlanResponse>(
       apiClient.delete(`/v1/events/${eventId}/budgets/${budgetId}`, { params: { userId } }),
     ),
+
+  /** 공지 목록 — 최신순 Slice 페이징. */
+  posts: (eventId: number, page = 0, size = 20) =>
+    unwrap<EventPostSlice>(
+      apiClient.get(`/v1/events/${eventId}/posts`, { params: { page, size } }),
+    ),
+
+  /** 공지 작성 — 총대만. fileIds 로 다중 이미지 첨부. 참여자에게 알림 발송. */
+  createPost: (userId: number, eventId: number, body: PostInput) =>
+    unwrap<EventPost>(apiClient.post(`/v1/events/${eventId}/posts`, body, { params: { userId } })),
+
+  /** 공지 수정 — 총대(작성자)만. fileIds 로 이미지 목록 완전 교체. */
+  updatePost: (userId: number, eventId: number, postId: number, body: PostInput) =>
+    unwrap<EventPost>(
+      apiClient.patch(`/v1/events/${eventId}/posts/${postId}`, body, { params: { userId } }),
+    ),
+
+  /** 공지 삭제 — 총대(작성자)만. Soft delete. */
+  deletePost: (userId: number, eventId: number, postId: number) =>
+    unwrap<string>(apiClient.delete(`/v1/events/${eventId}/posts/${postId}`, { params: { userId } })),
 }
