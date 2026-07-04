@@ -17,7 +17,9 @@ import type {
   ParticipateResponse,
   ParticipatingEventsResponse,
   PostInput,
+  SettlementResponse,
   UpdateBudgetRequest,
+  UpdateEventRequest,
 } from '@/types/event'
 
 /**
@@ -89,6 +91,33 @@ export function useEventDetail(eventId: number | null) {
     staleTime: 30_000,
     retry: false,
     queryFn: () => eventApi.detail(eventId as number),
+  })
+}
+
+/**
+ * 이벤트 수정 (총대). 소개·기간·진행시간 갱신 후 상세 캐시를 교체하고 목록/지도를 무효화한다.
+ * 총대아님 4006 · 진행중아님 4004 · 기간오류 4002 는 페이지에서 status 로 분기.
+ */
+export function useUpdateEvent(eventId: number) {
+  const qc = useQueryClient()
+  return useMutation<EventDetailResponse, ApiError, UpdateEventRequest>({
+    mutationFn: (body) => eventApi.update(eventId, body),
+    onSuccess: (event) => {
+      qc.setQueryData(['events', 'detail', eventId], event)
+      void qc.invalidateQueries({ queryKey: ['events', 'list'] })
+      void qc.invalidateQueries({ queryKey: ['events', 'map'] })
+    },
+  })
+}
+
+/** 정산 거래내역 (참여자/총대). 미참여(4001)는 페이지에서 빈 상태로 분기. */
+export function useEventSettlement(eventId: number | null) {
+  return useQuery<SettlementResponse, ApiError>({
+    queryKey: ['events', 'settlement', eventId],
+    enabled: eventId !== null,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: () => eventApi.settlement(eventId as number),
   })
 }
 

@@ -13,6 +13,8 @@ export const ErrorCode = {
   INSUFFICIENT_BALANCE: 3014,
   /** 이벤트 단건 조회 — 대상 이벤트 없음 */
   EVENT_NOT_FOUND: 4000,
+  /** 정산 내역 조회 — 참여하지 않은 이벤트(참여자/총대만 열람) */
+  EVENT_NOT_PARTICIPATED: 4001,
   /** 이벤트 생성 — 기간(시작/종료) 값이 유효하지 않음 */
   EVENT_INVALID_PERIOD: 4002,
   /** 이벤트 생성 — 직접입력(MANUAL) 경로에서 위치 정보 누락 */

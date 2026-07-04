@@ -201,20 +201,73 @@ export interface EventDetailResponse {
   targetAmount: number
   /** 현재 모금액(원) */
   currentAmount: number
-  /** 모금률(%) */
+  /** 모금률 (0~1 비율. 예: 0.3333) */
   fundingRate: number
+  /** 참여자 수 */
+  participantCount: number
   /** 모금 상태 (ONGOING 등 서버 enum) */
   status: string
   /** 모금 시작일 (YYYY-MM-DD) */
   startDate: string
   /** 모금 종료일 (YYYY-MM-DD) */
   endDate: string
+  /** 진행 시작 시간 ("HH:mm:ss", 미설정 시 null) */
+  operatingStartTime: string | null
+  /** 진행 종료 시간 ("HH:mm:ss", 미설정 시 null) */
+  operatingEndTime: string | null
   address: string
   latitude: number
   longitude: number
   siDo: string
   siGunGu: string
   legalDong: string
+}
+
+/** ===== 이벤트 수정 (PATCH /v1/events/{eventId}) — 총대만 =====
+ *  소개·기간·진행시간 갱신. 응답은 EventDetailResponse 전체. */
+export interface UpdateEventRequest {
+  /** 소개 (최대 5000자, 선택) */
+  description?: string
+  /** 모금 시작일 (YYYY-MM-DD) */
+  startDate: string
+  /** 모금 종료일 (YYYY-MM-DD, ≥ startDate) */
+  endDate: string
+  /** 진행 시작 시간 (HH:mm, 선택) */
+  operatingStartTime?: string
+  /** 진행 종료 시간 (HH:mm, 선택) */
+  operatingEndTime?: string
+}
+
+/** ===== 정산 거래내역 (GET /v1/events/{eventId}/settlement) — 참여자/총대만 =====
+ *  입금(모금 참여) + 출금(집행) 내역과 합계. 미참여 시 4001. */
+
+/** 입금 상태. ACTIVE(참여) · REFUNDED(환불됨). */
+export type DepositStatus = 'ACTIVE' | 'REFUNDED'
+
+/** 입금(모금 참여) 한 건. name 은 서버에서 마스킹된 이름. */
+export interface SettlementDeposit {
+  name: string
+  amount: number
+  /** 참여 시각 (ISO 8601) */
+  date: string
+  status: DepositStatus
+}
+
+/** 출금(집행) 한 건. */
+export interface SettlementExecution {
+  title: string
+  amount: number
+  /** 집행 시각 (ISO 8601) */
+  executedAt: string
+}
+
+export interface SettlementResponse {
+  deposits: SettlementDeposit[]
+  executions: SettlementExecution[]
+  /** 총 모금액(원) */
+  totalDeposit: number
+  /** 총 집행액(원) */
+  totalExecuted: number
 }
 
 /** ===== 모금 참여 (POST /v1/events/{eventId}/participate?userId=) ===== */

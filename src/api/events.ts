@@ -17,7 +17,9 @@ import type {
   ParticipateResponse,
   ParticipatingEventsResponse,
   PostInput,
+  SettlementResponse,
   UpdateBudgetRequest,
+  UpdateEventRequest,
 } from '@/types/event'
 
 export const eventApi = {
@@ -51,6 +53,17 @@ export const eventApi = {
   /** 이벤트 단건 상세 (참여 화면용). 없으면 4000. */
   detail: (eventId: number) =>
     unwrap<EventDetailResponse>(apiClient.get(`/v1/events/${eventId}`)),
+
+  /**
+   * 이벤트 수정 (총대만) — 소개·기간·진행시간. 응답은 상세 전체.
+   * 총대아님 4006 · 진행중아님 4004 · 기간오류 4002 · 없음 4000.
+   */
+  update: (eventId: number, body: UpdateEventRequest) =>
+    unwrap<EventDetailResponse>(apiClient.patch(`/v1/events/${eventId}`, body)),
+
+  /** 정산 거래내역 (참여자/총대만) — 입금·출금 내역 + 합계. 미참여 4001 · 없음 4000. */
+  settlement: (eventId: number) =>
+    unwrap<SettlementResponse>(apiClient.get(`/v1/events/${eventId}/settlement`)),
 
   /**
    * 모금 참여 (결제+입금) — amount(원) 참여. 토큰 부족 시 통장 자동충전→지갑→에스크로 입금.

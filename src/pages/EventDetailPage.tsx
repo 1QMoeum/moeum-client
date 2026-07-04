@@ -3,6 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
   Bell,
   ChevronLeft,
   ChevronRight,
@@ -14,13 +16,20 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react'
-import { useDeletePost, useEventBudgets, useEventDetail, useEventPosts } from '@/hooks/events'
+import {
+  useDeletePost,
+  useEventBudgets,
+  useEventDetail,
+  useEventPosts,
+  useEventSettlement,
+} from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
 import { getUserIdFromToken } from '@/lib/jwt'
 import { ErrorCode } from '@/constants/errorCodes'
 import Button from '@/components/ui/Button'
 import BudgetEditor from '@/components/events/BudgetEditor'
 import NoticeComposer from '@/components/events/NoticeComposer'
+import EventEditor from '@/components/events/EventEditor'
 import type { BudgetItem, BudgetStatus, EventDetailResponse, EventPost } from '@/types/event'
 
 /* ===== 디자인 토큰 (Figma: 금사빠_moeum) ===== */
@@ -43,6 +52,10 @@ const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 const shortDate = (d: string) => d.replaceAll('-', '.').slice(2)
 /** 2026-06-24 → 2026.06.24 */
 const dotDate = (d: string) => d.replaceAll('-', '.')
+/** 모금률 → 정수 %. 서버가 비율(0.33)로 주면 100 곱하고, 이미 %(33)면 그대로. */
+const toPercent = (rate: number) => Math.round(rate <= 1 ? rate * 100 : rate)
+/** "HH:mm:ss" | null → "HH:mm" (없으면 빈 문자열) */
+const hm = (t: string | null) => (t ? t.slice(0, 5) : '')
 
 /** endDate(YYYY-MM-DD)까지 남은 일수. 지났으면 0. */
 function daysLeft(endDate: string): number {
@@ -166,6 +179,7 @@ function EventView({
   const [liked, setLiked] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   const isOwner = getUserIdFromToken(accessToken) === event.creatorId
@@ -192,8 +206,7 @@ function EventView({
 
   const startEdit = () => {
     setMenuOpen(false)
-    setTab('budget')
-    setEditing(true)
+    setEditingEvent(true)
   }
 
   return (
@@ -355,6 +368,8 @@ function EventView({
         <BudgetEditorGate event={event} onClose={() => setEditing(false)} />
       )}
 
+      {editingEvent && <EventEditor event={event} onClose={() => setEditingEvent(false)} />}
+
       {toast && (
         <div
           role="status"
@@ -421,7 +436,8 @@ function MenuItem({
 
 /* ===== 공통 헤더 (진행률 링 + 통계) ===== */
 function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: number; ongoing: boolean }) {
-  const rate = Math.min(event.fundingRate, 100)
+  const pct = toPercent(event.fundingRate)
+  const rate = Math.min(pct, 100)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
@@ -534,9 +550,9 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           padding: '16px 8px',
         }}
       >
-        <Stat label="달성률" value={`${event.fundingRate}%`} />
+        <Stat label="참여자" value={`${event.participantCount}명`} />
         <StatDivider />
-        <Stat label="목표 금액" value={won(event.targetAmount)} />
+        <Stat label="달성률" value={`${pct}%`} />
         <StatDivider />
         <Stat label="마감일" value={shortDate(event.endDate)} />
       </section>
@@ -565,6 +581,13 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
 
         <Hr />
         <InfoBlock label="이벤트 날짜" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
+
+        {event.operatingStartTime && event.operatingEndTime && (
+          <>
+            <Hr />
+            <InfoBlock label="진행 시간" value={`${hm(event.operatingStartTime)} ~ ${hm(event.operatingEndTime)}`} />
+          </>
+        )}
 
         <Hr />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1030,15 +1053,104 @@ function NoticeCard({
 /* ===== 정산 내역 탭 ===== */
 type SettleFilter = 'all' | 'in' | 'out'
 
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+/** 정산 거래 한 줄 (입금/출금 통합). */
+type Tx = {
+  id: string
+  kind: 'in' | 'out'
+  name: string
+  memo: string
+  amount: number
+  refunded: boolean
+  time: string
+  dayKey: string
+  dayLabel: string
+  monthLabel: string
+  ts: number
+}
+
+/** ISO → 시각·일자 라벨. */
+function txParts(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return {
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    dayKey: `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`,
+    dayLabel: `${d.getMonth() + 1}.${d.getDate()} (${WEEKDAYS[d.getDay()]})`,
+    monthLabel: `${d.getFullYear()}.${pad(d.getMonth() + 1)}`,
+    ts: d.getTime(),
+  }
+}
+
 function SettlementTab({ event }: { event: EventDetailResponse }) {
   const [filter, setFilter] = useState<SettleFilter>('all')
-  const { data } = useEventBudgets(event.eventId)
+  const { data, isPending, error, refetch, isFetching } = useEventSettlement(event.eventId)
 
-  const items = data?.items ?? []
-  const executed = items.filter((i) => i.status === 'EXECUTED').reduce((s, i) => s + i.amount, 0)
-  const refund = items.filter((i) => i.status === 'REFUNDED').reduce((s, i) => s + i.amount, 0)
-  const raised = event.currentAmount
-  const remaining = Math.max(0, raised - executed - refund)
+  if (isPending) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ height: 64, borderRadius: 12, background: '#eef0f3' }} />
+        {[0, 1].map((i) => (
+          <div key={i} style={{ height: 84, borderRadius: 20, background: '#eef0f3' }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    // 미참여(4001) — 에러 대신 안내 빈 상태
+    if (error.status === ErrorCode.EVENT_NOT_PARTICIPATED) {
+      return (
+        <Card gap={12} radius={20}>
+          <EmptyState text="참여 후 정산 내역을 볼 수 있어요." sub="이 이벤트에 참여하면 입금·집행 내역이 공개됩니다." />
+        </Card>
+      )
+    }
+    return (
+      <ErrorState
+        message={`${error.message} (${error.status ?? '?'})`}
+        onRetry={() => void refetch()}
+        retrying={isFetching}
+      />
+    )
+  }
+
+  const deposits = data?.deposits ?? []
+  const executions = data?.executions ?? []
+  const totalDeposit = data?.totalDeposit ?? 0
+  const totalExecuted = data?.totalExecuted ?? 0
+  const refund = deposits.filter((d) => d.status === 'REFUNDED').reduce((s, d) => s + d.amount, 0)
+  const remaining = Math.max(0, totalDeposit - totalExecuted - refund)
+
+  // 통합 거래 목록
+  const txs: Tx[] = [
+    ...deposits.map((d, i) => {
+      const p = txParts(d.date)
+      return { id: `d${i}`, kind: 'in' as const, name: d.name, memo: '모금 참여', amount: d.amount, refunded: d.status === 'REFUNDED', ...p }
+    }),
+    ...executions.map((e, i) => {
+      const p = txParts(e.executedAt)
+      return { id: `e${i}`, kind: 'out' as const, name: e.title, memo: '집행', amount: e.amount, refunded: false, ...p }
+    }),
+  ]
+
+  const filtered = txs
+    .filter((t) => filter === 'all' || (filter === 'in' ? t.kind === 'in' : t.kind === 'out'))
+    .sort((a, b) => b.ts - a.ts)
+
+  // 일자별 그룹
+  const groups: Array<{ dayLabel: string; items: Tx[] }> = []
+  let curKey = ''
+  for (const t of filtered) {
+    if (t.dayKey !== curKey) {
+      groups.push({ dayLabel: t.dayLabel, items: [] })
+      curKey = t.dayKey
+    }
+    groups[groups.length - 1].items.push(t)
+  }
+
+  const monthLabel = filtered[0]?.monthLabel ?? dotDate(event.startDate).slice(0, 7)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -1046,8 +1158,8 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <SectionTitle>전체 요약</SectionTitle>
         <div style={{ display: 'flex', gap: 8 }}>
-          <SummaryCard label="총 모금액" value={won(raised)} />
-          <SummaryCard label="총 집행액" value={won(executed)} />
+          <SummaryCard label="총 모금액" value={won(totalDeposit)} />
+          <SummaryCard label="총 집행액" value={won(totalExecuted)} />
           <SummaryCard label="환불 예정액" value={won(refund)} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1063,17 +1175,7 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
 
       {/* 필터 토글 */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            background: '#fff',
-            borderRadius: 24,
-            boxShadow: CARD_SHADOW,
-            padding: 4,
-          }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 24, boxShadow: CARD_SHADOW, padding: 4 }}>
           {([
             { key: 'all', label: '전체' },
             { key: 'in', label: '입금' },
@@ -1107,18 +1209,83 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
 
       {/* 월 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: INK800, letterSpacing: '-0.02em' }}>
-          {dotDate(event.startDate).slice(0, 7)}
-        </span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: INK800, letterSpacing: '-0.02em' }}>{monthLabel}</span>
         <ChevronRight size={22} color={GRAY500} />
       </div>
 
-      <Card gap={12} radius={20}>
-        <EmptyState
-          text="거래 내역이 아직 없어요."
-          sub="모금 참여(입금)와 집행(출금) 내역이 이곳에 표시됩니다."
-        />
-      </Card>
+      {groups.length === 0 ? (
+        <Card gap={12} radius={20}>
+          <EmptyState text="거래 내역이 아직 없어요." sub="모금 참여(입금)와 집행(출금) 내역이 이곳에 표시됩니다." />
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {groups.map((g) => (
+            <div key={g.dayLabel} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <span style={{ fontSize: 16, fontWeight: 500, color: GRAY600, letterSpacing: '-0.01em' }}>{g.dayLabel}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {g.items.map((t) => (
+                  <div key={t.id} style={{ background: '#fff', borderRadius: 20, boxShadow: CARD_SHADOW, padding: '20px 16px' }}>
+                    <SettleRow tx={t} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SettleRow({ tx }: { tx: Tx }) {
+  const isIn = tx.kind === 'in'
+  const color = isIn ? VIOLET : AQUA
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          background: color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {isIn ? <ArrowDown size={16} color="#fff" /> : <ArrowUp size={16} color="#fff" />}
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK800, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {tx.name}
+          </span>
+          {tx.refunded && (
+            <span style={{ flexShrink: 0, padding: '1px 7px', borderRadius: 4, fontSize: 12, fontWeight: 500, color: GRAY500, background: GRAY50, letterSpacing: '-0.01em' }}>
+              환불됨
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 16, fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+          <span>{tx.memo}</span>
+          <span>{tx.time}</span>
+        </div>
+      </div>
+      <span
+        style={{
+          fontSize: 16,
+          fontWeight: 600,
+          color: tx.refunded ? GRAY500 : color,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+          flexShrink: 0,
+          textDecoration: tx.refunded ? 'line-through' : 'none',
+        }}
+      >
+        {isIn ? '+' : '-'}
+        {won(tx.amount)}
+      </span>
     </div>
   )
 }
