@@ -12,8 +12,8 @@ export interface ParticipatingEvent {
   currentAmount: number
   /** 참여자 수 */
   participantCount: number
-  /** 진행일 (YY.MM.DD) */
-  startedAt: string
+  /** 마감일 (YY.MM.DD) */
+  deadline: string
   /** 대표 이미지 (없으면 그라데이션 플레이스홀더) */
   imageUrl?: string
 }
@@ -26,7 +26,7 @@ export const MOCK_PARTICIPATING_EVENTS: ParticipatingEvent[] = [
     targetAmount: 1_500_000,
     currentAmount: 1_390_000,
     participantCount: 220,
-    startedAt: '26.06.24',
+    deadline: '26.06.24',
   },
   {
     eventId: 2,
@@ -35,7 +35,7 @@ export const MOCK_PARTICIPATING_EVENTS: ParticipatingEvent[] = [
     targetAmount: 3_000_000,
     currentAmount: 1_620_000,
     participantCount: 318,
-    startedAt: '26.06.18',
+    deadline: '26.06.18',
   },
   {
     eventId: 3,
@@ -44,6 +44,6 @@ export const MOCK_PARTICIPATING_EVENTS: ParticipatingEvent[] = [
     targetAmount: 5_000_000,
     currentAmount: 2_050_000,
     participantCount: 564,
-    startedAt: '26.06.10',
+    deadline: '26.06.10',
   },
 ]

@@ -1,4 +1,4 @@
-import { Bell, Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
+import { Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import type { UIEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -35,7 +35,7 @@ export default function MainPage() {
         style={{
           maxWidth: 480,
           margin: '0 auto',
-          padding: '8px 0 96px',
+          padding: '0 0 140px',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -46,37 +46,40 @@ export default function MainPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '12px 24px 4px',
+            height: 56,
+            padding: '10px 20px',
+            boxSizing: 'border-box',
           }}
         >
-          <MoeumLogo height={28} />
-          <button
-            type="button"
-            aria-label="알림"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 8,
-              cursor: 'pointer',
-              color: 'var(--color-text-primary)',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <Bell size={24} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <MoeumLogo height={28} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HeaderIconButton label="알림">
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V3.75H10.4426C8.21751 3.75 6.37591 5.48001 6.23702 7.70074L6.01601 11.2342C5.93175 12.5814 5.47946 13.8797 4.7084 14.9876C4.01172 15.9886 4.63194 17.3712 5.84287 17.5165L9.25 17.9254V19C9.25 20.5188 10.4812 21.75 12 21.75C13.5188 21.75 14.75 20.5188 14.75 19V17.9254L18.1571 17.5165C19.3681 17.3712 19.9883 15.9886 19.2916 14.9876C18.5205 13.8797 18.0682 12.5814 17.984 11.2342L17.763 7.70074C17.6241 5.48001 15.7825 3.75 13.5574 3.75H13V3ZM10.75 19C10.75 19.6904 11.3096 20.25 12 20.25C12.6904 20.25 13.25 19.6904 13.25 19V18.25H10.75V19Z"
+              />
+            </HeaderIconButton>
+            <HeaderIconButton label="내 정보">
+              <path d="M12 3.75C9.92893 3.75 8.25 5.42893 8.25 7.5C8.25 9.57107 9.92893 11.25 12 11.25C14.0711 11.25 15.75 9.57107 15.75 7.5C15.75 5.42893 14.0711 3.75 12 3.75Z" />
+              <path d="M8 13.25C5.92893 13.25 4.25 14.9289 4.25 17V18.1883C4.25 18.9415 4.79588 19.5837 5.53927 19.7051C9.8181 20.4037 14.1819 20.4037 18.4607 19.7051C19.2041 19.5837 19.75 18.9415 19.75 18.1883V17C19.75 14.9289 18.0711 13.25 16 13.25H15.6591C15.4746 13.25 15.2913 13.2792 15.1159 13.3364L14.2504 13.6191C12.7881 14.0965 11.2119 14.0965 9.74959 13.6191L8.88407 13.3364C8.70869 13.2792 8.52536 13.25 8.34087 13.25H8Z" />
+            </HeaderIconButton>
+          </div>
         </header>
 
         {/* 세그먼트 토글 */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 24px 4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 24px 0' }}>
           <div
             role="tablist"
             aria-label="홈 보기 전환"
             style={{
               display: 'inline-flex',
-              padding: 5,
-              borderRadius: 999,
+              padding: 4,
+              borderRadius: 24,
               background: 'var(--color-surface)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              boxShadow: '0 0 16px rgba(21,21,21,0.04)',
             }}
           >
             <SegmentButton label="참여중인 이벤트" active={tab === 'events'} onClick={() => setTab('events')} />
@@ -97,13 +100,13 @@ export default function MainPage() {
                 WebkitOverflowScrolling: 'touch',
               }}
             >
-              {events.map((ev) => (
-                <EventSlide key={ev.eventId} event={ev} />
+              {events.map((ev, i) => (
+                <EventSlide key={ev.eventId} event={ev} active={i === index} />
               ))}
             </div>
 
             {/* 인디케이터 */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '20px 0 8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, padding: '20px 0 0' }}>
               {events.map((ev, i) => (
                 <span
                   key={ev.eventId}
@@ -120,26 +123,24 @@ export default function MainPage() {
             </div>
 
             {/* 통계 카드 */}
-            <div style={{ padding: '12px 24px 0' }}>
+            <div style={{ padding: '32px 24px 0' }}>
               <div
                 style={{
                   display: 'flex',
                   background: 'var(--color-surface)',
-                  borderRadius: 'var(--radius-xl)',
-                  border: '1px solid var(--color-border)',
-                  padding: '20px 8px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                  borderRadius: 24,
+                  padding: '16px 8px',
+                  boxShadow: '0 0 8px rgba(21,21,21,0.04)',
                 }}
               >
                 <Stat label="참여자" value={`${won(active.participantCount)}명`} />
                 <Divider />
                 <Stat
                   label="달성률"
-                  value={`${Math.round((active.currentAmount / active.targetAmount) * 100)} %`}
-                  emphasize
+                  value={`${Math.round((active.currentAmount / active.targetAmount) * 100)}%`}
                 />
                 <Divider />
-                <Stat label="진행일" value={active.startedAt} />
+                <Stat label="마감일" value={active.deadline} />
               </div>
             </div>
           </>
@@ -169,14 +170,16 @@ function SegmentButton({
       aria-selected={active}
       onClick={onClick}
       style={{
-        padding: '10px 20px',
-        borderRadius: 999,
+        padding: '8px 16px',
+        borderRadius: 24,
         border: 'none',
         cursor: 'pointer',
-        fontSize: 15,
-        fontWeight: 700,
-        background: active ? '#6e6e76' : 'transparent',
-        color: active ? '#fff' : 'var(--color-text-secondary)',
+        fontSize: 14,
+        fontWeight: 500,
+        letterSpacing: '-0.02em',
+        lineHeight: 1.5,
+        background: active ? 'var(--color-accent)' : 'transparent',
+        color: active ? '#fff' : '#2f2f3b',
         transition: 'background 0.2s ease, color 0.2s ease',
         WebkitTapHighlightColor: 'transparent',
       }}
@@ -186,7 +189,7 @@ function SegmentButton({
   )
 }
 
-function EventSlide({ event }: { event: ParticipatingEvent }) {
+function EventSlide({ event, active }: { event: ParticipatingEvent; active: boolean }) {
   const percent = (event.currentAmount / event.targetAmount) * 100
   return (
     <section
@@ -196,23 +199,57 @@ function EventSlide({ event }: { event: ParticipatingEvent }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '16px 24px 0',
+        padding: '24px 24px 0',
       }}
     >
-      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 16,
+          fontWeight: 600,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          color: '#151519',
+        }}
+      >
         {event.title}
       </h1>
-      <p style={{ margin: '8px 0 0', fontSize: 15, color: 'var(--color-text-secondary)' }}>
-        {`D-${event.daysLeft} · 목표 ${won(event.targetAmount)}원`}
-      </p>
-      <p style={{ margin: '14px 0 24px', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+        <span
+          style={{
+            padding: '0 8px',
+            borderRadius: 4,
+            background: '#e3e1ff',
+            color: 'var(--color-accent)',
+            fontSize: 14,
+            fontWeight: 500,
+            lineHeight: 1.5,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {`D-${event.daysLeft}`}
+        </span>
+        <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#86869f' }}>
+          {`목표 ${won(event.targetAmount)}원`}
+        </span>
+      </div>
+      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span
+          style={{
+            fontSize: 36,
+            fontWeight: 700,
+            lineHeight: 1.5,
+            letterSpacing: '-0.02em',
+            color: '#0c0d0d',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {won(event.currentAmount)}
         </span>
-        <span style={{ fontSize: 20, fontWeight: 500, color: 'var(--color-text-primary)' }}>원</span>
+        <span style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>원</span>
       </p>
 
-      <ProgressRing percent={percent} size={272}>
+      <ProgressRing percent={percent} size={240} active={active}>
         <EventImage event={event} />
       </ProgressRing>
     </section>
@@ -250,17 +287,13 @@ function EventImage({ event }: { event: ParticipatingEvent }) {
   )
 }
 
-function Stat({ label, value, emphasize }: { label: string; value: string; emphasize?: boolean }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <span style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>{label}</span>
-      <span
-        style={{
-          fontSize: 20,
-          fontWeight: emphasize ? 700 : 600,
-          color: 'var(--color-text-primary)',
-        }}
-      >
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <span style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#5c5c72' }}>
+        {label}
+      </span>
+      <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#151519' }}>
         {value}
       </span>
     </div>
@@ -268,7 +301,30 @@ function Stat({ label, value, emphasize }: { label: string; value: string; empha
 }
 
 function Divider() {
-  return <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--color-border)', margin: '2px 0' }} />
+  return <div style={{ width: 1, height: 24, alignSelf: 'center', background: 'var(--color-track)' }} />
+}
+
+/** 상단 바 우측 solid 아이콘 버튼 (24px, Figma Solid 아이콘 세트). */
+function HeaderIconButton({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        display: 'flex',
+        cursor: 'pointer',
+        color: '#5c5c72',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        {children}
+      </svg>
+    </button>
+  )
 }
 
 /** 내 지갑 탭 — 예금토큰 잔액을 이벤트 탭과 같은 레이아웃(제목·계좌·금액·구슬)으로 표시. */
