@@ -88,6 +88,9 @@ export default function MainPage() {
         </div>
 
         {tab === 'events' ? (
+          events.length === 0 ? (
+            <EmptyEvents onExplore={() => navigate('/explore')} />
+          ) : (
           <>
             {/* 캐러셀 */}
             <div
@@ -144,6 +147,7 @@ export default function MainPage() {
               </div>
             </div>
           </>
+          )
         ) : (
           <WalletView />
         )}
@@ -284,6 +288,76 @@ function EventImage({ event }: { event: ParticipatingEvent }) {
     >
       이미지 준비중
     </div>
+  )
+}
+
+/** 참여중인 이벤트가 없을 때의 빈 상태 — 일러스트 + 안내 문구 + 탐색 유도 버튼. */
+function EmptyEvents({ onExplore }: { onExplore: () => void }) {
+  return (
+    <section
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '40px 24px 0',
+      }}
+    >
+      <img
+        src="/home-empty-events.png"
+        alt=""
+        aria-hidden
+        width={240}
+        height={240}
+        style={{ display: 'block', objectFit: 'contain' }}
+      />
+      <h1
+        style={{
+          margin: '24px 0 0',
+          fontSize: 18,
+          fontWeight: 600,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          color: '#151519',
+        }}
+      >
+        참여중인 이벤트가 없어요
+      </h1>
+      <p
+        style={{
+          margin: '12px 0 0',
+          fontSize: 14,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          color: '#86869f',
+          textAlign: 'center',
+        }}
+      >
+        마음에 드는 이벤트에 참여하고
+        <br />
+        함께 목표를 달성해보세요!
+      </p>
+      <button
+        type="button"
+        onClick={onExplore}
+        style={{
+          marginTop: 40,
+          padding: '12px 32px',
+          borderRadius: 24,
+          border: 'none',
+          background: 'var(--color-accent)',
+          color: '#fff',
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          cursor: 'pointer',
+          boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        이벤트 참여하기
+      </button>
+    </section>
   )
 }
 
