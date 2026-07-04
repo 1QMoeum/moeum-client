@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Navigate, useLocation as useRouterLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, AlertCircle, ImagePlus, ChevronDown } from 'lucide-react'
 import { useCreateEvent } from '@/hooks/events'
+import { useUploadImage } from '@/hooks/files'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
 import { toErrorMessage } from '@/api/client'
@@ -48,6 +49,7 @@ export default function CreateEventPage() {
   const aiVenue = routerState?.venue ?? null
   const accessToken = useAuthStore((s) => s.accessToken)
   const create = useCreateEvent()
+  const upload = useUploadImage()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [step, setStep] = useState<Step>(1)
@@ -58,6 +60,8 @@ export default function CreateEventPage() {
   // 01 기본정보
   const [title, setTitle] = useState('')
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  /** 업로드 완료된 대표사진 fileId — 생성 요청의 representativeFileId 로 전달 */
+  const [photoFileId, setPhotoFileId] = useState<number | null>(null)
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -89,8 +93,11 @@ export default function CreateEventPage() {
 
   const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) setPhotoPreview(URL.createObjectURL(file))
-    // 대표사진 업로드 API(representativeFileId 발급)는 아직 없어 미리보기만 한다.
+    if (!file) return
+    setPhotoPreview(URL.createObjectURL(file))
+    // presigned URL → S3 PUT → 완료 알림. 성공하면 fileId 를 생성 요청에 연결한다.
+    setPhotoFileId(null)
+    upload.mutate(file, { onSuccess: (fileId) => setPhotoFileId(fileId) })
   }
 
   const goBack = () => {
@@ -120,6 +127,7 @@ export default function CreateEventPage() {
       startDate,
       endDate,
       targetAmount,
+      ...(photoFileId != null ? { representativeFileId: photoFileId } : {}),
     }
     let body: CreateEventRequest
     if (aiActive && aiVenue) {
@@ -152,7 +160,7 @@ export default function CreateEventPage() {
   const nextDisabled =
     (step === 1 && !step1Valid) ||
     (step === 2 && !step2Valid) ||
-    (step === 3 && (!step3Valid || create.isPending))
+    (step === 3 && (!step3Valid || create.isPending || upload.isPending))
 
   return (
     <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
@@ -285,10 +293,20 @@ export default function CreateEventPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   onChange={onPickPhoto}
                   style={{ display: 'none' }}
                 />
+                {upload.isPending && (
+                  <span style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#8b95a1' }}>
+                    사진 업로드 중…
+                  </span>
+                )}
+                {upload.error && (
+                  <span style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#e03e3e' }}>
+                    {upload.error.message}
+                  </span>
+                )}
               </Field>
 
               <Field label="이벤트 설명">
