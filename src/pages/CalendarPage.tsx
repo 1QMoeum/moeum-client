@@ -20,6 +20,9 @@ const dotDate = (iso: string) => iso.replaceAll('-', '.')
 const sameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 
+/** 날짜 셀(주) 한 줄 높이(px) — 드래그 시 높이 보간 기준 */
+const ROW_H = 52
+
 /** 사용 계획 상태 → 칩 라벨. 모르는 코드는 그대로 노출. */
 const STATUS_LABELS: Record<string, string> = {
   PENDING: '승인대기',
@@ -61,6 +64,8 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState(today)
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [expanded, setExpanded] = useState(false)
+  /** 핸들 드래그 진행 상태 (시작 Y, 이동량 px) */
+  const [drag, setDrag] = useState<{ startY: number; delta: number } | null>(null)
   const [openCardKey, setOpenCardKey] = useState<string | null>(null)
 
   const yearMonth = `${view.year}-${pad(view.month + 1)}`
@@ -74,9 +79,12 @@ export default function CalendarPage() {
   }, [data])
 
   const weeks = useMemo(() => monthGrid(view.year, view.month), [view])
-  const visibleWeeks = expanded
-    ? weeks
-    : [weeks.find((w) => w.some((d) => sameDay(d, selected))) ?? weeks[0]]
+  const selWeekIndex = Math.max(0, weeks.findIndex((w) => w.some((d) => sameDay(d, selected))))
+
+  // 펼침 진행도 0(주간)~1(월 전체). 드래그 중엔 이동량을 비율로 반영하고, 놓으면 0/1로 스냅.
+  const range = (weeks.length - 1) * ROW_H
+  const base = expanded ? 1 : 0
+  const progress = drag ? Math.min(1, Math.max(0, base + drag.delta / range)) : base
 
   const selectedKey = dayKey(selected)
   const entries = entriesByDate[selectedKey] ?? []
@@ -183,35 +191,67 @@ export default function CalendarPage() {
                 ))}
               </div>
 
-              {visibleWeeks.map((week) => (
-                <div key={dayKey(week[0])} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-                  {week.map((d) => (
-                    <DayCell
-                      key={dayKey(d)}
-                      date={d}
-                      inMonth={d.getMonth() === view.month}
-                      isToday={sameDay(d, today)}
-                      isSelected={sameDay(d, selected)}
-                      dots={(entriesByDate[dayKey(d)] ?? []).map((e) => entryColor(e.type))}
-                      onSelect={() => selectDay(d)}
-                    />
+              {/* 월 전체를 항상 렌더하고, 높이·오프셋을 진행도로 보간해 주간↔월 전환 */}
+              <div
+                style={{
+                  height: ROW_H + progress * range,
+                  overflow: 'hidden',
+                  transition: drag ? 'none' : 'height 0.25s ease',
+                }}
+              >
+                <div
+                  style={{
+                    transform: `translateY(-${selWeekIndex * ROW_H * (1 - progress)}px)`,
+                    transition: drag ? 'none' : 'transform 0.25s ease',
+                  }}
+                >
+                  {weeks.map((week) => (
+                    <div key={dayKey(week[0])} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                      {week.map((d) => (
+                        <DayCell
+                          key={dayKey(d)}
+                          date={d}
+                          inMonth={d.getMonth() === view.month}
+                          isToday={sameDay(d, today)}
+                          isSelected={sameDay(d, selected)}
+                          dots={(entriesByDate[dayKey(d)] ?? []).map((e) => entryColor(e.type))}
+                          onSelect={() => selectDay(d)}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* 펼침/접힘 핸들 */}
+            {/* 펼침/접힘 핸들 — 드래그(위/아래)와 탭 모두 지원 */}
             <button
               type="button"
-              onClick={() => setExpanded((v) => !v)}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId)
+                setDrag({ startY: e.clientY, delta: 0 })
+              }}
+              onPointerMove={(e) => {
+                const y = e.clientY
+                setDrag((d) => (d ? { ...d, delta: y - d.startY } : d))
+              }}
+              onPointerUp={() => {
+                if (!drag) return
+                // 6px 미만 이동은 탭으로 간주해 토글, 그 외엔 드래그 진행도 기준 스냅
+                if (Math.abs(drag.delta) < 6) setExpanded((v) => !v)
+                else setExpanded(progress >= 0.5)
+                setDrag(null)
+              }}
+              onPointerCancel={() => setDrag(null)}
               aria-label={expanded ? '캘린더 접기' : '캘린더 펼치기'}
               aria-expanded={expanded}
               style={{
                 background: 'none',
                 border: 'none',
                 padding: '6px 24px',
-                cursor: 'pointer',
+                cursor: 'grab',
                 display: 'flex',
+                touchAction: 'none',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
