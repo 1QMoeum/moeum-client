@@ -1,0 +1,26 @@
+{
+  "name": "모음",
+  "short_name": "모음",
+  "description": "팬 모금 에스크로 서비스 모음",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#8B5CF6",
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/moeum-favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/moeum-logo.svg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,9 +1,15 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import MoeumLogo from '@/components/ui/MoeumLogo'
 import Button from '@/components/ui/Button'
 import LanguageSelector from '@/components/ui/LanguageSelector'
+import InstallPromptModal from '@/components/pwa/InstallPromptModal'
+import { useIsStandalone } from '@/hooks/pwa'
+
+const INSTALL_DISMISSED_AT_KEY = 'moeum:pwa-install-dismissed-at'
+const INSTALL_PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
 
 /**
  * 시작 화면.
@@ -16,6 +22,23 @@ export default function HomePage() {
   const hasRefresh = useAuthStore((s) => !!s.refreshToken)
   const isKorean = (i18n.resolvedLanguage ?? 'ko') === 'ko'
   const ctaPath = hasRefresh ? '/login' : isKorean ? '/kyc' : '/kyc/foreign'
+
+  const standalone = useIsStandalone()
+  const [showInstall, setShowInstall] = useState(false)
+
+  // 이미 홈화면 설치된 상태(standalone)이거나 24h 내 dismiss 이력이 있으면 노출 안 함.
+  useEffect(() => {
+    if (standalone) return
+    const dismissedAt = Number(localStorage.getItem(INSTALL_DISMISSED_AT_KEY) ?? 0)
+    if (Date.now() - dismissedAt < INSTALL_PROMPT_COOLDOWN_MS) return
+    const timer = setTimeout(() => setShowInstall(true), 800)
+    return () => clearTimeout(timer)
+  }, [standalone])
+
+  const handleDismissInstall = () => {
+    localStorage.setItem(INSTALL_DISMISSED_AT_KEY, String(Date.now()))
+    setShowInstall(false)
+  }
 
   return (
     <main
@@ -72,6 +95,8 @@ export default function HomePage() {
       <Button onClick={() => navigate(ctaPath)}>
         {hasRefresh ? t('home.ctaLogin') : t('home.ctaStart')}
       </Button>
+
+      <InstallPromptModal open={showInstall} onDismiss={handleDismissInstall} />
     </main>
   )
 }
