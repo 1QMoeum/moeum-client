@@ -10,9 +10,14 @@ import Button from '@/components/ui/Button'
 export default function MyDataConsentPage() {
   const navigate = useNavigate()
   const accessToken = useAuthStore((s) => s.accessToken)
+  const userType = useAuthStore((s) => s.userType)
 
   if (!accessToken) {
     return <Navigate to="/" replace />
+  }
+  // 외국인은 MyData 대신 Plaid 흐름을 사용.
+  if (userType === 'FOREIGN') {
+    return <Navigate to="/plaid/consent" replace />
   }
 
   return (

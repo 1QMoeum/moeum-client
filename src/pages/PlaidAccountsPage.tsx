@@ -1,33 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/api/client'
-import { mydataApi } from '@/api/mydata'
+import { plaidApi } from '@/api/plaid'
 import { accountApi } from '@/api/account'
 import { useAuthStore } from '@/store/auth'
 import Button from '@/components/ui/Button'
-import HanaLogo from '@/components/icons/HanaLogo'
-import type { MyDataAccountListItem } from '@/types/api'
-
-type AccountWithBalance = MyDataAccountListItem & { balance_amt: number }
-
-interface BankBrand {
-  short: string
-  display: string
-  color: string
-  fg: string
-}
+import { resolvePlaidBrand } from '@/constants/bankBrand'
+import type { PlaidAccountListItem } from '@/types/api'
 
 /**
- * 마이데이터 계좌 목록 + 잔액 + 선택.
- * Toss In-app Design System 톤 차용 — 카드 listItem, 우측 큰 잔액, sticky CTA.
+ * Plaid 계좌 목록 + 잔액 + 선택 (외국인).
+ * MyDataAccountsPage 의 외국인 미러. 서버가 이미 balances 를 목록 응답에 포함해 주므로
+ * mydata 처럼 계좌별 잔액을 별도 호출할 필요는 없지만, 상세/카드 진입 시 최신 잔액이
+ * 필요한 시나리오를 대비해 잔액 API 는 준비되어 있다.
+ * 연동 가능: type='depository' AND subtype IN (checking, savings). 신용카드는 표시하되 선택 불가.
  */
-export default function MyDataAccountsPage() {
+export default function PlaidAccountsPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const accessToken = useAuthStore((s) => s.accessToken)
-  const userType = useAuthStore((s) => s.userType)
 
-  const [accounts, setAccounts] = useState<AccountWithBalance[] | null>(null)
-  const [selectedNum, setSelectedNum] = useState<string | null>(null)
+  const [accounts, setAccounts] = useState<PlaidAccountListItem[] | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,16 +30,9 @@ export default function MyDataAccountsPage() {
     let cancelled = false
     void (async () => {
       try {
-        const list = await mydataApi.accounts()
-        const balances = await Promise.all(
-          list.account_list.map((a) => mydataApi.balance(a.account_num)),
-        )
+        const res = await plaidApi.accounts()
         if (cancelled) return
-        const merged = list.account_list.map((a, i) => ({
-          ...a,
-          balance_amt: balances[i].balance_amt,
-        }))
-        setAccounts(merged)
+        setAccounts(res.accounts)
       } catch (e) {
         if (cancelled) return
         if (e instanceof ApiError) {
@@ -62,17 +50,13 @@ export default function MyDataAccountsPage() {
   if (!accessToken) {
     return <Navigate to="/" replace />
   }
-  // 외국인은 MyData 대신 Plaid 흐름을 사용.
-  if (userType === 'FOREIGN') {
-    return <Navigate to="/plaid/accounts" replace />
-  }
 
   const handleConnect = async () => {
-    if (!selectedNum) return
+    if (!selectedId) return
     setError(null)
     setSubmitting(true)
     try {
-      await accountApi.connect(selectedNum)
+      await accountApi.connect(selectedId)
       navigate('/onboarding', { replace: true })
     } catch (e) {
       if (e instanceof ApiError) {
@@ -119,9 +103,7 @@ export default function MyDataAccountsPage() {
               color: '#191f28',
             }}
           >
-            예금 토큰 충전 계좌를
-            <br />
-            선택해주세요
+            {t('plaid.accounts.title')}
           </h1>
           <p
             style={{
@@ -132,7 +114,8 @@ export default function MyDataAccountsPage() {
               letterSpacing: '-0.01em',
             }}
           >
-            예금 토큰 충전·환불에 사용됩니다{count > 0 ? ` · 전체 ${count}개` : ''}
+            {t('plaid.accounts.subtitle')}
+            {count > 0 ? ` · ${t('plaid.accounts.totalCount', { count })}` : ''}
           </p>
         </header>
 
@@ -148,7 +131,7 @@ export default function MyDataAccountsPage() {
               letterSpacing: '-0.01em',
             }}
           >
-            계좌를 불러오는 중…
+            {t('plaid.accounts.loading')}
           </div>
         )}
 
@@ -156,10 +139,10 @@ export default function MyDataAccountsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {accounts.map((a) => (
               <AccountCard
-                key={a.account_num}
+                key={a.account_id}
                 item={a}
-                selected={selectedNum === a.account_num}
-                onClick={() => setSelectedNum(a.account_num)}
+                selected={selectedId === a.account_id}
+                onClick={() => setSelectedId(a.account_id)}
               />
             ))}
           </div>
@@ -193,26 +176,16 @@ export default function MyDataAccountsPage() {
           boxSizing: 'border-box',
         }}
       >
-        <Button variant="solid" onClick={handleConnect} disabled={!selectedNum || submitting}>
-          {submitting ? '등록 중…' : selectedNum ? '이 계좌로 등록' : '계좌를 선택해주세요'}
+        <Button variant="solid" onClick={handleConnect} disabled={!selectedId || submitting}>
+          {submitting
+            ? t('plaid.accounts.submitting')
+            : selectedId
+              ? t('plaid.accounts.submit')
+              : t('plaid.accounts.selectPrompt')}
         </Button>
       </footer>
     </main>
   )
-}
-
-const BANK_BRAND: Record<string, BankBrand> = {
-  '하나원큐': { short: '하나', display: '하나은행', color: '#008B84', fg: '#ffffff' },
-  'S은행': { short: 'S', display: 'S은행', color: '#0046FF', fg: '#ffffff' },
-  'K은행': { short: 'K', display: 'K은행', color: '#FFBC00', fg: '#191f28' },
-  'N은행': { short: 'N', display: 'N은행', color: '#04AA59', fg: '#ffffff' },
-}
-
-function resolveBrand(accountName: string): BankBrand {
-  for (const key of Object.keys(BANK_BRAND)) {
-    if (accountName.includes(key)) return BANK_BRAND[key]
-  }
-  return { short: '·', display: '계좌', color: '#b0b8c1', fg: '#ffffff' }
 }
 
 function AccountCard({
@@ -220,12 +193,13 @@ function AccountCard({
   selected,
   onClick,
 }: {
-  item: AccountWithBalance
+  item: PlaidAccountListItem
   selected: boolean
   onClick: () => void
 }) {
-  const isLinkable = item.account_type === '1001'
-  const brand = resolveBrand(item.account_name)
+  const isLinkable =
+    item.type === 'depository' && (item.subtype === 'checking' || item.subtype === 'savings')
+  const brand = resolvePlaidBrand(item.institution_id, item.name)
   const [pressed, setPressed] = useState(false)
 
   return (
@@ -254,37 +228,27 @@ function AccountCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {brand.short === '하나' ? (
-          <HanaLogo size={40} />
-        ) : (
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              background: brand.color,
-              color: brand.fg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: brand.short.length > 1 ? 12 : 16,
-              letterSpacing: '-0.02em',
-              flexShrink: 0,
-            }}
-          >
-            {brand.short}
-          </div>
-        )}
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            background: brand.color,
+            color: brand.fg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: 16,
+            letterSpacing: '-0.02em',
+            flexShrink: 0,
+          }}
+        >
+          {brand.short}
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              color: '#8b95a1',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {brand.display}
+          <div style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+            {item.name}
           </div>
           <div
             style={{
@@ -297,28 +261,9 @@ function AccountCard({
               whiteSpace: 'nowrap',
             }}
           >
-            {item.account_name}
+            •••• {item.mask}
           </div>
         </div>
-        {selected && (
-          <div
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #5DD9D9 0%, #A78BFA 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: 14,
-              flexShrink: 0,
-            }}
-          >
-            ✓
-          </div>
-        )}
       </div>
 
       <div
@@ -326,44 +271,29 @@ function AccountCard({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'baseline',
-          paddingLeft: 52,
+          borderTop: '1px solid #f2f4f6',
+          paddingTop: 12,
         }}
       >
-        <span
-          style={{
-            fontSize: 13,
-            color: '#8b95a1',
-            letterSpacing: '-0.01em',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {item.account_num}
+        <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+          {item.subtype}
         </span>
         <span
           style={{
-            fontSize: 20,
+            fontSize: 17,
             fontWeight: 700,
             color: '#191f28',
-            letterSpacing: '-0.02em',
             fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {item.balance_amt.toLocaleString('ko-KR')}원
-        </span>
-      </div>
-
-      {!isLinkable && (
-        <div
-          style={{
-            fontSize: 13,
-            color: '#e03e3e',
-            paddingLeft: 52,
             letterSpacing: '-0.01em',
           }}
         >
-          예적금 계좌는 예금 토큰 충전 계좌로 등록할 수 없습니다
-        </div>
-      )}
+          {item.balances.available.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{' '}
+          {item.balances.iso_currency_code}
+        </span>
+      </div>
     </button>
   )
 }

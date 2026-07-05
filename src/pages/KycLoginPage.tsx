@@ -29,7 +29,7 @@ export default function KycLoginPage() {
     if (pin.length !== 6) return
     kycLogin(
       { identityVerificationId: state.identityVerificationId, pin },
-      { onSuccess: () => navigate('/done', { replace: true }) },
+      { onSuccess: () => navigate('/onboarding', { replace: true }) },
     )
   }
 

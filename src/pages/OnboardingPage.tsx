@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useLogout } from '@/hooks/auth'
 import { accountApi } from '@/api/account'
 import { useAuthStore } from '@/store/auth'
@@ -7,6 +8,7 @@ import Button from '@/components/ui/Button'
 import HanaLogo from '@/components/icons/HanaLogo'
 import EnableNotificationModal from '@/components/notification/EnableNotificationModal'
 import { getNotificationPermissionStatus } from '@/lib/firebase'
+import { resolvePlaidBrand } from '@/constants/bankBrand'
 import type { BankAccountResponse } from '@/types/api'
 
 /**
@@ -16,11 +18,16 @@ import type { BankAccountResponse } from '@/types/api'
  *  - undefined: 로딩
  *  - null: 미연동 → "로그인 완료" + 계좌 연동하러 가기
  *  - BankAccountResponse: 연동됨 → "연동 완료" + 계좌 카드
+ *
+ * userType 이 FOREIGN 이면 "계좌 연동하러 가기" 는 /plaid/consent 로,
+ * 국내면 /mydata/consent 로 라우팅.
  */
-export default function DonePage() {
+export default function OnboardingPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const accessToken = useAuthStore((s) => s.accessToken)
   const refreshToken = useAuthStore((s) => s.refreshToken)
+  const userType = useAuthStore((s) => s.userType)
   const { mutate: logout, isPending } = useLogout()
 
   const [account, setAccount] = useState<BankAccountResponse | null | undefined>(undefined)
@@ -56,6 +63,7 @@ export default function DonePage() {
   }
 
   const isLinked = account !== null && account !== undefined
+  const linkPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
 
   return (
     <main
@@ -90,7 +98,11 @@ export default function DonePage() {
               color: '#191f28',
             }}
           >
-            {account === undefined ? '확인 중…' : isLinked ? '연동 완료' : '로그인 완료'}
+            {account === undefined
+              ? t('done.checking')
+              : isLinked
+                ? t('done.linked')
+                : t('done.loginDone')}
           </h1>
           <p
             style={{
@@ -103,10 +115,10 @@ export default function DonePage() {
             }}
           >
             {account === undefined
-              ? '계좌 연동 상태를 확인하고 있어요.'
+              ? t('done.checkingSub')
               : isLinked
-                ? '예금 토큰 충전 계좌가 등록되어 있어요.\n내 커스터디 지갑을 확인해 보세요.'
-                : '아직 예금 토큰 충전 계좌를 등록하지 않았어요.'}
+                ? t('done.linkedSub')
+                : t('done.noAccountSub')}
           </p>
         </header>
 
@@ -130,7 +142,9 @@ export default function DonePage() {
       >
         {account === null && (
           <>
-            <Button variant="solid" onClick={() => navigate('/mydata/consent')}>계좌 연동하러 가기</Button>
+            <Button variant="solid" onClick={() => navigate(linkPath)}>
+              {t('done.goLink')}
+            </Button>
             <button
               type="button"
               onClick={() => navigate('/main')}
@@ -146,13 +160,15 @@ export default function DonePage() {
                 letterSpacing: '-0.01em',
               }}
             >
-              나중에 하고 시작하기
+              {t('done.startLater')}
             </button>
           </>
         )}
         {isLinked && (
           <>
-            <Button variant="solid" onClick={() => navigate('/main')}>시작하기</Button>
+            <Button variant="solid" onClick={() => navigate('/main')}>
+              {t('done.start')}
+            </Button>
             <button
               type="button"
               onClick={() => navigate('/wallet')}
@@ -168,11 +184,11 @@ export default function DonePage() {
                 letterSpacing: '-0.01em',
               }}
             >
-              내 지갑 보기
+              {t('done.viewWallet')}
             </button>
             <button
               type="button"
-              onClick={() => navigate('/mydata/consent')}
+              onClick={() => navigate(linkPath)}
               style={{
                 all: 'unset',
                 width: '100%',
@@ -185,7 +201,7 @@ export default function DonePage() {
                 letterSpacing: '-0.01em',
               }}
             >
-              다른 계좌로 변경
+              {t('done.changeAccount')}
             </button>
           </>
         )}
@@ -206,7 +222,7 @@ export default function DonePage() {
             opacity: isPending ? 0.5 : 1,
           }}
         >
-          {isPending ? '로그아웃 중…' : '로그아웃'}
+          {isPending ? t('done.loggingOut') : t('done.logout')}
         </button>
       </footer>
       <EnableNotificationModal
@@ -218,7 +234,11 @@ export default function DonePage() {
 }
 
 function LinkedAccountCard({ account }: { account: BankAccountResponse }) {
+  const { t } = useTranslation()
   const isHana = account.accountType === 'HANA'
+  const isPlaid = account.accountType === 'PLAID'
+  // PLAID 인 경우 bankCode 에 institution_id 가 들어있어(예: ins_109508) 브랜드 조회 가능.
+  const plaidBrand = isPlaid ? resolvePlaidBrand(account.bankCode, account.accountHolder) : null
 
   return (
     <section
@@ -239,11 +259,30 @@ function LinkedAccountCard({ account }: { account: BankAccountResponse }) {
           letterSpacing: '-0.01em',
         }}
       >
-        등록된 예금 토큰 충전 계좌
+        {t('done.linkedCardLabel')}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {isHana ? (
           <HanaLogo size={40} />
+        ) : plaidBrand ? (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              background: plaidBrand.color,
+              color: plaidBrand.fg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 16,
+              letterSpacing: '-0.02em',
+              flexShrink: 0,
+            }}
+          >
+            {plaidBrand.short}
+          </div>
         ) : (
           <div
             style={{
@@ -261,7 +300,7 @@ function LinkedAccountCard({ account }: { account: BankAccountResponse }) {
               flexShrink: 0,
             }}
           >
-            타행
+            {t('done.otherBankBadge')}
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>

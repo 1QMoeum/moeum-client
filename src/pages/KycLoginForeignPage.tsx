@@ -15,7 +15,8 @@ interface NavState {
 
 /**
  * 외국인 재인증 로그인 — refresh 잃은 사용자가 여권 + 셀피 + PIN 으로 다시 토큰을 받는 경로.
- * KycForeignPage 에서 진입(passport/selfie state 포함) 하거나, URL 직접 진입 시 다시 업로드.
+ * 정상 진입은 KycForeignPage 에서 state 로 파일이 넘어옴 — 이 경우 파일 UI 없이 PIN 만 노출.
+ * URL 직접 진입한 fallback 케이스에만 업로드 UI 를 노출한다.
  */
 export default function KycLoginForeignPage() {
   const navigate = useNavigate()
@@ -28,6 +29,8 @@ export default function KycLoginForeignPage() {
   const [selfie, setSelfie] = useState<File | null>(initial?.selfie ?? null)
   const [pin, setPin] = useState('')
   const { mutate: login, isPending, error } = useKycLoginForeign()
+  // 위저드에서 정상 진입하면 파일이 이미 있음 — 업로드 UI 는 URL 직접 진입 fallback 케이스에만 노출.
+  const needsUpload = !initial?.passport || !initial?.selfie
 
   const handlePickPassport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] ?? null
@@ -50,39 +53,51 @@ export default function KycLoginForeignPage() {
         {t('kycLoginForeign.subtitle')}
       </p>
 
-      <input
-        ref={passportInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        onChange={handlePickPassport}
-        style={{ display: 'none' }}
-      />
-      <input
-        ref={selfieInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        onChange={handlePickSelfie}
-        style={{ display: 'none' }}
-      />
+      {needsUpload && (
+        <>
+          <input
+            ref={passportInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handlePickPassport}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={selfieInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handlePickSelfie}
+            style={{ display: 'none' }}
+          />
 
-      {!passport ? (
-        <Button variant="ghost" onClick={() => passportInputRef.current?.click()} disabled={isPending}>
-          {t('kycForeign.uploadLabel')}
-        </Button>
-      ) : (
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
-          {passport.name}
-        </p>
-      )}
+          {!passport ? (
+            <Button
+              variant="ghost"
+              onClick={() => passportInputRef.current?.click()}
+              disabled={isPending}
+            >
+              {t('kycForeign.uploadLabel')}
+            </Button>
+          ) : (
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
+              {passport.name}
+            </p>
+          )}
 
-      {!selfie ? (
-        <Button variant="ghost" onClick={() => selfieInputRef.current?.click()} disabled={isPending}>
-          {t('kycForeign.uploadSelfie')}
-        </Button>
-      ) : (
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
-          {selfie.name}
-        </p>
+          {!selfie ? (
+            <Button
+              variant="ghost"
+              onClick={() => selfieInputRef.current?.click()}
+              disabled={isPending}
+            >
+              {t('kycForeign.uploadSelfie')}
+            </Button>
+          ) : (
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
+              {selfie.name}
+            </p>
+          )}
+        </>
       )}
 
       <PinInput value={pin} onChange={setPin} disabled={isPending} />

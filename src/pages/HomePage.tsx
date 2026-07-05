@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore, type UserType } from '@/store/auth'
 import MoeumLogo from '@/components/ui/MoeumLogo'
 import Button from '@/components/ui/Button'
 import LanguageSelector from '@/components/ui/LanguageSelector'
@@ -14,14 +14,23 @@ const INSTALL_PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
 /**
  * 시작 화면.
  * - 자동 로그인 정보(refresh) 있으면 → 간편 로그인
- * - 없으면 → KYC: 현재 언어가 'ko' = 국내(KG이니시스), 그 외 = 외국인(여권 OCR)
+ * - 없으면 → 언어(로케일) 로 사용자 유형을 결정하고 CTA 하나만 노출. 한국어 = 국내 KYC,
+ *   그 외 = 외국인 여권 KYC. 언어 선택기(우측 상단)가 곧 유형 전환 수단이다.
+ *   CTA 클릭 시 store 에 userType 을 저장해 이후 계좌 연동 라우팅·잔액 조회 provider 분기에 재사용.
  */
 export default function HomePage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const hasRefresh = useAuthStore((s) => !!s.refreshToken)
+  const setUserType = useAuthStore((s) => s.setUserType)
+
   const isKorean = (i18n.resolvedLanguage ?? 'ko') === 'ko'
-  const ctaPath = hasRefresh ? '/login' : isKorean ? '/kyc' : '/kyc/foreign'
+  const inferredType: UserType = isKorean ? 'DOMESTIC' : 'FOREIGN'
+
+  const startKyc = () => {
+    setUserType(inferredType)
+    navigate(inferredType === 'DOMESTIC' ? '/kyc' : '/kyc/foreign')
+  }
 
   const standalone = useIsStandalone()
   const [showInstall, setShowInstall] = useState(false)
@@ -91,10 +100,14 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* 하단 CTA */}
-      <Button onClick={() => navigate(ctaPath)}>
-        {hasRefresh ? t('home.ctaLogin') : t('home.ctaStart')}
-      </Button>
+      {/* 하단 CTA — 언어별 1개만 노출 (한국어 = 국내, 그 외 = 여권) */}
+      {hasRefresh ? (
+        <Button onClick={() => navigate('/login')}>{t('home.ctaLogin')}</Button>
+      ) : (
+        <Button onClick={startKyc}>
+          {isKorean ? t('home.ctaDomestic') : t('home.ctaForeign')}
+        </Button>
+      )}
 
       <InstallPromptModal open={showInstall} onDismiss={handleDismissInstall} />
     </main>

@@ -14,7 +14,9 @@ import KycLoginPage from '@/pages/KycLoginPage'
 import KycLoginForeignPage from '@/pages/KycLoginForeignPage'
 import MyDataConsentPage from '@/pages/MyDataConsentPage'
 import MyDataAccountsPage from '@/pages/MyDataAccountsPage'
-import DonePage from '@/pages/DonePage'
+import PlaidConsentPage from '@/pages/PlaidConsentPage'
+import PlaidAccountsPage from '@/pages/PlaidAccountsPage'
+import OnboardingPage from '@/pages/OnboardingPage'
 import MapDemoPage from '@/pages/MapDemoPage'
 import EventMapPage from '@/pages/EventMapPage'
 import EventListPage from '@/pages/EventListPage'
@@ -45,7 +47,9 @@ export default function App() {
         <Route path="/kyc-login/foreign" element={<KycLoginForeignPage />} />
         <Route path="/mydata/consent" element={<MyDataConsentPage />} />
         <Route path="/mydata/accounts" element={<MyDataAccountsPage />} />
-        <Route path="/done" element={<DonePage />} />
+        <Route path="/plaid/consent" element={<PlaidConsentPage />} />
+        <Route path="/plaid/accounts" element={<PlaidAccountsPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/map" element={<MapDemoPage />} />
         <Route path="/explore" element={<EventListPage />} />
         <Route path="/events" element={<EventMapPage />} />
