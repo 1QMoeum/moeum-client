@@ -39,13 +39,23 @@ export default function MainPage() {
   }
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100%' }}>
+    <div
+      style={{
+        background: 'var(--color-bg)',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <main
         style={{
           maxWidth: 480,
+          width: '100%',
           margin: '0 auto',
-          padding: '0 0 140px',
+          // BottomNav 높이(~92px) + 여유. 이전 140px 는 과함 — 컨텐츠 짧을 때 하단 공백 원인.
+          padding: '0 0 108px',
           display: 'flex',
+          flex: 1,
           flexDirection: 'column',
         }}
       >
@@ -309,7 +319,8 @@ function EventImage({ event }: { event: ParticipatingEvent }) {
   )
 }
 
-/** 참여중인 이벤트가 없을 때의 빈 상태 — 일러스트 + 안내 문구 + 탐색 유도 버튼. */
+/** 참여중인 이벤트가 없을 때의 빈 상태 — 일러스트 + 안내 문구 + 탐색 유도 버튼.
+ *  flex:1 로 부모(main)의 남는 세로를 채워 하단 여백을 최소화. */
 function EmptyEvents({ onExplore }: { onExplore: () => void }) {
   const { t } = useTranslation()
   return (
@@ -318,7 +329,9 @@ function EmptyEvents({ onExplore }: { onExplore: () => void }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '40px 24px 0',
+        justifyContent: 'center',
+        flex: 1,
+        padding: '40px 24px 32px',
       }}
     >
       <img
@@ -468,8 +481,10 @@ function WalletView() {
     <section
       style={{
         display: 'flex',
+        flex: 1,
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: '16px 24px 0',
       }}
     >
