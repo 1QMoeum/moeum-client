@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import { useEnableNotifications } from '@/hooks/fcm'
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss'
@@ -12,8 +13,10 @@ interface Props {
 /**
  * 알림 권한 priming 모달. 브라우저 프롬프트 직전에 왜 필요한지 먼저 설명해 opt-in 률을 높인다.
  * "허용하기" 클릭 시에만 requestPermission() 이 호출된다(업계 표준 permission priming).
+ * 홈화면 추가 모달({@code InstallPromptModal})과 톤·구조 통일 — 아이콘 없이 텍스트만.
  */
 export default function EnableNotificationModal({ open, onDismiss, onGranted }: Props) {
+  const { t } = useTranslation()
   const enable = useEnableNotifications()
   const [pending, setPending] = useState(false)
   const swipe = useSwipeToDismiss({ onDismiss })
@@ -36,12 +39,13 @@ export default function EnableNotificationModal({ open, onDismiss, onGranted }: 
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(17, 24, 39, 0.5)',
+        background: 'rgba(17, 24, 39, 0.48)',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
         zIndex: 1000,
         WebkitTapHighlightColor: 'transparent',
+        animation: 'moeum-notif-fade 0.2s ease',
       }}
       onClick={onDismiss}
     >
@@ -52,81 +56,81 @@ export default function EnableNotificationModal({ open, onDismiss, onGranted }: 
           width: '100%',
           maxWidth: 480,
           background: '#ffffff',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          padding: '12px 24px max(20px, env(safe-area-inset-bottom))',
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
+          padding: '10px 24px max(24px, env(safe-area-inset-bottom))',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          animation: 'moeum-slideup 0.24s ease',
+          animation: 'moeum-notif-slideup 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
           ...swipe.style,
         }}
       >
         <div
           aria-hidden
           style={{
-            width: 40,
+            width: 36,
             height: 4,
             background: '#E5E8EB',
-            borderRadius: 2,
-            margin: '0 auto 4px',
+            borderRadius: 999,
+            margin: '0 auto 28px',
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <img src="/moeum-favicon.svg" alt="" width={56} height={56} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 22 }}>
           <h2
             id="notif-priming-title"
             style={{
               margin: 0,
-              fontSize: 19,
+              fontSize: 21,
               fontWeight: 700,
-              letterSpacing: '-0.02em',
-              color: '#191f28',
+              letterSpacing: '-0.03em',
+              color: '#191F28',
               lineHeight: 1.35,
             }}
           >
-            알림을 허용해 주세요
+            {t('notif.title')}
           </h2>
           <p
             style={{
               margin: 0,
-              fontSize: 13.5,
-              lineHeight: 1.5,
-              color: '#6b7684',
-              letterSpacing: '-0.01em',
+              fontSize: 14.5,
+              lineHeight: 1.55,
+              color: '#4E5968',
+              letterSpacing: '-0.015em',
+              wordBreak: 'keep-all',
+              whiteSpace: 'pre-line',
             }}
           >
-            허용하면 모음의 중요한 소식을
-            <br />
-            푸시 알림으로 받아볼 수 있어요.
+            {t('notif.body')}
           </p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Button variant="solid" onClick={handleAllow} disabled={pending}>
-            {pending ? '설정 중…' : '허용하기'}
-          </Button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            style={{
-              all: 'unset',
-              width: '100%',
-              padding: '12px 0',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 500,
-              color: '#8b95a1',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            나중에
-          </button>
-        </div>
+
+        <Button variant="solid" onClick={handleAllow} disabled={pending}>
+          {pending ? t('notif.allowing') : t('notif.allow')}
+        </Button>
+
+        <button
+          type="button"
+          onClick={onDismiss}
+          style={{
+            all: 'unset',
+            width: '100%',
+            padding: '18px 0 4px',
+            textAlign: 'center',
+            cursor: 'pointer',
+            fontSize: 15,
+            fontWeight: 600,
+            color: '#8B95A1',
+            letterSpacing: '-0.015em',
+          }}
+        >
+          {t('notif.later')}
+        </button>
       </div>
-      <style>{`@keyframes moeum-slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+      <style>{`
+        @keyframes moeum-notif-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes moeum-notif-slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
     </div>
   )
 }
