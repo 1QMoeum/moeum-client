@@ -9,6 +9,7 @@ import MoeumEntrySplashPage from '@/pages/MoeumEntrySplashPage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
 import MyPage from '@/pages/MyPage'
+import MyEventsPage from '@/pages/MyEventsPage'
 import KycPage from '@/pages/KycPage'
 import KycForeignPage from '@/pages/KycForeignPage'
 import SignupPage from '@/pages/SignupPage'
@@ -30,6 +31,7 @@ import AiPlannerPage from '@/pages/AiPlannerPage'
 import EventDetailPage from '@/pages/EventDetailPage'
 import ParticipatePage from '@/pages/ParticipatePage'
 import WalletPage from '@/pages/WalletPage'
+import WalletTxPage from '@/pages/WalletTxPage'
 
 export default function App() {
   useAutoRegisterFcmToken()
@@ -47,6 +49,7 @@ export default function App() {
         <Route path="/main" element={<MainPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mypage/events/:tab" element={<MyEventsPage />} />
         <Route path="/kyc" element={<KycPage />} />
         <Route path="/kyc/foreign" element={<KycForeignPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -68,6 +71,8 @@ export default function App() {
         <Route path="/events/:eventId" element={<EventDetailPage />} />
         <Route path="/events/:eventId/participate" element={<ParticipatePage />} />
         <Route path="/wallet" element={<WalletPage />} />
+        <Route path="/wallet/charge" element={<WalletTxPage mode="charge" />} />
+        <Route path="/wallet/convert" element={<WalletTxPage mode="convert" />} />
       </Routes>
     </AuthBootstrap>
   )

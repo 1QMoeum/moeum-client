@@ -15,6 +15,7 @@ import type {
   EventPost,
   EventPostSlice,
   MapBounds,
+  OperatingEventsResponse,
   ParticipateResponse,
   ParticipatingEventsResponse,
   PostInput,
@@ -34,6 +35,21 @@ export function useParticipatingEvents(enabled = true) {
     enabled: enabled && userId != null,
     staleTime: 30_000,
     queryFn: () => eventApi.participating(userId as number),
+  })
+}
+
+/**
+ * 마이페이지 — 내가 총대로 운영중(ONGOING)인 이벤트 (최신순).
+ * userId 는 accessToken(JWT sub)에서 파생하므로 로그인 전에는 비활성화된다.
+ */
+export function useOperatingEvents(enabled = true) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const userId = getUserIdFromToken(accessToken)
+  return useQuery<OperatingEventsResponse, ApiError>({
+    queryKey: ['events', 'operating', userId],
+    enabled: enabled && userId != null,
+    staleTime: 30_000,
+    queryFn: () => eventApi.operating(userId as number),
   })
 }
 

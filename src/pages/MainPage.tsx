@@ -530,8 +530,8 @@ function WalletView() {
       </button>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
-        <ActionPill label={t('main.withdraw')} variant="outline" onClick={() => navigate('/wallet?action=withdraw')} />
-        <ActionPill label={t('main.charge')} variant="filled" onClick={() => navigate('/wallet?action=charge')} />
+        <ActionPill label={t('main.withdraw')} variant="outline" onClick={() => navigate('/wallet/convert')} />
+        <ActionPill label={t('main.charge')} variant="filled" onClick={() => navigate('/wallet/charge')} />
       </div>
     </section>
   )

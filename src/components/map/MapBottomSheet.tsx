@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Flame, Heart, MapPin } from 'lucide-react'
 import { mapTokens, pillStyle } from '@/components/map/mapStyle'
+import { useBookmarkedIds, useToggleBookmark } from '@/hooks/bookmark'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { categoryImage } from '@/types/event'
 import type { EventListItem, ViewportEvent } from '@/types/event'
@@ -51,7 +52,14 @@ const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min)
 export default function MapBottomSheet({ areaLabel, nearby, trending, pending, onSelectEvent }: Props) {
   const [tab, setTab] = useState<SheetTab>('nearby')
   const [expanded, setExpanded] = useState(false)
+
+  // 찜(관심 이벤트) — 서버 관심 목록으로 초기 상태를 맞추고, 토글은 낙관적 갱신 후 mutation.
+  const bookmarkedIds = useBookmarkedIds()
+  const toggleBookmark = useToggleBookmark()
   const [liked, setLiked] = useState<Set<number>>(new Set())
+  useEffect(() => {
+    setLiked(new Set(bookmarkedIds))
+  }, [bookmarkedIds])
 
   // 뷰포트 높이 → 펼침 높이·접힘 오프셋 계산 (회전/리사이즈 대응)
   const [vh, setVh] = useState(() => (typeof window === 'undefined' ? 800 : window.innerHeight))
@@ -136,12 +144,25 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
   }, [tab, nearby, trending])
 
   const toggleLike = (eventId: number) => {
+    const next = !liked.has(eventId)
     setLiked((prev) => {
-      const next = new Set(prev)
-      if (next.has(eventId)) next.delete(eventId)
-      else next.add(eventId)
-      return next
+      const updated = new Set(prev)
+      if (next) updated.add(eventId)
+      else updated.delete(eventId)
+      return updated
     })
+    toggleBookmark.mutate(
+      { eventId, next },
+      {
+        onError: () =>
+          setLiked((prev) => {
+            const rolled = new Set(prev)
+            if (next) rolled.delete(eventId)
+            else rolled.add(eventId)
+            return rolled
+          }),
+      },
+    )
   }
 
   const title = tab === 'nearby' ? '현재 주변 인기 이벤트 TOP 10' : '현재 전국 인기 이벤트 TOP 10'

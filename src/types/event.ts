@@ -447,3 +447,29 @@ export interface ParticipatingEvent {
 export interface ParticipatingEventsResponse {
   content: ParticipatingEvent[]
 }
+
+/** ===== 운영중인 이벤트 (GET /v1/events/operating) =====
+ *  내가 만든(총대) 진행중(ONGOING) 이벤트, 최신순. 삭제 제외. */
+export interface OperatingEvent {
+  eventId: number
+  title: string
+  category: EventCategory
+  status: EventStatus
+  /** 대표 이미지 (없으면 플레이스홀더 표시) */
+  representativeImageUrl: string | null
+  targetAmount: number
+  currentAmount: number
+  /** 달성률(%) — 서버 계산값 */
+  fundingRate: number
+  participantCount: number
+  /** 모금 시작일 (YYYY-MM-DD) */
+  startDate: string
+  /** 마감일 (YYYY-MM-DD) */
+  endDate: string
+  /** 마감까지 남은 일수 (D-n) */
+  dDay: number
+}
+
+export interface OperatingEventsResponse {
+  content: OperatingEvent[]
+}
