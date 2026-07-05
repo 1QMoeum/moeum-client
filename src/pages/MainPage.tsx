@@ -9,6 +9,7 @@ import { useMyAccount } from '@/hooks/account'
 import { useParticipatingEvents } from '@/hooks/events'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
+import { fundingPercent } from '@/types/event'
 import type { ParticipatingEvent } from '@/types/event'
 
 type Tab = 'events' | 'wallet'
@@ -154,7 +155,7 @@ export default function MainPage() {
               >
                 <Stat label="참여자" value={`${won(active.participantCount)}명`} />
                 <Divider />
-                <Stat label="달성률" value={`${Math.round(active.fundingRate)}%`} />
+                <Stat label="달성률" value={`${fundingPercent(active.currentAmount, active.targetAmount)}%`} />
                 <Divider />
                 <Stat label="마감일" value={shortDate(active.endDate)} />
               </div>
@@ -207,7 +208,7 @@ function SegmentButton({
 }
 
 function EventSlide({ event, active }: { event: ParticipatingEvent; active: boolean }) {
-  const percent = event.fundingRate
+  const percent = fundingPercent(event.currentAmount, event.targetAmount)
   return (
     <section
       style={{

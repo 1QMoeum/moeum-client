@@ -13,7 +13,7 @@ import { toKakaoPaths } from '@/lib/geo'
 import { loadLegalDongFeature } from '@/lib/legalDongGeo'
 import { categoryMeta, createFlagElement, createInfoBubbleElement } from '@/lib/mapPin'
 import { reverseGeocode } from '@/lib/reverseGeocode'
-import { EVENT_CATEGORIES, categoryImage } from '@/types/event'
+import { EVENT_CATEGORIES, categoryImage, fundingPercent } from '@/types/event'
 import type {
   EventHistoryDistrict,
   EventMapDistrict,
@@ -320,7 +320,7 @@ export default function EventMap() {
       position = new kakao.maps.LatLng(selected.position.lat, selected.position.lng)
     } else {
       const data = selected.kind === 'event' ? selected.data : selected.data.representative
-      const rate = selected.kind === 'event' ? selected.data.fundingRate : selected.data.fundingRate
+      const rate = fundingPercent(data.currentAmount, data.targetAmount)
       const meta = categoryMeta(data.category)
       const region =
         selected.kind === 'district'

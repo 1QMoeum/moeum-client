@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
+import { fundingPercent } from '@/types/event'
 import type { EventDetailResponse, ParticipateResponse } from '@/types/event'
 import type { BankAccountResponse } from '@/types/api'
 
@@ -182,7 +183,7 @@ function Stepper({ step }: { step: Step }) {
 }
 
 function EventInfoCard({ event }: { event: EventDetailResponse }) {
-  const rate = Math.min(event.fundingRate, 100)
+  const rate = fundingPercent(event.currentAmount, event.targetAmount)
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 16, background: '#f9fafb', borderRadius: 18 }}>
       <div style={{ display: 'flex', gap: 14 }}>
@@ -203,7 +204,7 @@ function EventInfoCard({ event }: { event: EventDetailResponse }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>현재 모금액</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#8B5CF6' }}>{event.fundingRate}%</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#8B5CF6' }}>{rate}%</span>
         </div>
         <div style={{ fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
           {won(event.currentAmount)}

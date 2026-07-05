@@ -34,6 +34,16 @@ export function categoryImage(category: string): string | undefined {
   return CATEGORY_IMAGES[category]
 }
 
+/**
+ * 달성률(%) 0~100 정수. 서버 `fundingRate` 는 스케일이 불안정하므로(0~1 비율로 내려옴)
+ * 신뢰하지 않고 실제 금액(currentAmount/targetAmount)에서 직접 계산한다.
+ * 목표가 0 이하면 0% 로 본다.
+ */
+export function fundingPercent(currentAmount: number, targetAmount: number): number {
+  if (!targetAmount || targetAmount <= 0) return 0
+  return Math.min(100, Math.round((currentAmount / targetAmount) * 100))
+}
+
 /** 줌아웃 집계 — 법정동 대표 이벤트 */
 export interface RepresentativeEvent {
   eventId: number

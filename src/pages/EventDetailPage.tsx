@@ -30,6 +30,7 @@ import Button from '@/components/ui/Button'
 import BudgetEditor from '@/components/events/BudgetEditor'
 import NoticeComposer from '@/components/events/NoticeComposer'
 import EventEditor from '@/components/events/EventEditor'
+import { fundingPercent } from '@/types/event'
 import type { BudgetItem, BudgetStatus, EventDetailResponse, EventPost } from '@/types/event'
 
 /* ===== 디자인 토큰 (Figma: 금사빠_moeum) ===== */
@@ -52,8 +53,6 @@ const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 const shortDate = (d: string) => d.replaceAll('-', '.').slice(2)
 /** 2026-06-24 → 2026.06.24 */
 const dotDate = (d: string) => d.replaceAll('-', '.')
-/** 모금률 → 정수 %. 서버가 비율(0.33)로 주면 100 곱하고, 이미 %(33)면 그대로. */
-const toPercent = (rate: number) => Math.round(rate <= 1 ? rate * 100 : rate)
 /** "HH:mm:ss" | null → "HH:mm" (없으면 빈 문자열) */
 const hm = (t: string | null) => (t ? t.slice(0, 5) : '')
 
@@ -436,8 +435,8 @@ function MenuItem({
 
 /* ===== 공통 헤더 (진행률 링 + 통계) ===== */
 function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: number; ongoing: boolean }) {
-  const pct = toPercent(event.fundingRate)
-  const rate = Math.min(pct, 100)
+  const pct = fundingPercent(event.currentAmount, event.targetAmount)
+  const rate = pct
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
@@ -678,8 +677,8 @@ function LocationBlock({ event }: { event: EventDetailResponse }) {
 /* ===== 사용 계획 탭 ===== */
 /** 사용 계획 항목 상태 → 집행 내역 칩(라벨·색). */
 const EXEC_CHIP: Record<BudgetStatus, { label: string; color: string; bg: string }> = {
-  EXECUTED: { label: '증빙완료', color: VIOLET, bg: VIOLET_BG },
-  PENDING: { label: '승인대기', color: GRAY500, bg: GRAY50 },
+  EXECUTED: { label: '집행완료', color: VIOLET, bg: VIOLET_BG },
+  PENDING: { label: '집행전', color: GRAY500, bg: GRAY50 },
   REFUNDED: { label: '환불완료', color: AQUA, bg: '#e3f8f6' },
   CANCELLED: { label: '취소', color: GRAY300, bg: GRAY50 },
 }

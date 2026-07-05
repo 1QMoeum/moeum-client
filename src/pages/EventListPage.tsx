@@ -5,7 +5,7 @@ import { useEventList } from '@/hooks/events'
 import { useHomeOnBack } from '@/hooks/useHomeOnBack'
 import { useAuthStore } from '@/store/auth'
 import BottomNav from '@/components/ui/BottomNav'
-import { EVENT_CATEGORIES, categoryImage } from '@/types/event'
+import { EVENT_CATEGORIES, categoryImage, fundingPercent } from '@/types/event'
 import type { EventListItem, EventStatus } from '@/types/event'
 
 /** 진행 상태 필터. 마감임박(closing)은 서버 ONGOING + 클라이언트 7일 필터. */
@@ -467,7 +467,7 @@ function EventCard({ event, onClick }: { event: EventListItem; onClick: () => vo
         </span>
         <span style={{ display: 'flex', gap: 13, fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em' }}>
           <span style={{ display: 'flex', gap: 4 }}>
-            <span style={{ color: 'var(--color-accent)' }}>{Math.round(event.fundingRate)}%</span>
+            <span style={{ color: 'var(--color-accent)' }}>{fundingPercent(event.currentAmount, event.targetAmount)}%</span>
             <span style={{ color: '#5c5c72' }}>달성</span>
           </span>
           <span style={{ display: 'flex', gap: 4, minWidth: 0 }}>
