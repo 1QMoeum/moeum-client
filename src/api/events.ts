@@ -14,6 +14,7 @@ import type {
   EventPost,
   EventPostSlice,
   MapBounds,
+  OperatingEventsResponse,
   ParticipateRequest,
   ParticipateResponse,
   ParticipatingEventsResponse,
@@ -32,6 +33,10 @@ export const eventApi = {
     unwrap<ParticipatingEventsResponse>(
       apiClient.get('/v1/events/participating', { params: { userId } }),
     ),
+
+  /** 운영중인 이벤트 (내가 총대) — 내가 만든 진행중(ONGOING) 이벤트를 최신순으로. 삭제 제외. */
+  operating: (userId: number) =>
+    unwrap<OperatingEventsResponse>(apiClient.get('/v1/events/operating', { params: { userId } })),
 
   /** 지도 이벤트 집계 (줌아웃) — 진행중 이벤트를 법정동별로 집계 */
   map: () => unwrap<EventMapResponse>(apiClient.get('/v1/events/map')),

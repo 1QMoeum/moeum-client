@@ -24,6 +24,7 @@ import {
   useEventPosts,
   useEventSettlement,
 } from '@/hooks/events'
+import { useBookmarkedIds, useToggleBookmark } from '@/hooks/bookmark'
 import { useAuthStore } from '@/store/auth'
 import { getUserIdFromToken } from '@/lib/jwt'
 import { ErrorCode } from '@/constants/errorCodes'
@@ -183,7 +184,6 @@ function EventView({
 }) {
   const accessToken = useAuthStore((s) => s.accessToken)
   const [tab, setTab] = useState<Tab>('intro')
-  const [liked, setLiked] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editingEvent, setEditingEvent] = useState(false)
@@ -192,6 +192,22 @@ function EventView({
   const isOwner = getUserIdFromToken(accessToken) === event.creatorId
   const ongoing = event.status === 'ONGOING'
   const dday = daysLeft(event.endDate)
+
+  // 찜(관심 이벤트) — 서버 관심 목록으로 초기 상태를 맞추고, 토글은 낙관적 갱신 후 mutation.
+  const bookmarkedIds = useBookmarkedIds()
+  const toggleBookmark = useToggleBookmark()
+  const [liked, setLiked] = useState(false)
+  useEffect(() => {
+    setLiked(bookmarkedIds.has(event.eventId))
+  }, [bookmarkedIds, event.eventId])
+  const onToggleLike = () => {
+    const next = !liked
+    setLiked(next)
+    toggleBookmark.mutate(
+      { eventId: event.eventId, next },
+      { onError: () => setLiked(!next) },
+    )
+  }
 
   const cancelMut = useCancelEvent(event.eventId)
   const cancelEvent = () => {
@@ -382,7 +398,7 @@ function EventView({
           zIndex: 15,
         }}
       >
-        <IconBtn label="찜" onClick={() => setLiked((v) => !v)}>
+        <IconBtn label={liked ? '찜 해제' : '찜'} onClick={onToggleLike}>
           <Heart size={22} strokeWidth={2.2} color={liked ? '#fa5252' : GRAY500} fill={liked ? '#fa5252' : 'none'} />
         </IconBtn>
         <IconBtn label="공유" onClick={() => void share()}>

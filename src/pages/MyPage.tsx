@@ -1,12 +1,59 @@
+import { useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ErrorBanner from '@/components/ui/ErrorBanner'
+import { useMyPage } from '@/hooks/mypage'
+import { useOperatingEvents, useParticipatingEvents } from '@/hooks/events'
+import { toErrorMessage } from '@/api/client'
+import { categoryImage } from '@/types/event'
+import type { EventListItem } from '@/types/event'
+
+/** 원화 천단위 콤마. */
+const won = (n: number) => n.toLocaleString('ko-KR')
+
+/** 'YYYY-MM-DD' → 'YYYY.MM.DD' (표시용). */
+function formatDate(isoDate: string): string {
+  return isoDate.replaceAll('-', '.')
+}
+
+/** 마감일까지 남은 일수 라벨 (D-day / D-n / 마감). */
+function ddayLabel(endDate: string): string {
+  const end = new Date(`${endDate}T23:59:59`).getTime()
+  const diff = Math.ceil((end - Date.now()) / (24 * 60 * 60 * 1000))
+  if (diff > 0) return `D-${diff}`
+  if (diff === 0) return 'D-day'
+  return '마감'
+}
+
+/** 참여 이벤트 상태 → 칩 라벨. */
+function participationLabel(status: string): string {
+  if (status === 'ONGOING') return '참여중'
+  if (status === 'COMPLETED') return '참여 완료'
+  if (status === 'FAILED') return '무산'
+  if (status === 'CANCELLED') return '취소'
+  return status
+}
 
 /**
  * 마이페이지 — 내 정보 · 예금토큰 지갑 카드 · 참여 현황 · 최근 참여 이벤트.
- * 아직 전용 API 가 없어 퍼블리싱(정적 데이터) 상태. API 나오면 hooks/query 로 교체.
+ * GET /v1/users/me/mypage 로 실데이터를 받아 렌더한다(지갑·통장 미생성 시 null).
  */
 export default function MyPage() {
   const navigate = useNavigate()
+  const { data, isPending, error } = useMyPage()
+
+  const counts = data?.counts
+  const recentEvents = data?.recentParticipatingEvents ?? []
+
+  // 참여중 카운트 — 내가 총대인(운영중) 이벤트는 '운영중'에만 세도록 목록과 동일 규칙으로 계산한다.
+  // (목록은 프론트에서 필터하므로 백엔드 counts.participating 대신 필터 후 개수를 쓴다.)
+  const { data: participatingData } = useParticipatingEvents()
+  const { data: operatingData } = useOperatingEvents()
+  const participatingCount = useMemo(() => {
+    if (!participatingData) return counts?.participating
+    const operatingIds = new Set((operatingData?.content ?? []).map((e) => e.eventId))
+    return participatingData.content.filter((e) => !operatingIds.has(e.eventId)).length
+  }, [participatingData, operatingData, counts?.participating])
 
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100%' }}>
@@ -52,6 +99,8 @@ export default function MyPage() {
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, padding: '30px 20px 0' }}>
+          {error && <ErrorBanner message={toErrorMessage(error)} />}
+
           {/* 내 정보 */}
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <SectionTitle>내 정보</SectionTitle>
@@ -76,17 +125,19 @@ export default function MyPage() {
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#000' }}>
-                  김하린
+                  {data?.name ?? (isPending ? '불러오는 중…' : '—')}
                 </span>
-                <Chip label="하나인증서" />
+                {data?.hanaCertVerified && <Chip label="하나인증서" />}
               </span>
               <CaretRight />
             </button>
 
             {/* 지갑 카드 */}
             <WalletCard
-              onCharge={() => navigate('/wallet?action=charge')}
-              onWithdraw={() => navigate('/wallet?action=withdraw')}
+              balance={data?.wallet?.tokenBalance ?? null}
+              hasWallet={data ? data.wallet !== null : true}
+              onCharge={() => navigate('/wallet/charge')}
+              onWithdraw={() => navigate('/wallet/convert')}
             />
 
             {/* 참여 현황 */}
@@ -99,16 +150,38 @@ export default function MyPage() {
                 boxShadow: '0 0 8px rgba(21,21,21,0.04)',
               }}
             >
-              <MiniStat label="참여중" value="3개" />
-              <MiniStat label="운영중" value="1개" />
-              <MiniStat label="관심 이벤트" value="7개" />
+              <MiniStat
+                label="참여중"
+                value={countText(participatingCount)}
+                onClick={() => navigate('/mypage/events/participating')}
+              />
+              <MiniStat
+                label="운영중"
+                value={countText(counts?.operating)}
+                onClick={() => navigate('/mypage/events/operating')}
+              />
+              <MiniStat
+                label="관심 이벤트"
+                value={countText(counts?.bookmarked)}
+                onClick={() => navigate('/mypage/events/bookmarked')}
+              />
             </div>
           </section>
 
           {/* 최근 참여 이벤트 */}
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <SectionTitle>최근 참여 이벤트</SectionTitle>
-            <RecentEventCard />
+            {recentEvents.length > 0 ? (
+              recentEvents.map((event) => (
+                <RecentEventCard
+                  key={event.eventId}
+                  event={event}
+                  onClick={() => navigate(`/events/${event.eventId}`)}
+                />
+              ))
+            ) : (
+              <EmptyRecent loading={isPending} />
+            )}
           </section>
         </div>
       </main>
@@ -116,13 +189,28 @@ export default function MyPage() {
   )
 }
 
+/** 카운트 값 텍스트 (미로딩 시 '—개'). */
+function countText(n: number | undefined): string {
+  return n == null ? '—' : `${n}개`
+}
+
 /** 둥근 모서리 + 가운데 V 노치가 파인 글래스 트레이 마스크 (viewBox 363×123). */
 const TRAY_MASK = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 363 123' preserveAspectRatio='none'><path d='M16 0 H150 L181.5 30 L213 0 H347 Q363 0 363 16 V107 Q363 123 347 123 H16 Q0 123 0 107 V16 Q0 0 16 0 Z'/></svg>",
 )}")`
 
-/** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). */
-function WalletCard({ onCharge, onWithdraw }: { onCharge: () => void; onWithdraw: () => void }) {
+/** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). balance=null 이면 지갑 미생성. */
+function WalletCard({
+  balance,
+  hasWallet,
+  onCharge,
+  onWithdraw,
+}: {
+  balance: number | null
+  hasWallet: boolean
+  onCharge: () => void
+  onWithdraw: () => void
+}) {
   const trayStyle: CSSProperties & { WebkitBackdropFilter?: string; WebkitMaskImage?: string } = {
     position: 'absolute',
     left: 0,
@@ -181,7 +269,7 @@ function WalletCard({ onCharge, onWithdraw }: { onCharge: () => void; onWithdraw
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              58,000
+              {balance == null ? (hasWallet ? '…' : '0') : won(balance)}
             </span>
             <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#e0e0ed' }}>
               Hana-KRW
@@ -233,12 +321,13 @@ function PillButton({
   )
 }
 
-/** 최근 참여 이벤트 카드 — 퍼블리싱용 정적 데이터. */
-function RecentEventCard() {
+/** 최근 참여 이벤트 카드 — 대표이미지·제목·D-day·목표액·시작일·참여상태. */
+function RecentEventCard({ event, onClick }: { event: EventListItem; onClick: () => void }) {
   return (
     <button
       type="button"
-      aria-label="리나 생일 광고 이벤트 상세"
+      aria-label={`${event.title} 상세`}
+      onClick={onClick}
       style={{
         width: '100%',
         background: '#fff',
@@ -255,7 +344,7 @@ function RecentEventCard() {
       }}
     >
       <img
-        src="/sample-event-rina.png"
+        src={event.representativeImageUrl || categoryImage(event.category) || '/categories/gift.png'}
         alt=""
         aria-hidden
         style={{
@@ -282,25 +371,46 @@ function RecentEventCard() {
                 whiteSpace: 'nowrap',
               }}
             >
-              리나 생일 광고 이벤트
+              {event.title}
             </span>
             <CaretRight />
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Chip label="D-12" />
+            <Chip label={ddayLabel(event.endDate)} />
             <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#86869f' }}>
-              목표 1,500,000원
+              목표 {won(event.targetAmount)}원
             </span>
           </span>
         </span>
         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#0c0d0d' }}>
-            2026.06.07
+            {formatDate(event.startDate)}
           </span>
-          <Chip label="참여 완료" />
+          <Chip label={participationLabel(event.status)} />
         </span>
       </span>
     </button>
+  )
+}
+
+/** 최근 참여 이벤트 없음/로딩 안내. */
+function EmptyRecent({ loading }: { loading: boolean }) {
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        padding: '28px 16px',
+        textAlign: 'center',
+        fontSize: 14,
+        lineHeight: 1.5,
+        letterSpacing: '-0.02em',
+        color: '#86869f',
+        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+      }}
+    >
+      {loading ? '불러오는 중…' : '아직 참여한 이벤트가 없어요.'}
+    </div>
   )
 }
 
@@ -312,16 +422,31 @@ function SectionTitle({ children }: { children: ReactNode }) {
   )
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        background: 'none',
+        border: 'none',
+        padding: '4px 0',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
       <span style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#5c5c72' }}>
         {label}
       </span>
       <span style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#151519' }}>
         {value}
       </span>
-    </div>
+    </button>
   )
 }
 
