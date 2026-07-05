@@ -197,14 +197,14 @@ function requireUserId(accessToken: string | null): number {
 
 /**
  * 사용 계획 생성 (총대). 진행중아님 4004 · 총대아님 4006 은 페이지에서 status 로 분기.
- * 성공 시 반환된 전체 계획으로 캐시를 갱신한다.
+ * 성공 시 서버의 전체 계획을 재조회한다(응답이 새 항목만 담아도 기존 항목이 사라지지 않도록).
  */
 export function useCreateBudgets(eventId: number) {
   const accessToken = useAuthStore((s) => s.accessToken)
   const qc = useQueryClient()
   return useMutation<BudgetPlanResponse, ApiError, CreateBudgetRequest>({
     mutationFn: (body) => eventApi.createBudgets(requireUserId(accessToken), eventId, body),
-    onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: budgetsKey(eventId) }),
   })
 }
 

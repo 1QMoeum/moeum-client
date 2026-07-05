@@ -57,8 +57,9 @@ interface Props {
 export default function EventEditor({ event, onClose }: Props) {
   const [description, setDescription] = useState(event.description ?? '')
   const [images, setImages] = useState<Img[]>(() => initImages(event))
-  const [startDate, setStartDate] = useState(event.startDate)
-  const [endDate, setEndDate] = useState(event.endDate)
+  // 시작일·종료일은 생성 후 변경 불가 — 원래 값을 그대로 유지해 전송한다.
+  const startDate = event.startDate
+  const endDate = event.endDate
   const [startTime, setStartTime] = useState(toHm(event.operatingStartTime))
   const [endTime, setEndTime] = useState(toHm(event.operatingEndTime))
   const [pickError, setPickError] = useState<string | null>(null)
@@ -237,28 +238,15 @@ export default function EventEditor({ event, onClose }: Props) {
             {pickError && <span style={errTextStyle}>{pickError}</span>}
           </div>
 
-          {/* 기간 */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={fieldLabelStyle}>시작일</span>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={inputStyle} />
-            </label>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={fieldLabelStyle}>종료일</span>
-              <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={inputStyle} />
-            </label>
-          </div>
-          {!periodValid && startDate !== '' && endDate !== '' && <span style={errTextStyle}>종료일은 시작일 이후여야 해요.</span>}
-
           {/* 진행 시간 */}
           <div style={{ display: 'flex', gap: 10 }}>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={dateFieldStyle}>
               <span style={fieldLabelStyle}>진행 시작 (선택)</span>
-              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={inputStyle} />
+              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={nativeInputStyle} />
             </label>
-            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={dateFieldStyle}>
               <span style={fieldLabelStyle}>진행 종료 (선택)</span>
-              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={inputStyle} />
+              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={nativeInputStyle} />
             </label>
           </div>
           {!timePaired && <span style={errTextStyle}>진행 시작·종료 시간을 함께 입력해 주세요.</span>}
@@ -288,6 +276,25 @@ const inputStyle: React.CSSProperties = {
   letterSpacing: '-0.01em',
   background: '#fff',
   fontFamily: 'inherit',
+}
+
+/** date/time 필드 wrapper — 플렉스 자식이 네이티브 컨트롤의 큰 고유폭 때문에
+ *  줄어들지 못해 오른쪽으로 삐져나가는 문제를 막으려면 minWidth:0 이 필수. */
+const dateFieldStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+}
+
+/** iOS 네이티브 date/time 컨트롤 정규화(가운데 정렬·과도한 고유폭 제거). */
+const nativeInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  minWidth: 0,
+  WebkitAppearance: 'none',
+  appearance: 'none',
+  textAlign: 'left',
 }
 
 const fieldLabelStyle: React.CSSProperties = {

@@ -24,12 +24,14 @@ const sameDay = (a: Date, b: Date) =>
 /** 날짜 셀(주) 한 줄 높이(px) — 드래그 시 높이 보간 기준 */
 const ROW_H = 52
 
-/** 사용 계획 상태 → 칩 라벨. 모르는 코드는 그대로 노출. */
+/**
+ * 사용 계획(BUDGET) 집행 상태 → 칩 라벨. 서버 BudgetStatus enum(PENDING/EXECUTED/CANCELLED)만 온다.
+ * (환불은 budget 상태가 아니라 이벤트/참여 레벨 개념이라 여기 오지 않음)
+ */
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: '승인대기',
-  EXECUTED: '증빙완료',
-  CANCELLED: '취소됨',
-  REFUNDED: '환불됨',
+  PENDING: '집행전',
+  EXECUTED: '집행완료',
+  CANCELLED: '취소',
 }
 const statusLabel = (code: string) => STATUS_LABELS[code] ?? code
 
@@ -386,10 +388,16 @@ function ScheduleCard({
   open: boolean
   onToggle: () => void
 }) {
-  const chips = [
-    ...(entry.fundingComplete ? [] : ['입금 미완료']),
-    ...(entry.executionStatus ? [statusLabel(entry.executionStatus)] : []),
-  ]
+  // 뱃지는 type 으로 분기한다.
+  // - BUDGET: 집행 상태(executionStatus) + 미입금 시 '입금 미완료' 오버레이
+  // - EVENT_START/EVENT_END: 집행 뱃지 없이 마일스톤 라벨
+  const chips: string[] =
+    entry.type === 'BUDGET'
+      ? [
+          ...(entry.fundingComplete ? [] : ['입금 미완료']),
+          ...(entry.executionStatus ? [statusLabel(entry.executionStatus)] : []),
+        ]
+      : [entry.type === 'EVENT_START' ? '모금 시작' : '모금 마감']
   return (
     <div style={{ filter: 'drop-shadow(0 0 8px rgba(21,21,21,0.04))' }}>
       <button

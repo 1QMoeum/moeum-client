@@ -420,7 +420,7 @@ function ItemFields({
           type="date"
           value={value.scheduledDate}
           onChange={(e) => onChange({ scheduledDate: e.target.value })}
-          style={inputStyle}
+          style={dateInputStyle}
         />
       </Field>
       <Field label="업체명">
@@ -469,6 +469,19 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   letterSpacing: '-0.01em',
   background: '#fff',
+}
+
+/**
+ * date 인풋 전용 — iOS Safari 에서 텍스트 인풋 스타일을 그대로 쓰면 높이·정렬이 깨지므로
+ * appearance 를 초기화하고 높이를 다른 필드와 맞춘다. (탭하면 네이티브 날짜 피커는 그대로 뜸)
+ */
+const dateInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  minHeight: 44,
+  minWidth: 0,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  textAlign: 'left',
 }
 
 const smallBtnStyle: React.CSSProperties = {
