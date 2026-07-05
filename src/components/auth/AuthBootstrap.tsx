@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
 import SplashScreen from '@/components/ui/SplashScreen'
@@ -14,6 +15,7 @@ const MIN_SPLASH_MS = 700
  * 복원이 끝나기 전까지는 자식 렌더를 보류해, 보호 페이지가 잘못 리다이렉트하는 걸 막는다.
  */
 export default function AuthBootstrap({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
   const accessToken = useAuthStore((s) => s.accessToken)
   const refreshToken = useAuthStore((s) => s.refreshToken)
   const setTokens = useAuthStore((s) => s.setTokens)
@@ -40,7 +42,11 @@ export default function AuthBootstrap({ children }: { children: ReactNode }) {
     return () => clearTimeout(id)
   }, [])
 
+  // 하나원큐 인앱 플로우(스플래시·홈·자산)는 자체 로딩 화면이 있고 인증 상태도 안 읽으므로
+  // 모음 스플래시 없이 바로 렌더한다. 복원은 백그라운드에서 계속 진행된다.
+  const isHanaFlow = pathname === '/' || pathname.startsWith('/hana')
+
   // 인증 복원이 끝나고 최소 노출 시간도 지나야 실제 화면을 보여준다
-  if (!ready || !minElapsed) return <SplashScreen />
+  if (!isHanaFlow && (!ready || !minElapsed)) return <SplashScreen />
   return <>{children}</>
 }
