@@ -2,6 +2,7 @@ import { Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import type { UIEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import BottomNav from '@/components/ui/BottomNav'
 import ProgressRing from '@/components/home/ProgressRing'
 import { useMyWallet } from '@/hooks/wallet'
@@ -14,18 +15,24 @@ import type { ParticipatingEvent } from '@/types/event'
 
 type Tab = 'events' | 'wallet'
 
-const won = (n: number) => n.toLocaleString('ko-KR')
+const numLocale = (lang: string | undefined) => (lang === 'ko' ? 'ko-KR' : 'en-US')
 
 /** 서버 날짜(YYYY-MM-DD) → 화면 표기(YY.MM.DD) */
 const shortDate = (iso: string) => iso.slice(2).replaceAll('-', '.')
 
 export default function MainPage() {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const [tab, setTab] = useState<Tab>('events')
   const [index, setIndex] = useState(0)
   const { data, isLoading, error } = useParticipatingEvents()
   const events = data?.content ?? []
   const active = events[index] ?? events[0]
+  const locale = numLocale(i18n.resolvedLanguage)
+  const won = (n: number) => n.toLocaleString(locale)
+  // 서버에 GET /v1/events/participating 미구현 상태 — 1000(INVALID_INPUT) 로 떨어짐.
+  // 사용자에겐 에러 노출 대신 empty state 로 우회 (환경 별 무의미한 노이즈 제거).
+  const treatAsEmpty = !!error
 
   const onScroll = (e: UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget
@@ -64,14 +71,14 @@ export default function MainPage() {
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HeaderIconButton label="알림">
+            <HeaderIconButton label={t('main.notifAria')}>
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V3.75H10.4426C8.21751 3.75 6.37591 5.48001 6.23702 7.70074L6.01601 11.2342C5.93175 12.5814 5.47946 13.8797 4.7084 14.9876C4.01172 15.9886 4.63194 17.3712 5.84287 17.5165L9.25 17.9254V19C9.25 20.5188 10.4812 21.75 12 21.75C13.5188 21.75 14.75 20.5188 14.75 19V17.9254L18.1571 17.5165C19.3681 17.3712 19.9883 15.9886 19.2916 14.9876C18.5205 13.8797 18.0682 12.5814 17.984 11.2342L17.763 7.70074C17.6241 5.48001 15.7825 3.75 13.5574 3.75H13V3ZM10.75 19C10.75 19.6904 11.3096 20.25 12 20.25C12.6904 20.25 13.25 19.6904 13.25 19V18.25H10.75V19Z"
               />
             </HeaderIconButton>
-            <HeaderIconButton label="내 정보" onClick={() => navigate('/mypage')}>
+            <HeaderIconButton label={t('main.myPageAria')} onClick={() => navigate('/mypage')}>
               <path d="M12 3.75C9.92893 3.75 8.25 5.42893 8.25 7.5C8.25 9.57107 9.92893 11.25 12 11.25C14.0711 11.25 15.75 9.57107 15.75 7.5C15.75 5.42893 14.0711 3.75 12 3.75Z" />
               <path d="M8 13.25C5.92893 13.25 4.25 14.9289 4.25 17V18.1883C4.25 18.9415 4.79588 19.5837 5.53927 19.7051C9.8181 20.4037 14.1819 20.4037 18.4607 19.7051C19.2041 19.5837 19.75 18.9415 19.75 18.1883V17C19.75 14.9289 18.0711 13.25 16 13.25H15.6591C15.4746 13.25 15.2913 13.2792 15.1159 13.3364L14.2504 13.6191C12.7881 14.0965 11.2119 14.0965 9.74959 13.6191L8.88407 13.3364C8.70869 13.2792 8.52536 13.25 8.34087 13.25H8Z" />
             </HeaderIconButton>
@@ -82,7 +89,7 @@ export default function MainPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 24px 0' }}>
           <div
             role="tablist"
-            aria-label="홈 보기 전환"
+            aria-label={t('main.viewToggleAria')}
             style={{
               display: 'inline-flex',
               padding: 4,
@@ -91,8 +98,8 @@ export default function MainPage() {
               boxShadow: '0 0 16px rgba(21,21,21,0.04)',
             }}
           >
-            <SegmentButton label="참여중인 이벤트" active={tab === 'events'} onClick={() => setTab('events')} />
-            <SegmentButton label="내 지갑" active={tab === 'wallet'} onClick={() => setTab('wallet')} />
+            <SegmentButton label={t('main.tabEvents')} active={tab === 'events'} onClick={() => setTab('events')} />
+            <SegmentButton label={t('main.tabWallet')} active={tab === 'wallet'} onClick={() => setTab('wallet')} />
           </div>
         </div>
 
@@ -101,11 +108,7 @@ export default function MainPage() {
             <div style={{ display: 'flex', justifyContent: 'center', padding: '160px 24px 0' }}>
               <div style={{ width: 256, height: 256, borderRadius: '50%', background: '#eef0f3' }} />
             </div>
-          ) : error ? (
-            <div style={{ padding: '24px 24px 0' }}>
-              <ErrorCard message={`${error.message} (${error.status ?? '?'})`} />
-            </div>
-          ) : events.length === 0 ? (
+          ) : treatAsEmpty || events.length === 0 ? (
             <EmptyEvents onExplore={() => navigate('/explore')} />
           ) : (
           <>
@@ -153,11 +156,11 @@ export default function MainPage() {
                   boxShadow: '0 0 8px rgba(21,21,21,0.04)',
                 }}
               >
-                <Stat label="참여자" value={`${won(active.participantCount)}명`} />
+                <Stat label={t('main.stat.participants')} value={t('main.stat.participantsValue', { count: active.participantCount })} />
                 <Divider />
-                <Stat label="달성률" value={`${fundingPercent(active.currentAmount, active.targetAmount)}%`} />
+                <Stat label={t('main.stat.progress')} value={`${fundingPercent(active.currentAmount, active.targetAmount)}%`} />
                 <Divider />
-                <Stat label="마감일" value={shortDate(active.endDate)} />
+                <Stat label={t('main.stat.dueDate')} value={shortDate(active.endDate)} />
               </div>
             </div>
           </>
@@ -208,6 +211,8 @@ function SegmentButton({
 }
 
 function EventSlide({ event, active }: { event: ParticipatingEvent; active: boolean }) {
+  const { t, i18n } = useTranslation()
+  const won = (n: number) => n.toLocaleString(numLocale(i18n.resolvedLanguage))
   const percent = fundingPercent(event.currentAmount, event.targetAmount)
   return (
     <section
@@ -248,7 +253,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
           {`D-${event.dDay}`}
         </span>
         <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#86869f' }}>
-          {`목표 ${won(event.targetAmount)}원`}
+          {t('main.targetPrefix', { amount: won(event.targetAmount) })}
         </span>
       </div>
       <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
@@ -264,7 +269,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         >
           {won(event.currentAmount)}
         </span>
-        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>원</span>
+        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
       <ProgressRing percent={percent} size={256} active={active}>
@@ -275,6 +280,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
 }
 
 function EventImage({ event }: { event: ParticipatingEvent }) {
+  const { t } = useTranslation()
   if (event.representativeImageUrl) {
     return (
       <img
@@ -300,13 +306,14 @@ function EventImage({ event }: { event: ParticipatingEvent }) {
         fontWeight: 700,
       }}
     >
-      이미지 준비중
+      {t('main.imageComingSoon')}
     </div>
   )
 }
 
 /** 참여중인 이벤트가 없을 때의 빈 상태 — 일러스트 + 안내 문구 + 탐색 유도 버튼. */
 function EmptyEvents({ onExplore }: { onExplore: () => void }) {
+  const { t } = useTranslation()
   return (
     <section
       style={{
@@ -334,7 +341,7 @@ function EmptyEvents({ onExplore }: { onExplore: () => void }) {
           color: '#151519',
         }}
       >
-        참여중인 이벤트가 없어요
+        {t('main.emptyTitle')}
       </h1>
       <p
         style={{
@@ -344,11 +351,10 @@ function EmptyEvents({ onExplore }: { onExplore: () => void }) {
           letterSpacing: '-0.02em',
           color: '#86869f',
           textAlign: 'center',
+          whiteSpace: 'pre-line',
         }}
       >
-        마음에 드는 이벤트에 참여하고
-        <br />
-        함께 목표를 달성해보세요!
+        {t('main.emptyDesc')}
       </p>
       <button
         type="button"
@@ -369,7 +375,7 @@ function EmptyEvents({ onExplore }: { onExplore: () => void }) {
           WebkitTapHighlightColor: 'transparent',
         }}
       >
-        이벤트 참여하기
+        {t('main.emptyCta')}
       </button>
     </section>
   )
@@ -427,11 +433,15 @@ function HeaderIconButton({
 /** 내 지갑 탭 — 예금토큰 잔액을 이벤트 탭과 같은 레이아웃(제목·계좌·금액·구슬)으로 표시. */
 function WalletView() {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const accessToken = useAuthStore((s) => s.accessToken)
+  const userType = useAuthStore((s) => s.userType)
   const { data: wallet, isPending, error } = useMyWallet(!!accessToken)
   const { data: account } = useMyAccount(!!accessToken)
+  const won = (n: number) => n.toLocaleString(numLocale(i18n.resolvedLanguage))
 
   const noWallet = error?.status === ErrorCode.WALLET_NOT_FOUND
+  const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
 
   if (isPending) {
     return (
@@ -443,14 +453,14 @@ function WalletView() {
   if (noWallet) {
     return (
       <div style={{ padding: '24px 24px 0' }}>
-        <EmptyWalletCard onLink={() => navigate('/mydata/consent')} />
+        <EmptyWalletCard onLink={() => navigate(consentPath)} />
       </div>
     )
   }
   if (error) {
     return (
       <div style={{ padding: '24px 24px 0' }}>
-        <ErrorCard message={`${error.message} (${error.status ?? '?'})`} />
+        <ErrorCard message={error.message} />
       </div>
     )
   }
@@ -466,12 +476,12 @@ function WalletView() {
       }}
     >
       <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--color-text-primary)' }}>
-        하나 예금토큰
+        {t('main.hanaToken')}
       </h1>
       <button
         type="button"
-        onClick={() => navigate('/mydata/consent')}
-        aria-label={account ? '충전 계좌 변경' : '충전 계좌 연동'}
+        onClick={() => navigate(consentPath)}
+        aria-label={account ? t('main.changeAccountAria') : t('main.linkAccountAria')}
         style={{
           all: 'unset',
           display: 'flex',
@@ -486,29 +496,29 @@ function WalletView() {
         }}
       >
         {account
-          ? `${account.accountType === 'HANA' ? '하나은행' : '연동 계좌'} ${account.accountNumber}`
-          : '충전 계좌 연동하기'}
+          ? `${account.accountType === 'HANA' ? t('main.linkedBankHana') : t('main.linkedBankOther')} ${account.accountNumber}`
+          : t('main.linkAccountCta')}
         <ChevronRight size={15} strokeWidth={2.4} />
       </button>
       <p style={{ margin: '14px 0 24px', display: 'flex', alignItems: 'baseline', gap: 6 }}>
         <span style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
           {won(wallet.tokenBalance)}
         </span>
-        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)' }}>원</span>
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)' }}>{t('main.unit')}</span>
       </p>
 
       <button
         type="button"
         onClick={() => navigate('/wallet')}
-        aria-label="내 지갑 보기"
+        aria-label={t('main.viewWalletAria')}
         style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
         <TokenSphere size={256} />
       </button>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
-        <ActionPill label="출금하기" variant="outline" onClick={() => navigate('/wallet?action=withdraw')} />
-        <ActionPill label="충전하기" variant="filled" onClick={() => navigate('/wallet?action=charge')} />
+        <ActionPill label={t('main.withdraw')} variant="outline" onClick={() => navigate('/wallet?action=withdraw')} />
+        <ActionPill label={t('main.charge')} variant="filled" onClick={() => navigate('/wallet?action=charge')} />
       </div>
     </section>
   )
@@ -582,6 +592,7 @@ function ActionPill({
 }
 
 function EmptyWalletCard({ onLink }: { onLink: () => void }) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
@@ -603,10 +614,10 @@ function EmptyWalletCard({ onLink }: { onLink: () => void }) {
     >
       <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#191f28' }}>
         <WalletIcon size={18} strokeWidth={2.2} color="#8B5CF6" />
-        아직 지갑이 없어요
+        {t('main.walletEmptyTitle')}
       </span>
       <span style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--color-text-secondary)' }}>
-        충전 계좌를 연동하면 커스터디 지갑이 자동으로 만들어져요.
+        {t('main.walletEmptyDesc')}
         <ChevronRight size={13} strokeWidth={2.4} style={{ verticalAlign: -2, marginLeft: 2 }} />
       </span>
     </button>

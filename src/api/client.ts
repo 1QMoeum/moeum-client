@@ -35,9 +35,9 @@ export class ApiError extends Error {
   }
 }
 
-/** 어떤 에러든 사용자에게 보여줄 메시지로 변환. ApiError 는 상태코드까지 덧붙인다. */
+/** 어떤 에러든 사용자에게 보여줄 메시지로 변환. */
 export function toErrorMessage(e: unknown): string {
-  if (e instanceof ApiError) return `${e.message} (${e.status})`
+  if (e instanceof ApiError) return e.message
   if (e instanceof Error) return e.message
   return '알 수 없는 오류가 발생했습니다.'
 }

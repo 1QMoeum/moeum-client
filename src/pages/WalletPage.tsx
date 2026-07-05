@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronLeft,
   Copy,
@@ -13,17 +14,17 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { useMyWallet, useChargeWallet, useWithdrawWallet } from '@/hooks/wallet'
-import { useMyAccount, useAccountBalance } from '@/hooks/account'
+import { useMyAccount, useAccountBalance, type AccountBalance } from '@/hooks/account'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
 import HanaLogo from '@/components/icons/HanaLogo'
+import { resolvePlaidBrand } from '@/constants/bankBrand'
 import type {
   WalletResponse,
   WalletTxResponse,
   BankAccountResponse,
-  MyDataBalanceResponse,
 } from '@/types/api'
 
 type TxMode = 'charge' | 'withdraw'
@@ -43,6 +44,7 @@ function shortenAddress(address: string): string {
  */
 export default function WalletPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const accessToken = useAuthStore((s) => s.accessToken)
   const { data: wallet, isPending, error, refetch, isFetching } = useMyWallet(!!accessToken)
@@ -86,7 +88,7 @@ export default function WalletPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            aria-label="뒤로"
+            aria-label={t('wallet.back')}
             style={{
               all: 'unset',
               display: 'flex',
@@ -111,7 +113,7 @@ export default function WalletPage() {
               letterSpacing: '-0.02em',
             }}
           >
-            내 지갑
+            {t('wallet.title')}
           </h1>
         </header>
 
@@ -120,7 +122,7 @@ export default function WalletPage() {
         {!isPending && noWallet && <EmptyWallet />}
 
         {!isPending && error && !noWallet && (
-          <ErrorState message={`${error.message} (${error.status ?? '?'})`} onRetry={() => void refetch()} retrying={isFetching} />
+          <ErrorState message={error.message} onRetry={() => void refetch()} retrying={isFetching} />
         )}
 
         {!isPending && wallet && <WalletView wallet={wallet} initialTxMode={initialTxMode} />}
@@ -130,10 +132,12 @@ export default function WalletPage() {
 }
 
 function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initialTxMode: TxMode | null }) {
+  const { t, i18n } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [txMode, setTxMode] = useState<TxMode | null>(initialTxMode)
   const { data: account } = useMyAccount(true)
-  const { data: balance, isPending: balancePending } = useAccountBalance(account?.accountNumber)
+  const { data: balance, isPending: balancePending } = useAccountBalance(account)
+  const numberLocale = i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'
 
   const copyAddress = async () => {
     try {
@@ -172,7 +176,7 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
           }}
         >
           <WalletIcon size={18} strokeWidth={2.4} />
-          예금토큰 잔액
+          {t('wallet.balanceLabel')}
         </div>
         <div
           style={{
@@ -191,12 +195,12 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
               lineHeight: 1.1,
             }}
           >
-            {wallet.tokenBalance.toLocaleString('ko-KR')}
+            {wallet.tokenBalance.toLocaleString(numberLocale)}
           </span>
-          <span style={{ fontSize: 18, fontWeight: 700, opacity: 0.92 }}>원</span>
+          <span style={{ fontSize: 18, fontWeight: 700, opacity: 0.92 }}>{t('wallet.balanceUnit')}</span>
         </div>
         <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2, letterSpacing: '-0.01em' }}>
-          서버에 캐시된 잔액이에요
+          {t('wallet.balanceCacheNote')}
         </div>
       </section>
 
@@ -204,14 +208,14 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
       <div style={{ display: 'flex', gap: 12 }}>
         <ActionButton
           icon={<Plus size={20} strokeWidth={2.6} />}
-          label="충전"
-          sublabel="원 → 토큰"
+          label={t('wallet.charge')}
+          sublabel={t('wallet.chargeSub')}
           onClick={() => setTxMode('charge')}
         />
         <ActionButton
           icon={<ArrowDownToLine size={20} strokeWidth={2.6} />}
-          label="전환"
-          sublabel="토큰 → 원"
+          label={t('wallet.withdraw')}
+          sublabel={t('wallet.withdrawSub')}
           onClick={() => setTxMode('withdraw')}
         />
       </div>
@@ -246,7 +250,7 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>지갑 주소</span>
+            <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>{t('wallet.walletAddress')}</span>
             <span
               style={{
                 fontSize: 15,
@@ -272,7 +276,7 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
             }}
           >
             {copied ? <Check size={16} strokeWidth={2.6} /> : <Copy size={16} strokeWidth={2.4} />}
-            {copied ? '복사됨' : '복사'}
+            {copied ? t('wallet.copied') : t('wallet.copy')}
           </span>
         </button>
 
@@ -295,9 +299,9 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>익스플로러</span>
+            <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>{t('wallet.explorer')}</span>
             <span style={{ fontSize: 15, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
-              블록체인에서 보기
+              {t('wallet.viewOnChain')}
             </span>
           </div>
           <ExternalLink size={18} strokeWidth={2.2} color="#8b95a1" style={{ flexShrink: 0 }} />
@@ -314,14 +318,14 @@ function WalletView({ wallet, initialTxMode }: { wallet: WalletResponse; initial
           letterSpacing: '-0.01em',
         }}
       >
-        개인키는 안전하게 보관되며 외부에 노출되지 않습니다.
+        {t('wallet.privateKeyNote')}
       </p>
 
       {txMode && (
         <TxModal
           mode={txMode}
           balance={wallet.tokenBalance}
-          availableAmt={balance?.available_amt}
+          availableAmt={balance?.currency === 'KRW' ? balance.available : undefined}
           onClose={() => setTxMode(null)}
         />
       )}
@@ -387,17 +391,20 @@ function ActionButton({
   )
 }
 
-/** 충전 계좌 + 마이데이터 잔액. 충전하면 이 통장에서 돈이 빠져나간다. */
+/** 충전 계좌 + 잔액. 충전하면 이 통장에서 돈이 빠져나간다. */
 function FundingAccount({
   account,
   balance,
   balancePending,
 }: {
   account: BankAccountResponse | null | undefined
-  balance: MyDataBalanceResponse | undefined
+  balance: AccountBalance | null | undefined
   balancePending: boolean
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
+  const userType = useAuthStore((s) => s.userType)
+  const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
 
   // 로딩
   if (account === undefined) {
@@ -409,7 +416,7 @@ function FundingAccount({
     return (
       <button
         type="button"
-        onClick={() => navigate('/mydata/consent')}
+        onClick={() => navigate(consentPath)}
         style={{
           all: 'unset',
           boxSizing: 'border-box',
@@ -426,10 +433,10 @@ function FundingAccount({
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em' }}>
-            충전 계좌 연동하기
+            {t('wallet.linkAccount')}
           </span>
           <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
-            계좌를 연동하면 바로 충전할 수 있어요
+            {t('wallet.linkAccountSub')}
           </span>
         </div>
         <ChevronLeft size={20} color="#adb5bd" style={{ transform: 'rotate(180deg)', flexShrink: 0 }} />
@@ -438,6 +445,8 @@ function FundingAccount({
   }
 
   const isHana = account.accountType === 'HANA'
+  const isPlaid = account.accountType === 'PLAID'
+  const plaidBrand = isPlaid ? resolvePlaidBrand(account.bankCode, account.accountHolder) : null
 
   return (
     <section
@@ -451,12 +460,31 @@ function FundingAccount({
       }}
     >
       <div style={{ fontSize: 13, color: '#8b95a1', fontWeight: 500, letterSpacing: '-0.01em' }}>
-        충전 계좌
+        {t('wallet.fundingAccount')}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {isHana ? (
           <HanaLogo size={40} />
+        ) : plaidBrand ? (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              background: plaidBrand.color,
+              color: plaidBrand.fg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 16,
+              letterSpacing: '-0.02em',
+              flexShrink: 0,
+            }}
+          >
+            {plaidBrand.short}
+          </div>
         ) : (
           <div
             style={{
@@ -474,7 +502,7 @@ function FundingAccount({
               flexShrink: 0,
             }}
           >
-            타행
+            {t('wallet.otherBankBadge')}
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
@@ -497,7 +525,7 @@ function FundingAccount({
       <div style={{ height: 1, background: '#f2f4f6' }} />
 
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>출금 가능 금액</span>
+        <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>{t('wallet.availableBalance')}</span>
         <span
           style={{
             fontSize: 18,
@@ -508,10 +536,12 @@ function FundingAccount({
           }}
         >
           {balancePending
-            ? '조회 중…'
+            ? t('wallet.loading')
             : balance
-              ? `${balance.available_amt.toLocaleString('ko-KR')}원`
-              : '조회 실패'}
+              ? balance.currency === 'KRW'
+                ? `${balance.available.toLocaleString('ko-KR')}${t('wallet.balanceUnit')}`
+                : `${balance.available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${balance.currency}`
+              : t('wallet.loadFail')}
         </span>
       </div>
     </section>
@@ -534,6 +564,7 @@ function WalletSkeleton() {
 }
 
 function EmptyWallet() {
+  const { t } = useTranslation()
   return (
     <div
       style={{
@@ -562,7 +593,7 @@ function EmptyWallet() {
         <WalletIcon size={28} strokeWidth={2.2} />
       </div>
       <div style={{ fontSize: 17, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
-        아직 지갑이 없어요
+        {t('wallet.emptyTitle')}
       </div>
       <p
         style={{
@@ -574,7 +605,7 @@ function EmptyWallet() {
           maxWidth: 260,
         }}
       >
-        예금 토큰을 사용하려면 커스터디 지갑이 필요해요. 충전 계좌를 연동하면 자동으로 만들어집니다.
+        {t('wallet.emptyDesc')}
       </p>
     </div>
   )
@@ -589,6 +620,7 @@ function ErrorState({
   onRetry: () => void
   retrying: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <div
       style={{
@@ -609,7 +641,7 @@ function ErrorState({
         </p>
       </div>
       <Button variant="solid" onClick={onRetry} disabled={retrying} style={{ width: 'auto', padding: '12px 28px' }}>
-        {retrying ? '불러오는 중…' : '다시 시도'}
+        {retrying ? t('wallet.retrying') : t('wallet.retry')}
       </Button>
     </div>
   )
@@ -633,10 +665,12 @@ function TxModal({
   availableAmt: number | undefined
   onClose: () => void
 }) {
+  const { t, i18n } = useTranslation()
   const [amountStr, setAmountStr] = useState('')
   const charge = useChargeWallet()
   const withdraw = useWithdrawWallet()
   const tx = mode === 'charge' ? charge : withdraw
+  const numberLocale = i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'
 
   const amount = Number(amountStr)
   const overBalance = mode === 'withdraw' && amount > balance
@@ -644,12 +678,12 @@ function TxModal({
   const overAvailable = mode === 'charge' && availableAmt != null && amount > availableAmt
   const canSubmit = amount > 0 && !overBalance && !tx.isPending && !tx.isSuccess
 
-  const title = mode === 'charge' ? '충전하기' : '원화로 전환'
-  const desc = mode === 'charge' ? '원화를 예금토큰으로 충전해요' : '예금토큰을 원화로 되돌려요'
+  const title = mode === 'charge' ? t('wallet.txChargeTitle') : t('wallet.txWithdrawTitle')
+  const desc = mode === 'charge' ? t('wallet.txChargeDesc') : t('wallet.txWithdrawDesc')
 
   const errorText = (() => {
     if (!tx.error) return null
-    if (tx.error.status === ErrorCode.INSUFFICIENT_BALANCE) return '잔액이 부족해요. 금액을 다시 확인해 주세요.'
+    if (tx.error.status === ErrorCode.INSUFFICIENT_BALANCE) return t('wallet.insufficientBalance')
     return toErrorMessage(tx.error)
   })()
 
@@ -700,7 +734,7 @@ function TxModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t('wallet.close')}
             style={{
               all: 'unset',
               display: 'flex',
@@ -739,7 +773,7 @@ function TxModal({
                   inputMode="numeric"
                   autoFocus
                   placeholder="0"
-                  value={amountStr ? Number(amountStr).toLocaleString('ko-KR') : ''}
+                  value={amountStr ? Number(amountStr).toLocaleString(numberLocale) : ''}
                   onChange={(e) => setAmountStr(e.target.value.replace(/[^0-9]/g, ''))}
                   style={{
                     flex: 1,
@@ -754,20 +788,20 @@ function TxModal({
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 />
-                <span style={{ fontSize: 18, fontWeight: 700, color: '#8b95a1' }}>원</span>
+                <span style={{ fontSize: 18, fontWeight: 700, color: '#8b95a1' }}>{t('wallet.balanceUnit')}</span>
               </div>
 
               {mode === 'withdraw' && (
                 <span style={{ fontSize: 12, color: overBalance ? '#e03e3e' : '#adb5bd', letterSpacing: '-0.01em' }}>
                   {overBalance
-                    ? '보유 잔액을 초과했어요'
-                    : `전환 가능 ${balance.toLocaleString('ko-KR')}원`}
+                    ? t('wallet.overBalance')
+                    : t('wallet.convertableUpTo', { amount: balance.toLocaleString(numberLocale) })}
                 </span>
               )}
 
               {mode === 'charge' && availableAmt != null && (
                 <span style={{ fontSize: 12, color: overAvailable ? '#f08c00' : '#adb5bd', letterSpacing: '-0.01em' }}>
-                  출금 가능 {availableAmt.toLocaleString('ko-KR')}원
+                  {t('wallet.availableUpTo', { amount: availableAmt.toLocaleString(numberLocale) })}
                 </span>
               )}
             </div>
@@ -777,12 +811,12 @@ function TxModal({
               {QUICK_AMOUNTS.map((v) => (
                 <QuickChip
                   key={v}
-                  label={`+${(v / 10_000).toLocaleString('ko-KR')}만`}
+                  label={t('wallet.quickAmount', { amount: v.toLocaleString(numberLocale) })}
                   onClick={() => setAmountStr(String((Number(amountStr) || 0) + v))}
                 />
               ))}
               {mode === 'withdraw' && balance > 0 && (
-                <QuickChip label="전액" onClick={() => setAmountStr(String(balance))} />
+                <QuickChip label={t('wallet.max')} onClick={() => setAmountStr(String(balance))} />
               )}
             </div>
 
@@ -801,7 +835,7 @@ function TxModal({
                 }}
               >
                 <AlertCircle size={16} strokeWidth={2.2} style={{ flexShrink: 0 }} />
-                통장 출금 가능액을 초과해요. 그대로 충전할까요?
+                {t('wallet.overAvailableWarn')}
               </div>
             )}
 
@@ -825,7 +859,7 @@ function TxModal({
             )}
 
             <Button variant="solid" onClick={submit} disabled={!canSubmit}>
-              {tx.isPending ? '처리 중…' : title}
+              {tx.isPending ? t('wallet.processing') : title}
             </Button>
           </>
         )}
@@ -866,15 +900,17 @@ function TxResult({
   result: WalletTxResponse
   onClose: () => void
 }) {
+  const { t, i18n } = useTranslation()
+  const numberLocale = i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, paddingTop: 4 }}>
       <CheckCircle2 size={52} strokeWidth={2} color="#12b886" />
       <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span style={{ fontSize: 17, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em' }}>
-          {mode === 'charge' ? '충전이 완료됐어요' : '전환이 완료됐어요'}
+          {mode === 'charge' ? t('wallet.chargeComplete') : t('wallet.withdrawComplete')}
         </span>
         <span style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>
-          잔액 {result.tokenBalance.toLocaleString('ko-KR')}원
+          {t('wallet.balanceAfter', { amount: result.tokenBalance.toLocaleString(numberLocale) })}
         </span>
       </div>
 
@@ -893,12 +929,12 @@ function TxResult({
           letterSpacing: '-0.01em',
         }}
       >
-        트랜잭션 보기
+        {t('wallet.viewTx')}
         <ExternalLink size={15} strokeWidth={2.4} />
       </a>
 
       <Button variant="solid" onClick={onClose} style={{ marginTop: 4 }}>
-        확인
+        {t('wallet.confirm')}
       </Button>
     </div>
   )
