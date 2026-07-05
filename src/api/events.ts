@@ -1,6 +1,7 @@
 import { apiClient, unwrap } from '@/api/client'
 import type {
   BudgetPlanResponse,
+  CancelEventResponse,
   CreateBudgetRequest,
   CreateEventRequest,
   CreateEventResponse,
@@ -18,7 +19,6 @@ import type {
   ParticipatingEventsResponse,
   PostInput,
   SettlementResponse,
-  UpdateBudgetRequest,
   UpdateEventRequest,
 } from '@/types/event'
 
@@ -61,6 +61,15 @@ export const eventApi = {
   update: (eventId: number, body: UpdateEventRequest) =>
     unwrap<EventDetailResponse>(apiClient.patch(`/v1/events/${eventId}`, body)),
 
+  /**
+   * 이벤트 취소 + 환불 (총대만) — PENDING 사용계획 취소, 미집행 잔액을 참여자에게 비례 환불(내림).
+   * 이미 집행된 건은 환불 불가. 총대아님 4006 · 진행중아님 4004.
+   */
+  cancel: (userId: number, eventId: number) =>
+    unwrap<CancelEventResponse>(
+      apiClient.post(`/v1/events/${eventId}/cancel`, null, { params: { userId } }),
+    ),
+
   /** 정산 거래내역 (참여자/총대만) — 입금·출금 내역 + 합계. 미참여 4001 · 없음 4000. */
   settlement: (eventId: number) =>
     unwrap<SettlementResponse>(apiClient.get(`/v1/events/${eventId}/settlement`)),
@@ -85,15 +94,6 @@ export const eventApi = {
   createBudgets: (userId: number, eventId: number, body: CreateBudgetRequest) =>
     unwrap<BudgetPlanResponse>(
       apiClient.post(`/v1/events/${eventId}/budgets`, body, { params: { userId } }),
-    ),
-
-  /**
-   * 사용 계획 항목 수정 — 총대만(4006) · PENDING만(4008) · 모금 시작 전만(4009).
-   * 변경 후 전체 사용 계획 반환.
-   */
-  updateBudget: (userId: number, eventId: number, budgetId: number, body: UpdateBudgetRequest) =>
-    unwrap<BudgetPlanResponse>(
-      apiClient.patch(`/v1/events/${eventId}/budgets/${budgetId}`, body, { params: { userId } }),
     ),
 
   /**

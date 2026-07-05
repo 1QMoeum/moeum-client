@@ -60,6 +60,9 @@ export default function EventEditor({ event, onClose }: Props) {
   // 시작일·종료일은 생성 후 변경 불가 — 원래 값을 그대로 유지해 전송한다.
   const startDate = event.startDate
   const endDate = event.endDate
+  // 진행(이벤트) 날짜 범위 — 생성 시엔 없고 여기서 처음 입력·수정한다.
+  const [eventStartDate, setEventStartDate] = useState(event.eventStartDate ?? '')
+  const [eventEndDate, setEventEndDate] = useState(event.eventEndDate ?? '')
   const [startTime, setStartTime] = useState(toHm(event.operatingStartTime))
   const [endTime, setEndTime] = useState(toHm(event.operatingEndTime))
   const [pickError, setPickError] = useState<string | null>(null)
@@ -80,7 +83,11 @@ export default function EventEditor({ event, onClose }: Props) {
 
   const periodValid = startDate !== '' && endDate !== '' && endDate >= startDate
   const timePaired = (startTime === '') === (endTime === '')
-  const valid = periodValid && timePaired
+  // 진행 날짜는 선택 — 둘 다 비었거나(미입력) 둘 다 채워 종료 ≥ 시작이어야 유효.
+  const eventDatePaired = (eventStartDate === '') === (eventEndDate === '')
+  const eventDateOrdered = !eventStartDate || !eventEndDate || eventEndDate >= eventStartDate
+  const eventDateValid = eventDatePaired && eventDateOrdered
+  const valid = periodValid && timePaired && eventDateValid
 
   const onPick = (files: FileList | null) => {
     if (!files) return
@@ -115,6 +122,8 @@ export default function EventEditor({ event, onClose }: Props) {
           introImageFileIds,
           startDate,
           endDate,
+          eventStartDate: eventStartDate || undefined,
+          eventEndDate: eventEndDate || undefined,
           operatingStartTime: startTime || undefined,
           operatingEndTime: endTime || undefined,
         },
@@ -237,6 +246,33 @@ export default function EventEditor({ event, onClose }: Props) {
             />
             {pickError && <span style={errTextStyle}>{pickError}</span>}
           </div>
+
+          {/* 진행 날짜 (범위) */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <label style={dateFieldStyle}>
+              <span style={fieldLabelStyle}>진행 시작일 (선택)</span>
+              <input
+                type="date"
+                value={eventStartDate}
+                onChange={(e) => setEventStartDate(e.target.value)}
+                style={nativeInputStyle}
+              />
+            </label>
+            <label style={dateFieldStyle}>
+              <span style={fieldLabelStyle}>진행 종료일 (선택)</span>
+              <input
+                type="date"
+                value={eventEndDate}
+                min={eventStartDate || undefined}
+                onChange={(e) => setEventEndDate(e.target.value)}
+                style={nativeInputStyle}
+              />
+            </label>
+          </div>
+          {!eventDatePaired && <span style={errTextStyle}>진행 시작일·종료일을 함께 입력해 주세요.</span>}
+          {eventDatePaired && !eventDateOrdered && (
+            <span style={errTextStyle}>진행 종료일은 시작일 이후여야 해요.</span>
+          )}
 
           {/* 진행 시간 */}
           <div style={{ display: 'flex', gap: 10 }}>

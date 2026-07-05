@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import {
+  useCancelEvent,
   useDeletePost,
   useEventBudgets,
   useEventDetail,
@@ -72,9 +73,16 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'settlement', label: '정산 내역' },
 ]
 
+/** 비진행 상태의 하단 CTA 문구 (진행중이면 참여 버튼). 모르는 상태는 기본 문구. */
+const STATUS_CTA: Record<string, string> = {
+  CANCELLED: '취소됨',
+  FAILED: '무산됨',
+  COMPLETED: '종료됨',
+}
+
 /**
  * 이벤트 상세 (참여 전/후 공용). 상단 공통 헤더(진행률 링·통계) + 4개 탭.
- * 총대(생성자)는 우상단 메뉴로 수정/공유/삭제, 사용 계획 편집이 가능하다.
+ * 총대(생성자)는 우상단 메뉴로 수정/공유/취소, 사용 계획 편집이 가능하다.
  */
 export default function EventDetailPage() {
   const navigate = useNavigate()
@@ -185,6 +193,36 @@ function EventView({
   const ongoing = event.status === 'ONGOING'
   const dday = daysLeft(event.endDate)
 
+  const cancelMut = useCancelEvent(event.eventId)
+  const cancelEvent = () => {
+    setMenuOpen(false)
+    if (cancelMut.isPending) return
+    if (
+      !window.confirm(
+        '이벤트를 취소하면 미집행 잔액이 참여자에게 환불돼요. 이미 집행된 금액은 되돌릴 수 없어요. 취소할까요?',
+      )
+    )
+      return
+    cancelMut.mutate(undefined, {
+      onSuccess: (res) => {
+        setToast(
+          res.refundedCount > 0
+            ? `이벤트를 취소했어요 · ${res.refundedCount}명에게 ${won(res.refundedTotal)} 환불`
+            : '이벤트를 취소했어요',
+        )
+      },
+      onError: (e) => {
+        setToast(
+          e.status === ErrorCode.BUDGET_NOT_OWNER
+            ? '총대만 이벤트를 취소할 수 있어요'
+            : e.status === ErrorCode.EVENT_NOT_ACTIVE
+              ? '진행중인 이벤트만 취소할 수 있어요'
+              : e.message,
+        )
+      },
+    })
+  }
+
   useEffect(() => {
     if (!toast) return
     const t = window.setTimeout(() => setToast(null), 2200)
@@ -233,7 +271,7 @@ function EventView({
         }
       />
 
-      {/* 총대 메뉴 (수정/공유/삭제) */}
+      {/* 총대 메뉴 (수정/공유/취소) */}
       {menuOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setMenuOpen(false)} />
@@ -264,12 +302,9 @@ function EventView({
             />
             <MenuItem
               icon={<Trash2 size={18} color="#fa5252" />}
-              label="삭제하기"
+              label="취소하기"
               danger
-              onClick={() => {
-                setMenuOpen(false)
-                setToast('삭제 기능은 곧 제공될 예정이에요')
-              }}
+              onClick={cancelEvent}
             />
           </div>
         </>
@@ -359,7 +394,7 @@ function EventView({
           disabled={!ongoing}
           style={{ flex: 1, background: ongoing ? VIOLET : undefined, borderRadius: 32 }}
         >
-          {ongoing ? '이벤트 참여하기' : '진행 중인 모금이 아니에요'}
+          {ongoing ? '이벤트 참여하기' : (STATUS_CTA[event.status] ?? '진행 중인 모금이 아니에요')}
         </Button>
       </div>
 
@@ -568,7 +603,17 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
         <IntroContentBody event={event} />
 
         <Hr />
-        <InfoBlock label="이벤트 날짜" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
+        <InfoBlock label="모금 기간" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
+
+        {event.eventStartDate && event.eventEndDate && (
+          <>
+            <Hr />
+            <InfoBlock
+              label="진행 날짜"
+              value={`${dotDate(event.eventStartDate)} ~ ${dotDate(event.eventEndDate)}`}
+            />
+          </>
+        )}
 
         {event.operatingStartTime && event.operatingEndTime && (
           <>
@@ -1459,17 +1504,10 @@ const infoLabelStyle: CSSProperties = {
   letterSpacing: '-0.01em',
 }
 
-/** 사용 계획 편집 모달 — 모금 시작 여부(currentAmount>0)를 넘겨 잠금 규칙을 적용한다. */
+/** 사용 계획 편집 모달 — 기존 PENDING 항목 취소 + 신규 항목 추가. */
 function BudgetEditorGate({ event, onClose }: { event: EventDetailResponse; onClose: () => void }) {
   const { data } = useEventBudgets(event.eventId)
-  return (
-    <BudgetEditor
-      eventId={event.eventId}
-      items={data?.items ?? []}
-      fundingStarted={event.currentAmount > 0}
-      onClose={onClose}
-    />
-  )
+  return <BudgetEditor eventId={event.eventId} items={data?.items ?? []} onClose={onClose} />
 }
 
 /* ===== 상태 화면 ===== */

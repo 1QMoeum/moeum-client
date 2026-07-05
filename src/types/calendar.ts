@@ -18,7 +18,7 @@ export interface CalendarEntryDto {
   title: string
   amount: number | null
   executionStatus: BudgetStatus | null
-  /** 모금(입금) 완료 여부 — false 면 '입금 미완료' 칩 */
+  /** 모금(입금) 완료 여부. (칩으로는 더 이상 노출하지 않음) */
   fundingComplete: boolean
 }
 

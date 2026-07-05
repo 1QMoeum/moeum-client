@@ -231,6 +231,10 @@ export interface EventDetailResponse {
   startDate: string
   /** 모금 종료일 (YYYY-MM-DD) */
   endDate: string
+  /** 진행(이벤트) 시작 날짜 (YYYY-MM-DD). 생성 시엔 없고 수정에서 입력. 미설정 시 null */
+  eventStartDate: string | null
+  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ eventStartDate). 미설정 시 null */
+  eventEndDate: string | null
   /** 진행 시작 시간 ("HH:mm:ss", 미설정 시 null) */
   operatingStartTime: string | null
   /** 진행 종료 시간 ("HH:mm:ss", 미설정 시 null) */
@@ -254,10 +258,29 @@ export interface UpdateEventRequest {
   startDate: string
   /** 모금 종료일 (YYYY-MM-DD, ≥ startDate) */
   endDate: string
+  /** 진행(이벤트) 시작 날짜 (YYYY-MM-DD, 선택). 수정에서 처음 입력. */
+  eventStartDate?: string
+  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ eventStartDate, 선택) */
+  eventEndDate?: string
   /** 진행 시작 시간 (HH:mm, 선택) */
   operatingStartTime?: string
   /** 진행 종료 시간 (HH:mm, 선택) */
   operatingEndTime?: string
+}
+
+/** ===== 이벤트 취소 + 환불 (POST /v1/events/{eventId}/cancel) — 총대만 =====
+ *  PENDING 사용계획을 취소하고, 미집행 잔액(모금액−집행합)을 참여자에게 비례 환불(에스크로→지갑, 내림).
+ *  이미 집행된 건은 되돌리지 않는다. 총대아님 4006 · 진행중아님 4004. */
+export interface CancelEventResponse {
+  eventId: number
+  /** 취소 후 이벤트 상태 (CANCELLED) */
+  status: EventStatus
+  /** 이미 집행되어 환불되지 않은 총액(원) */
+  executedTotal: number
+  /** 참여자에게 환불된 총액(원) */
+  refundedTotal: number
+  /** 환불 처리된 참여자 수 */
+  refundedCount: number
 }
 
 /** ===== 정산 거래내역 (GET /v1/events/{eventId}/settlement) — 참여자/총대만 =====
@@ -361,9 +384,6 @@ export interface BudgetItemInput {
 export interface CreateBudgetRequest {
   items: BudgetItemInput[]
 }
-
-/** 사용 계획 항목 수정 요청 — 단일 항목. */
-export type UpdateBudgetRequest = BudgetItemInput
 
 /** ===== 이벤트 공지 (EventPost) — /v1/events/{eventId}/posts =====
  *  총대가 남기는 소식(카페 계약·영수증 등). 참여자에게 알림 발송. */

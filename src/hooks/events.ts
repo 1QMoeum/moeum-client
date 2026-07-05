@@ -5,6 +5,7 @@ import { getUserIdFromToken } from '@/lib/jwt'
 import { useAuthStore } from '@/store/auth'
 import type {
   BudgetPlanResponse,
+  CancelEventResponse,
   CreateBudgetRequest,
   CreateEventRequest,
   CreateEventResponse,
@@ -18,7 +19,6 @@ import type {
   ParticipatingEventsResponse,
   PostInput,
   SettlementResponse,
-  UpdateBudgetRequest,
   UpdateEventRequest,
 } from '@/types/event'
 
@@ -110,6 +110,21 @@ export function useUpdateEvent(eventId: number) {
   })
 }
 
+/**
+ * 이벤트 취소 + 환불 (총대). 총대아님 4006 · 진행중아님 4004 는 페이지에서 status 로 분기.
+ * 성공 시 상세·목록·지도·참여목록·정산 캐시를 무효화한다(상태 CANCELLED 반영).
+ */
+export function useCancelEvent(eventId: number) {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const qc = useQueryClient()
+  return useMutation<CancelEventResponse, ApiError, void>({
+    mutationFn: () => eventApi.cancel(requireUserId(accessToken), eventId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
 /** 정산 거래내역 (참여자/총대). 미참여(4001)는 페이지에서 빈 상태로 분기. */
 export function useEventSettlement(eventId: number | null) {
   return useQuery<SettlementResponse, ApiError>({
@@ -170,7 +185,7 @@ export function useParticipateEvent() {
   })
 }
 
-/** 사용 계획 쿼리 키. 생성/수정/취소 mutation 의 setQueryData 대상. */
+/** 사용 계획 쿼리 키. 생성/취소 mutation 의 갱신 대상. */
 const budgetsKey = (eventId: number) => ['events', 'budgets', eventId] as const
 
 /**
@@ -205,23 +220,6 @@ export function useCreateBudgets(eventId: number) {
   return useMutation<BudgetPlanResponse, ApiError, CreateBudgetRequest>({
     mutationFn: (body) => eventApi.createBudgets(requireUserId(accessToken), eventId, body),
     onSuccess: () => void qc.invalidateQueries({ queryKey: budgetsKey(eventId) }),
-  })
-}
-
-/** 사용 계획 항목 수정 mutation 변수. */
-type UpdateBudgetVars = { budgetId: number; body: UpdateBudgetRequest }
-
-/**
- * 사용 계획 항목 수정 (총대). 총대아님 4006 · PENDING아님 4008 · 모금후잠금 4009.
- * 성공 시 반환된 전체 계획으로 캐시를 갱신한다.
- */
-export function useUpdateBudget(eventId: number) {
-  const accessToken = useAuthStore((s) => s.accessToken)
-  const qc = useQueryClient()
-  return useMutation<BudgetPlanResponse, ApiError, UpdateBudgetVars>({
-    mutationFn: ({ budgetId, body }) =>
-      eventApi.updateBudget(requireUserId(accessToken), eventId, budgetId, body),
-    onSuccess: (plan) => qc.setQueryData(budgetsKey(eventId), plan),
   })
 }
 
