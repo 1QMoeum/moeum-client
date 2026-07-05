@@ -2,7 +2,6 @@ import { Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import type { UIEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MoeumLogo from '@/components/ui/MoeumLogo'
 import BottomNav from '@/components/ui/BottomNav'
 import ProgressRing from '@/components/home/ProgressRing'
 import { useMyWallet } from '@/hooks/wallet'
@@ -56,7 +55,12 @@ export default function MainPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <MoeumLogo height={28} />
+            <img
+              src="/moeum-favicon.svg"
+              alt="moeum"
+              draggable={false}
+              style={{ height: 36, width: 'auto', userSelect: 'none' }}
+            />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <HeaderIconButton label="알림">
