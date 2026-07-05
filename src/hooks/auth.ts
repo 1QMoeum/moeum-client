@@ -41,21 +41,29 @@ export function useLogin() {
   })
 }
 
-/** 회원가입 — KYC + PIN. 성공 시 토큰 저장. */
+/** 회원가입 — KYC + PIN. 성공 시 토큰 저장 + userType=DOMESTIC 저장. */
 export function useSignup() {
   const setTokens = useAuthStore((s) => s.setTokens)
+  const setUserType = useAuthStore((s) => s.setUserType)
   return useMutation<TokenResponse, ApiError, KycPinVars>({
     mutationFn: ({ identityVerificationId, pin }) => authApi.signup(identityVerificationId, pin),
-    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+    onSuccess: ({ accessToken, refreshToken }) => {
+      setTokens(accessToken, refreshToken)
+      setUserType('DOMESTIC')
+    },
   })
 }
 
-/** 재인증 로그인 — KYC + PIN. 성공 시 토큰 저장. */
+/** 재인증 로그인 — KYC + PIN. 성공 시 토큰 저장 + userType=DOMESTIC 저장. */
 export function useKycLogin() {
   const setTokens = useAuthStore((s) => s.setTokens)
+  const setUserType = useAuthStore((s) => s.setUserType)
   return useMutation<TokenResponse, ApiError, KycPinVars>({
     mutationFn: ({ identityVerificationId, pin }) => authApi.kycLogin(identityVerificationId, pin),
-    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+    onSuccess: ({ accessToken, refreshToken }) => {
+      setTokens(accessToken, refreshToken)
+      setUserType('DOMESTIC')
+    },
   })
 }
 
@@ -93,20 +101,28 @@ export function useVerifyForeignFace() {
   })
 }
 
-/** Foreign signup — passport + selfie + PIN. Saves tokens on success. */
+/** Foreign signup — passport + selfie + PIN. Saves tokens + userType=FOREIGN on success. */
 export function useSignupForeign() {
   const setTokens = useAuthStore((s) => s.setTokens)
+  const setUserType = useAuthStore((s) => s.setUserType)
   return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
     mutationFn: ({ passport, selfie, pin }) => authApi.signupForeign(passport, selfie, pin),
-    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+    onSuccess: ({ accessToken, refreshToken }) => {
+      setTokens(accessToken, refreshToken)
+      setUserType('FOREIGN')
+    },
   })
 }
 
-/** Foreign re-verification login — passport + selfie + PIN. Saves tokens on success. */
+/** Foreign re-verification login — passport + selfie + PIN. Saves tokens + userType=FOREIGN on success. */
 export function useKycLoginForeign() {
   const setTokens = useAuthStore((s) => s.setTokens)
+  const setUserType = useAuthStore((s) => s.setUserType)
   return useMutation<TokenResponse, ApiError, ForeignKycPinVars>({
     mutationFn: ({ passport, selfie, pin }) => authApi.kycLoginForeign(passport, selfie, pin),
-    onSuccess: ({ accessToken, refreshToken }) => setTokens(accessToken, refreshToken),
+    onSuccess: ({ accessToken, refreshToken }) => {
+      setTokens(accessToken, refreshToken)
+      setUserType('FOREIGN')
+    },
   })
 }
