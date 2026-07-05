@@ -59,11 +59,54 @@ export interface MyDataBalanceResponse {
   available_amt: number
 }
 
+/** ===== 도메인 타입 — plaid (외국인 mock, Plaid 표준 스펙 그대로 snake_case) =====
+ *  서버가 공용 응답 포맷으로 감싸지 않고 raw 반환. */
+
+export interface PlaidBalances {
+  current: number
+  available: number
+  iso_currency_code: string
+}
+
+export interface PlaidAccountListItem {
+  account_id: string
+  balances: PlaidBalances
+  mask: string
+  name: string
+  official_name: string
+  /** 예: 'depository' / 'credit' / 'loan' / 'investment'. 연동은 depository 만 통과 */
+  type: string
+  /** 예: 'checking' / 'savings' / 'credit card'. 연동은 checking/savings 만 통과 */
+  subtype: string
+  /** Plaid 표준은 계좌 레벨 필드가 아니나, mock 은 은행 섞여있어 계좌별 브랜드 렌더용으로 실려온다. */
+  institution_id: string
+}
+
+export interface PlaidItem {
+  institution_id: string
+  item_id: string
+}
+
+export interface PlaidAccountsResponse {
+  accounts: PlaidAccountListItem[]
+  item: PlaidItem
+  request_id: string
+}
+
+export interface PlaidBalanceResponse {
+  account: {
+    account_id: string
+    balances: PlaidBalances
+  }
+  request_id: string
+}
+
 /** ===== 도메인 타입 — bank account (우리 자원, ResponseDTO 적용) ===== */
 
 export interface BankAccountResponse {
   accountId: number
-  accountType: 'HANA' | 'OTHER'
+  /** HANA/OTHER = 국내 마이데이터 연동, PLAID = 외국인 Plaid 연동 */
+  accountType: 'HANA' | 'OTHER' | 'PLAID'
   bankCode: string
   accountNumber: string
   accountHolder: string

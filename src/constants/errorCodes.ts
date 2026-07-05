@@ -7,6 +7,10 @@ export const ErrorCode = {
   REFRESH_INVALID: 2006,
   /** 모금 참여 시 통장(연동 계좌) 잔액 부족 — 자동충전 불가 */
   ACCOUNT_INSUFFICIENT: 2010,
+  /** 사용자 유형 mismatch — DOMESTIC 이 /plaid 를, FOREIGN 이 /mydata 를 호출 시 */
+  INVALID_PROVIDER_FOR_USER_TYPE: 2019,
+  /** 외국인 계좌 연동 — depository(checking/savings) 만 허용, 신용카드·투자·대출 거절 */
+  UNSUPPORTED_PLAID_ACCOUNT_TYPE: 2020,
   /** 커스터디 지갑 미생성 — 빈 상태(생성 안내) 노출 */
   WALLET_NOT_FOUND: 3000,
   /** 전환(withdraw) 시 예금토큰 잔액 부족 */
