@@ -22,6 +22,39 @@
   box-sizing: border-box;
 }
 
+/* 스플래시(시작화면) 로딩 스피너 — 애니메이션이라 인라인 대신 클래스로 둔다. */
+@keyframes moeum-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes moeum-splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.moeum-splash-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-track);
+  border-top-color: var(--color-accent);
+  animation: moeum-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moeum-splash-spinner {
+    animation-duration: 2s;
+  }
+}
+
 html,
 body,
 #root {

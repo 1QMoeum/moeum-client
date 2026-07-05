@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/auth'
+import SplashScreen from '@/components/ui/SplashScreen'
+
+/** 스플래시 최소 노출 시간(ms) — 복원이 즉시 끝나도 시작화면이 번쩍이지 않게. */
+const MIN_SPLASH_MS = 700
 
 /**
  * 앱 진입 시 1회 실행되는 인증 부트스트랩.
@@ -15,8 +19,10 @@ export default function AuthBootstrap({ children }: { children: ReactNode }) {
   const setTokens = useAuthStore((s) => s.setTokens)
   const clearTokens = useAuthStore((s) => s.clearTokens)
 
-  // refresh 가 없거나(복원할 게 없음) access 가 이미 있으면 바로 준비 완료
+  // refresh 가 없거나(복원할 게 없음) access 가 이미 있으면 인증 준비는 즉시 완료
   const [ready, setReady] = useState(() => !refreshToken || !!accessToken)
+  // 스플래시 최소 노출 시간 경과 여부 — ready 와 별개로 관리해 시작화면이 번쩍이지 않게
+  const [minElapsed, setMinElapsed] = useState(false)
   const started = useRef(false)
 
   useEffect(() => {
@@ -29,6 +35,12 @@ export default function AuthBootstrap({ children }: { children: ReactNode }) {
       .finally(() => setReady(true))
   }, [ready, refreshToken, setTokens, clearTokens])
 
-  if (!ready) return null
+  useEffect(() => {
+    const id = setTimeout(() => setMinElapsed(true), MIN_SPLASH_MS)
+    return () => clearTimeout(id)
+  }, [])
+
+  // 인증 복원이 끝나고 최소 노출 시간도 지나야 실제 화면을 보여준다
+  if (!ready || !minElapsed) return <SplashScreen />
   return <>{children}</>
 }
