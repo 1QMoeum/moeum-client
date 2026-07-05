@@ -566,18 +566,7 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <SectionTitle>이벤트 소개</SectionTitle>
       <Card gap={24}>
-        {event.representativeImageUrl && (
-          <img
-            src={event.representativeImageUrl}
-            alt={event.title}
-            style={{ width: '100%', borderRadius: 8, display: 'block' }}
-          />
-        )}
-        {event.description && (
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: '#474c52', letterSpacing: '-0.01em', whiteSpace: 'pre-wrap' }}>
-            {event.description}
-          </p>
-        )}
+        <IntroContentBody event={event} />
 
         <Hr />
         <InfoBlock label="이벤트 날짜" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
@@ -597,6 +586,47 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
       </Card>
     </div>
   )
+}
+
+/** 이벤트 소개 본문 — 소개 사진(갤러리, seq순) + 소개 글. 둘 다 이벤트 수정으로 채운다. */
+function IntroContentBody({ event }: { event: EventDetailResponse }) {
+  const imgs = [...(event.introImages ?? [])].sort((a, b) => a.seq - b.seq)
+
+  return (
+    <>
+      {imgs.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: imgs.length === 1 ? '1fr' : '1fr 1fr', gap: 8 }}>
+          {imgs.map((img) => (
+            <img
+              key={img.fileId}
+              src={img.url}
+              alt=""
+              style={{
+                width: '100%',
+                aspectRatio: imgs.length === 1 ? 'auto' : '1 / 1',
+                objectFit: imgs.length === 1 ? 'contain' : 'cover',
+                borderRadius: 8,
+                display: 'block',
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {event.description && <p style={introTextStyle}>{event.description}</p>}
+      {imgs.length === 0 && !event.description && (
+        <p style={{ ...introTextStyle, color: '#adb5bd' }}>아직 소개가 등록되지 않았어요.</p>
+      )}
+    </>
+  )
+}
+
+const introTextStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 14,
+  lineHeight: 1.7,
+  color: '#474c52',
+  letterSpacing: '-0.01em',
+  whiteSpace: 'pre-wrap',
 }
 
 function InfoBlock({ label, value }: { label: string; value: string }) {

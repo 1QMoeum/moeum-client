@@ -1,12 +1,14 @@
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, ImagePlus } from 'lucide-react'
 import { useUpdateEvent } from '@/hooks/events'
+import { useUploadImage } from '@/hooks/files'
 import { ErrorCode } from '@/constants/errorCodes'
 import { ApiError } from '@/api/client'
 import Button from '@/components/ui/Button'
 import type { EventDetailResponse } from '@/types/event'
 
 const VIOLET = '#665bf7'
+const MAX_IMAGES = 10
 
 /** "HH:mm:ss" | null → "HH:mm" (input[type=time] 용). */
 const toHm = (t: string | null) => (t ? t.slice(0, 5) : '')
@@ -28,101 +30,214 @@ function updateErrorMessage(err: unknown): string {
   return '잠시 후 다시 시도해 주세요.'
 }
 
+/** 소개 첨부 이미지 — 기존(fileId 보유) 또는 새로 고른 파일. */
+type Img =
+  | { kind: 'existing'; fileId: number; url: string }
+  | { kind: 'new'; file: File; previewUrl: string }
+
+const imgSrc = (img: Img) => (img.kind === 'existing' ? img.url : img.previewUrl)
+
+/** 상세의 introImages(seq순) → Img[] (기존 이미지 유지 편집용). */
+function initImages(event: EventDetailResponse): Img[] {
+  return [...(event.introImages ?? [])]
+    .sort((a, b) => a.seq - b.seq)
+    .map((x) => ({ kind: 'existing', fileId: x.fileId, url: x.url }))
+}
+
 interface Props {
   event: EventDetailResponse
   onClose: () => void
 }
 
 /**
- * 이벤트 수정(총대) — 소개·기간·진행시간. PATCH 후 상세 캐시가 갱신된다.
- * 진행시간은 선택이며 시작/종료를 함께 비우거나 함께 채워야 한다.
+ * 이벤트 수정(총대) — 소개 본문(글) · 소개 사진(갤러리) · 기간 · 진행시간.
+ * 저장 시 새 사진은 /v1/files 로 업로드해 fileId 를 얻고, 기존 사진은 fileId 를 그대로 실어
+ * 순서대로 introImageFileIds 를 만들어 보낸다(이미지 목록 완전 교체).
  */
 export default function EventEditor({ event, onClose }: Props) {
   const [description, setDescription] = useState(event.description ?? '')
+  const [images, setImages] = useState<Img[]>(() => initImages(event))
   const [startDate, setStartDate] = useState(event.startDate)
   const [endDate, setEndDate] = useState(event.endDate)
   const [startTime, setStartTime] = useState(toHm(event.operatingStartTime))
   const [endTime, setEndTime] = useState(toHm(event.operatingEndTime))
+  const [pickError, setPickError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const updateMut = useUpdateEvent(event.eventId)
+  const uploadMut = useUploadImage()
+  const submitting = updateMut.isPending || uploadMut.isPending
+
+  useEffect(
+    () => () => {
+      images.forEach((img) => {
+        if (img.kind === 'new') URL.revokeObjectURL(img.previewUrl)
+      })
+    },
+    [images],
+  )
 
   const periodValid = startDate !== '' && endDate !== '' && endDate >= startDate
-  const timePaired = (startTime === '') === (endTime === '') // 둘 다 비거나 둘 다 채움
+  const timePaired = (startTime === '') === (endTime === '')
   const valid = periodValid && timePaired
 
-  const save = () => {
-    if (!valid || updateMut.isPending) return
-    updateMut.mutate(
-      {
-        description: description.trim() || undefined,
-        startDate,
-        endDate,
-        operatingStartTime: startTime || undefined,
-        operatingEndTime: endTime || undefined,
-      },
-      { onSuccess: onClose },
-    )
+  const onPick = (files: FileList | null) => {
+    if (!files) return
+    setPickError(null)
+    const room = MAX_IMAGES - images.length
+    if (room <= 0) {
+      setPickError(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요.`)
+      return
+    }
+    const next: Img[] = Array.from(files)
+      .slice(0, room)
+      .map((file) => ({ kind: 'new', file, previewUrl: URL.createObjectURL(file) }))
+    setImages((prev) => [...prev, ...next])
   }
+
+  const removeImage = (i: number) =>
+    setImages((prev) => {
+      const target = prev[i]
+      if (target.kind === 'new') URL.revokeObjectURL(target.previewUrl)
+      return prev.filter((_, idx) => idx !== i)
+    })
+
+  const save = async () => {
+    if (!valid || submitting) return
+    try {
+      const introImageFileIds = await Promise.all(
+        images.map((img) => (img.kind === 'existing' ? Promise.resolve(img.fileId) : uploadMut.mutateAsync(img.file))),
+      )
+      updateMut.mutate(
+        {
+          description: description.trim() || undefined,
+          introImageFileIds,
+          startDate,
+          endDate,
+          operatingStartTime: startTime || undefined,
+          operatingEndTime: endTime || undefined,
+        },
+        { onSuccess: onClose },
+      )
+    } catch {
+      /* uploadMut.error 로 표시 */
+    }
+  }
+
+  const errorMsg = updateMut.isError
+    ? updateErrorMessage(updateMut.error)
+    : uploadMut.isError
+      ? updateErrorMessage(uploadMut.error)
+      : null
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="이벤트 수정"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          maxHeight: '92vh',
-          background: '#fff',
-          borderRadius: '20px 20px 0 0',
-          display: 'flex',
-          flexDirection: 'column',
-          boxSizing: 'border-box',
-        }}
+        style={{ width: '100%', maxWidth: 480, maxHeight: '92vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}
       >
-        <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '18px 20px 12px',
-            borderBottom: '1px solid #f1f3f5',
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em' }}>
-            이벤트 수정
-          </h2>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 12px', borderBottom: '1px solid #f1f3f5' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em' }}>이벤트 수정</h2>
           <button type="button" onClick={onClose} aria-label="닫기" style={closeBtnStyle}>
             <X size={22} />
           </button>
         </header>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* 소개 본문 */}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={fieldLabelStyle}>소개</span>
+            <span style={fieldLabelStyle}>이벤트 소개</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이벤트를 소개하는 내용을 적어주세요."
-              rows={4}
+              rows={5}
               maxLength={5000}
-              style={{ ...inputStyle, resize: 'vertical', minHeight: 92, lineHeight: 1.6 }}
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 108, lineHeight: 1.6 }}
             />
           </label>
 
+          {/* 소개 사진 (갤러리) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={fieldLabelStyle}>소개 사진 (선택)</span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {images.map((img, i) => (
+                <div key={imgSrc(img)} style={{ position: 'relative', width: 76, height: 76 }}>
+                  <img src={imgSrc(img)} alt="" style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 12, display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    aria-label="사진 삭제"
+                    style={{
+                      all: 'unset',
+                      position: 'absolute',
+                      top: -6,
+                      right: -6,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: 'rgba(21,21,25,0.82)',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              {images.length < MAX_IMAGES && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  aria-label="사진 추가"
+                  style={{
+                    all: 'unset',
+                    width: 76,
+                    height: 76,
+                    borderRadius: 12,
+                    border: '1.5px dashed #d0d5dd',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                    color: '#8b95a1',
+                    cursor: 'pointer',
+                    boxSizing: 'border-box',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <ImagePlus size={20} />
+                  <span style={{ fontSize: 11 }}>
+                    {images.length}/{MAX_IMAGES}
+                  </span>
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              onChange={(e) => {
+                onPick(e.target.files)
+                e.target.value = ''
+              }}
+              style={{ display: 'none' }}
+            />
+            {pickError && <span style={errTextStyle}>{pickError}</span>}
+          </div>
+
+          {/* 기간 */}
           <div style={{ display: 'flex', gap: 10 }}>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span style={fieldLabelStyle}>시작일</span>
@@ -133,12 +248,9 @@ export default function EventEditor({ event, onClose }: Props) {
               <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={inputStyle} />
             </label>
           </div>
-          {!periodValid && startDate !== '' && endDate !== '' && (
-            <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em', marginTop: -8 }}>
-              종료일은 시작일 이후여야 해요.
-            </span>
-          )}
+          {!periodValid && startDate !== '' && endDate !== '' && <span style={errTextStyle}>종료일은 시작일 이후여야 해요.</span>}
 
+          {/* 진행 시간 */}
           <div style={{ display: 'flex', gap: 10 }}>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span style={fieldLabelStyle}>진행 시작 (선택)</span>
@@ -149,27 +261,14 @@ export default function EventEditor({ event, onClose }: Props) {
               <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={inputStyle} />
             </label>
           </div>
-          {!timePaired && (
-            <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em', marginTop: -8 }}>
-              진행 시작·종료 시간을 함께 입력해 주세요.
-            </span>
-          )}
+          {!timePaired && <span style={errTextStyle}>진행 시작·종료 시간을 함께 입력해 주세요.</span>}
 
-          {updateMut.isError && (
-            <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>
-              {updateErrorMessage(updateMut.error)}
-            </span>
-          )}
+          {errorMsg && <span style={errTextStyle}>{errorMsg}</span>}
         </div>
 
         <div style={{ padding: '12px 20px calc(14px + env(safe-area-inset-bottom))', borderTop: '1px solid #f1f3f5' }}>
-          <Button
-            variant="solid"
-            onClick={save}
-            disabled={!valid || updateMut.isPending}
-            style={{ background: valid && !updateMut.isPending ? VIOLET : undefined, borderRadius: 24 }}
-          >
-            {updateMut.isPending ? '저장 중…' : '수정 완료'}
+          <Button variant="solid" onClick={() => void save()} disabled={!valid || submitting} style={{ background: valid && !submitting ? VIOLET : undefined, borderRadius: 24 }}>
+            {submitting ? '저장 중…' : '수정 완료'}
           </Button>
         </div>
       </div>
@@ -196,6 +295,13 @@ const fieldLabelStyle: React.CSSProperties = {
   fontWeight: 600,
   color: '#6b7684',
   letterSpacing: '-0.01em',
+}
+
+const errTextStyle: React.CSSProperties = {
+  fontSize: 12.5,
+  color: '#e03e3e',
+  letterSpacing: '-0.01em',
+  marginTop: -8,
 }
 
 const closeBtnStyle: React.CSSProperties = {

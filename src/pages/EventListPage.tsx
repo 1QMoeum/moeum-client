@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useEventList } from '@/hooks/events'
+import { useHomeOnBack } from '@/hooks/useHomeOnBack'
 import { useAuthStore } from '@/store/auth'
 import BottomNav from '@/components/ui/BottomNav'
 import { EVENT_CATEGORIES, categoryImage } from '@/types/event'
@@ -12,13 +13,7 @@ type StatusKey = 'all' | 'ongoing' | 'closing' | 'history'
 /** 정렬 기준 (모두 클라이언트 정렬 — 서버 기본은 최신순). */
 type SortKey = 'latest' | 'amount' | 'funding' | 'closing'
 
-const STATUS_TABS: Array<{ key: StatusKey; label: string }> = [
-  { key: 'all', label: '전체' },
-  { key: 'ongoing', label: '진행중' },
-  { key: 'history', label: '히스토리' },
-]
-
-/** 필터 시트의 진행 상태 칩 (페이지 탭 + 마감 임박). */
+/** 필터 시트의 진행 상태 칩 (전체·진행중·마감 임박·히스토리). */
 const SHEET_STATUS: Array<{ key: StatusKey; label: string }> = [
   { key: 'all', label: '전체' },
   { key: 'ongoing', label: '진행중' },
@@ -71,6 +66,7 @@ const won = (n: number) => n.toLocaleString('ko-KR')
  */
 export default function EventListPage() {
   const navigate = useNavigate()
+  useHomeOnBack()
   const accessToken = useAuthStore((s) => s.accessToken)
 
   const [query, setQuery] = useState('')
@@ -155,7 +151,7 @@ export default function EventListPage() {
             boxSizing: 'border-box',
           }}
         >
-          <IconButton label="뒤로가기" onClick={() => navigate(-1)}>
+          <IconButton label="뒤로가기" onClick={() => navigate('/main')}>
             <BackCaret />
           </IconButton>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: '#27282c' }}>
@@ -234,10 +230,8 @@ export default function EventListPage() {
               <SearchIcon />
             </button>
 
-            {/* 검색 결과 모드 — 검색바 바로 아래 상태 칩 */}
-            {searching && (
-              <StatusChipRow statusKey={statusKey} onStatus={setStatusKey} onFilter={() => setFilterOpen(true)} />
-            )}
+            {/* 검색 결과 모드 — 검색바 바로 아래 필터 아이콘 */}
+            {searching && <StatusChipRow onFilter={() => setFilterOpen(true)} />}
           </section>
 
           {/* 카테고리 */}
@@ -301,7 +295,7 @@ export default function EventListPage() {
             {!searching && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <SectionTitle label="전체 이벤트" />
-                <StatusChipRow statusKey={statusKey} onStatus={setStatusKey} onFilter={() => setFilterOpen(true)} />
+                <StatusChipRow onFilter={() => setFilterOpen(true)} />
               </div>
             )}
 
@@ -370,26 +364,10 @@ export default function EventListPage() {
   )
 }
 
-/** 상태 칩(전체/진행중/히스토리) + 필터 아이콘 한 줄. */
-function StatusChipRow({
-  statusKey,
-  onStatus,
-  onFilter,
-}: {
-  statusKey: StatusKey
-  onStatus: (s: StatusKey) => void
-  onFilter: () => void
-}) {
+/** 진행 상태는 필터 시트에서만 다룬다. 밖에는 필터 아이콘만 우측 정렬로 노출. */
+function StatusChipRow({ onFilter }: { onFilter: () => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {STATUS_TABS.map((t) => {
-          const active = statusKey === t.key || (t.key === 'ongoing' && statusKey === 'closing')
-          return (
-            <Pill key={t.key} label={t.label} active={active} size="xs" onClick={() => onStatus(t.key)} />
-          )
-        })}
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
       <IconButton label="필터" onClick={onFilter}>
         <FilterIcon />
       </IconButton>

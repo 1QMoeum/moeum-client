@@ -136,18 +136,18 @@ export function createInfoBubbleElement({
   wrap.style.cssText = [
     'display:flex',
     'align-items:center',
-    'gap:14px',
+    'gap:11px',
     'background:#fff',
-    'border-radius:24px',
-    'padding:12px 18px 12px 12px',
+    'border-radius:20px',
+    'padding:10px 15px 10px 10px',
     'box-shadow:0 6px 24px rgba(0,0,0,.16)',
-    'max-width:270px',
+    'max-width:230px',
     onClick ? 'cursor:pointer' : 'cursor:default',
   ].join(';')
 
   const thumb = document.createElement('div')
   thumb.style.cssText =
-    'width:56px;height:56px;border-radius:50%;background:#f1f3f5;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;'
+    'width:46px;height:46px;border-radius:50%;background:#f1f3f5;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;'
   if (imageUrl) {
     const img = document.createElement('img')
     img.src = imageUrl
@@ -166,9 +166,9 @@ export function createInfoBubbleElement({
     el.style.cssText = `white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;${css}`
     col.appendChild(el)
   }
-  if (region) line(region, 'font-size:14px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
-  line(title, 'font-size:16px;color:#0c0d0d;font-weight:600;letter-spacing:-.02em;')
-  line(subtitle, 'font-size:14px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
+  if (region) line(region, 'font-size:13px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
+  line(title, 'font-size:15px;color:#0c0d0d;font-weight:600;letter-spacing:-.02em;')
+  line(subtitle, 'font-size:13px;color:#5c5c72;font-weight:500;letter-spacing:-.02em;')
 
   wrap.appendChild(thumb)
   wrap.appendChild(col)
@@ -177,7 +177,7 @@ export function createInfoBubbleElement({
     const caret = document.createElement('div')
     caret.style.cssText = 'flex-shrink:0;display:flex;color:#86869f;'
     caret.innerHTML =
-      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     wrap.appendChild(caret)
     wrap.addEventListener('click', onClick)
   }

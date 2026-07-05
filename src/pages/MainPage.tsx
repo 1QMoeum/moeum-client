@@ -98,7 +98,7 @@ export default function MainPage() {
         {tab === 'events' ? (
           isLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '160px 24px 0' }}>
-              <div style={{ width: 240, height: 240, borderRadius: '50%', background: '#eef0f3' }} />
+              <div style={{ width: 256, height: 256, borderRadius: '50%', background: '#eef0f3' }} />
             </div>
           ) : error ? (
             <div style={{ padding: '24px 24px 0' }}>
@@ -222,8 +222,8 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
       <h1
         style={{
           margin: 0,
-          fontSize: 16,
-          fontWeight: 600,
+          fontSize: 19,
+          fontWeight: 700,
           lineHeight: 1.5,
           letterSpacing: '-0.02em',
           color: '#151519',
@@ -253,7 +253,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
       <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
-            fontSize: 36,
+            fontSize: 38,
             fontWeight: 700,
             lineHeight: 1.5,
             letterSpacing: '-0.02em',
@@ -263,10 +263,10 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         >
           {won(event.currentAmount)}
         </span>
-        <span style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>원</span>
+        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>원</span>
       </p>
 
-      <ProgressRing percent={percent} size={240} active={active}>
+      <ProgressRing percent={percent} size={256} active={active}>
         <EventImage event={event} />
       </ProgressRing>
     </section>
@@ -435,7 +435,7 @@ function WalletView() {
   if (isPending) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 24px 0' }}>
-        <div style={{ width: 272, height: 272, borderRadius: '50%', background: '#eef0f3' }} />
+        <div style={{ width: 256, height: 256, borderRadius: '50%', background: '#eef0f3' }} />
       </div>
     )
   }
@@ -464,7 +464,7 @@ function WalletView() {
         padding: '16px 24px 0',
       }}
     >
-      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+      <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--color-text-primary)' }}>
         하나 예금토큰
       </h1>
       <button
@@ -490,10 +490,10 @@ function WalletView() {
         <ChevronRight size={15} strokeWidth={2.4} />
       </button>
       <p style={{ margin: '14px 0 24px', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
           {won(wallet.tokenBalance)}
         </span>
-        <span style={{ fontSize: 20, fontWeight: 500, color: 'var(--color-text-primary)' }}>원</span>
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)' }}>원</span>
       </p>
 
       <button
@@ -502,7 +502,7 @@ function WalletView() {
         aria-label="내 지갑 보기"
         style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
-        <TokenSphere size={272} />
+        <TokenSphere size={256} />
       </button>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>

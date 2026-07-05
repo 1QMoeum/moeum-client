@@ -7,6 +7,9 @@ import { useAuthStore } from '@/store/auth'
 /** 서버가 허용하는 이미지 타입 (presigned 발급 시에도 검증됨). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
+/** 최대 업로드 용량 (서버와 동일 기준, 사전 검증용). */
+const MAX_SIZE = 10 * 1024 * 1024
+
 /**
  * 이미지 업로드 — presigned URL 발급 → S3 PUT → 완료 알림까지 한 번에.
  * 성공 시 도메인 연결용 fileId 를 반환한다 (예: 이벤트 representativeFileId).
@@ -21,6 +24,9 @@ export function useUploadImage() {
       }
       if (!IMAGE_TYPES.includes(file.type)) {
         throw new ApiError(null, 'PNG·JPEG·WebP 이미지만 업로드할 수 있어요.')
+      }
+      if (file.size > MAX_SIZE) {
+        throw new ApiError(null, '10MB 이하 이미지만 업로드할 수 있어요.')
       }
       const presigned = await fileApi.presignedUrl({
         fileName: file.name,

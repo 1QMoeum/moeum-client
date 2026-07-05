@@ -185,6 +185,13 @@ export interface CreateEventResponse {
   eventId: number
 }
 
+/** 소개 갤러리 이미지 한 장. url=표시용, fileId=수정 유지용, seq=정렬 순서. */
+export interface IntroImage {
+  fileId: number
+  url: string
+  seq: number
+}
+
 /** ===== 이벤트 단건 상세 (GET /v1/events/{eventId}) =====
  *  참여 화면용. 없으면 status 4000. */
 export interface EventDetailResponse {
@@ -193,7 +200,10 @@ export interface EventDetailResponse {
   /** 총대(생성자)의 하나은행 본인인증 여부 */
   creatorHanaVerified: boolean
   title: string
+  /** 이벤트 소개 본문(글). 소개 탭 본문 + 원 아래 문구(클램프)로 사용. */
   description: string
+  /** 소개 첨부 이미지(갤러리). seq 순서로 정렬해 표시. 수정 시 fileId 로 기존 이미지 유지. */
+  introImages?: IntroImage[]
   category: EventCategory
   /** 대표 이미지 URL */
   representativeImageUrl: string
@@ -226,8 +236,10 @@ export interface EventDetailResponse {
 /** ===== 이벤트 수정 (PATCH /v1/events/{eventId}) — 총대만 =====
  *  소개·기간·진행시간 갱신. 응답은 EventDetailResponse 전체. */
 export interface UpdateEventRequest {
-  /** 소개 (최대 5000자, 선택) */
+  /** 이벤트 소개 본문(최대 5000자, 선택) */
   description?: string
+  /** 소개 첨부 이미지 fileId 목록(선택). 사전 업로드된 fileId, 완전 교체. */
+  introImageFileIds?: number[]
   /** 모금 시작일 (YYYY-MM-DD) */
   startDate: string
   /** 모금 종료일 (YYYY-MM-DD, ≥ startDate) */

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '@/components/ui/BottomNav'
 import { useCalendarMonth, useEventTimeline } from '@/hooks/calendar'
+import { useHomeOnBack } from '@/hooks/useHomeOnBack'
 import type { CalendarEntryDto, TimelineNodeDto } from '@/types/calendar'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
@@ -60,6 +61,7 @@ function monthGrid(year: number, month: number): Date[][] {
  */
 export default function CalendarPage() {
   const navigate = useNavigate()
+  useHomeOnBack()
   const today = useMemo(() => new Date(), [])
   const [selected, setSelected] = useState(today)
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
@@ -115,7 +117,7 @@ export default function CalendarPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <IconButton label="뒤로가기" onClick={() => navigate(-1)}>
+            <IconButton label="뒤로가기" onClick={() => navigate('/main')}>
               <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M14.5 6.5 9 12l5.5 5.5" stroke="#27282c" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -461,9 +463,30 @@ function ScheduleCard({
   )
 }
 
+/**
+ * 타임라인 노드를 생애주기 순서로 정렬한다.
+ * 모금 시작일은 항상 처음, 모금 마감일은 항상 끝, 사용계획은 그 사이(집행예정일순).
+ * (집행예정일이 마감일보다 뒤여도 마감일을 마지막에 둔다.)
+ */
+function orderTimeline(nodes: TimelineNodeDto[]): TimelineNodeDto[] {
+  const rank = (t: string) => (t === 'EVENT_START' ? 0 : t === 'EVENT_END' ? 2 : 1)
+  const ordered = [...nodes].sort((a, b) => {
+    const r = rank(a.type) - rank(b.type)
+    if (r !== 0) return r
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+  })
+  // 노드가 4개 이상이면 앵커(현재) 기준 3칸 창으로 슬라이드.
+  if (ordered.length <= 3) return ordered
+  const anchorIdx = ordered.findIndex((n) => n.anchor)
+  const center = anchorIdx === -1 ? ordered.length - 1 : anchorIdx
+  const start = Math.min(Math.max(center - 1, 0), ordered.length - 3)
+  return ordered.slice(start, start + 3)
+}
+
 /** 실시간 진행 타임라인 패널 — 카드가 펼쳐질 때만 조회한다. */
 function TimelinePanel({ eventId, dateKey }: { eventId: number; dateKey: string }) {
   const { data, isPending, error } = useEventTimeline(eventId, dateKey)
+  const nodes = orderTimeline(data?.nodes ?? [])
 
   return (
     <div
@@ -490,7 +513,7 @@ function TimelinePanel({ eventId, dateKey }: { eventId: number; dateKey: string 
           {/* 타임라인 세로 축 */}
           <span aria-hidden style={{ position: 'absolute', left: 3, top: 6, bottom: 6, width: 1, background: '#cacdd2' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {(data?.nodes ?? []).map((node, i) => (
+            {nodes.map((node, i) => (
               <TimelineRow key={`${node.date}-${node.budgetId ?? node.type}-${i}`} node={node} />
             ))}
           </div>
@@ -503,6 +526,9 @@ function TimelinePanel({ eventId, dateKey }: { eventId: number; dateKey: string 
 function TimelineRow({ node }: { node: TimelineNodeDto }) {
   const active = node.anchor
   const titleColor = active ? '#0c0d0d' : '#9fa4a8'
+  // 시작/마감 노드는 이벤트 제목 대신 마일스톤 라벨로 표시(제목 중복 방지).
+  const label =
+    node.type === 'EVENT_START' ? '모금 시작일' : node.type === 'EVENT_END' ? '모금 마감일' : node.title
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
       <span
@@ -528,7 +554,7 @@ function TimelineRow({ node }: { node: TimelineNodeDto }) {
                 color: titleColor,
               }}
             >
-              {node.title}
+              {label}
             </span>
             {node.amount != null && node.amount > 0 && (
               <>

@@ -29,12 +29,22 @@ export function isAdVenue(type: string): boolean {
   return type !== 'CAFE'
 }
 
+/** 크롤링 원본 키(product-image/x.webp)의 이미지 호스트 base. */
+const VENUE_IMAGE_BASE = 'https://kr.cafe24obs.com/data'
+
 /**
- * 렌더 가능한 이미지 src. 서버 imageUrl 이 크롤링 원본 키(product-image/x.webp)일 수 있어
- * 절대 URL 이 아니면 undefined(플레이스홀더 표시)로 처리한다.
+ * 렌더 가능한 이미지 src. 서버 imageUrl 은
+ * - 절대 URL(https://…) 이면 그대로,
+ * - 크롤링 원본 키(product-image/x.webp) 이면 base 를 붙여 절대 URL 로 만든다.
+ * 값이 없으면 undefined(플레이스홀더 표시).
+ *
+ * 주의: 결과는 반드시 순수 <img> 로 렌더한다 (Next <Image> 는 octet-stream 거부).
  */
 export function venueImageSrc(imageUrl: string | null | undefined): string | undefined {
-  return imageUrl && /^https?:\/\//.test(imageUrl) ? imageUrl : undefined
+  if (!imageUrl) return undefined
+  if (/^https?:\/\//.test(imageUrl)) return imageUrl
+  // base 끝 슬래시 + 키(product-image/…) 이중 슬래시 방지
+  return `${VENUE_IMAGE_BASE}/${imageUrl.replace(/^\/+/, '')}`
 }
 
 /** 추천 결과 한 줄. 유사도(similarity)순으로 내려온다. */
