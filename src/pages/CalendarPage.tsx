@@ -389,14 +389,13 @@ function ScheduleCard({
   onToggle: () => void
 }) {
   // 뱃지는 type 으로 분기한다.
-  // - BUDGET: 집행 상태(executionStatus) + 미입금 시 '입금 미완료' 오버레이
+  // - BUDGET: 집행 상태(executionStatus) 칩 하나만 표시(집행전/집행완료/취소)
   // - EVENT_START/EVENT_END: 집행 뱃지 없이 마일스톤 라벨
   const chips: string[] =
     entry.type === 'BUDGET'
-      ? [
-          ...(entry.fundingComplete ? [] : ['입금 미완료']),
-          ...(entry.executionStatus ? [statusLabel(entry.executionStatus)] : []),
-        ]
+      ? entry.executionStatus
+        ? [statusLabel(entry.executionStatus)]
+        : []
       : [entry.type === 'EVENT_START' ? '모금 시작' : '모금 마감']
   return (
     <div style={{ filter: 'drop-shadow(0 0 8px rgba(21,21,21,0.04))' }}>

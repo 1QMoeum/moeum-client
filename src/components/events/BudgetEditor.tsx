@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { X, Plus, Trash2, Check } from 'lucide-react'
-import { useCancelBudget, useCreateBudgets, useUpdateBudget } from '@/hooks/events'
+import { X, Plus, Trash2 } from 'lucide-react'
+import { useCancelBudget, useCreateBudgets } from '@/hooks/events'
 import { ErrorCode } from '@/constants/errorCodes'
 import { ApiError } from '@/api/client'
 import Button from '@/components/ui/Button'
@@ -16,8 +16,6 @@ function budgetErrorMessage(err: unknown): string {
         return '총대만 사용 계획을 변경할 수 있어요.'
       case ErrorCode.BUDGET_NOT_PENDING:
         return '이미 집행·취소된 항목은 변경할 수 없어요.'
-      case ErrorCode.BUDGET_LOCKED_AFTER_FUNDING:
-        return '모금이 시작되어 금액·업체는 변경할 수 없어요.'
       case ErrorCode.EVENT_NOT_ACTIVE:
         return '진행 중인 모금에서만 추가할 수 있어요.'
       default:
@@ -50,16 +48,14 @@ function isValid(item: BudgetItemInput): boolean {
 interface Props {
   eventId: number
   items: BudgetItem[]
-  /** 모금이 시작됐는지(참여자 입금 발생). true면 PENDING 항목도 금액·업체 수정이 잠긴다(취소만 가능). */
-  fundingStarted: boolean
   onClose: () => void
 }
 
 /**
- * 사용 계획 편집(총대). 기존 PENDING 항목 수정/취소 + 신규 항목 추가.
+ * 사용 계획 편집(총대). 기존 PENDING 항목 취소 + 신규 항목 추가.
  * 모든 변경은 서버가 반환한 전체 계획으로 캐시를 갱신한다(훅 onSuccess).
  */
-export default function BudgetEditor({ eventId, items, fundingStarted, onClose }: Props) {
+export default function BudgetEditor({ eventId, items, onClose }: Props) {
   const [drafts, setDrafts] = useState<BudgetItemInput[]>([])
   const createMut = useCreateBudgets(eventId)
 
@@ -143,34 +139,12 @@ export default function BudgetEditor({ eventId, items, fundingStarted, onClose }
 
         {/* 본문 (스크롤) */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {fundingStarted && (
-            <p
-              style={{
-                margin: 0,
-                padding: '10px 14px',
-                background: '#fff4e6',
-                borderRadius: 10,
-                fontSize: 12.5,
-                color: '#e8590c',
-                letterSpacing: '-0.01em',
-                lineHeight: 1.5,
-              }}
-            >
-              모금이 시작되어 기존 항목의 금액·업체는 변경할 수 없어요. 항목 취소와 신규 추가만 가능해요.
-            </p>
-          )}
-
           {/* 기존 항목 */}
           {items.length > 0 && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <SectionLabel>기존 항목</SectionLabel>
               {items.map((item) => (
-                <ExistingItem
-                  key={item.budgetId}
-                  eventId={eventId}
-                  item={item}
-                  fundingStarted={fundingStarted}
-                />
+                <ExistingItem key={item.budgetId} eventId={eventId} item={item} />
               ))}
             </section>
           )}
@@ -264,75 +238,10 @@ export default function BudgetEditor({ eventId, items, fundingStarted, onClose }
   )
 }
 
-/** 기존 항목 한 줄 — PENDING && 모금 전이면 수정 가능, PENDING이면 취소 가능. */
-function ExistingItem({
-  eventId,
-  item,
-  fundingStarted,
-}: {
-  eventId: number
-  item: BudgetItem
-  fundingStarted: boolean
-}) {
-  const editable = item.status === 'PENDING' && !fundingStarted
+/** 기존 항목 한 줄 — PENDING이면 취소 가능. */
+function ExistingItem({ eventId, item }: { eventId: number; item: BudgetItem }) {
   const cancellable = item.status === 'PENDING'
-
-  const [editing, setEditing] = useState(false)
-  // vendorAccount 는 조회 응답에 없으므로 수정 시 다시 입력받는다.
-  const [form, setForm] = useState<BudgetItemInput>({
-    title: item.title,
-    amount: item.amount,
-    scheduledDate: item.scheduledDate,
-    vendorName: item.vendorName,
-    vendorAccount: '',
-  })
-
-  const updateMut = useUpdateBudget(eventId)
   const cancelMut = useCancelBudget(eventId)
-
-  const save = () => {
-    if (!isValid(form)) return
-    updateMut.mutate(
-      { budgetId: item.budgetId, body: form },
-      { onSuccess: () => setEditing(false) },
-    )
-  }
-
-  if (editing) {
-    return (
-      <div style={{ border: '1px solid #8B5CF6', borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <ItemFields value={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
-        {updateMut.isError && (
-          <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>
-            {budgetErrorMessage(updateMut.error)}
-          </span>
-        )}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            style={ghostBtnStyle}
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            disabled={!isValid(form) || updateMut.isPending}
-            style={{
-              ...ghostBtnStyle,
-              color: '#fff',
-              background: isValid(form) ? '#8B5CF6' : '#c4b5fd',
-              border: 'none',
-              cursor: isValid(form) && !updateMut.isPending ? 'pointer' : 'not-allowed',
-            }}
-          >
-            <Check size={15} /> {updateMut.isPending ? '저장 중…' : '저장'}
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   const dimmed = item.status === 'CANCELLED'
 
@@ -363,23 +272,16 @@ function ExistingItem({
           {budgetErrorMessage(cancelMut.error)}
         </span>
       ) : (
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          {editable && (
-            <button type="button" onClick={() => setEditing(true)} style={smallBtnStyle}>
-              수정
-            </button>
-          )}
-          {cancellable && (
-            <button
-              type="button"
-              onClick={() => cancelMut.mutate(item.budgetId)}
-              disabled={cancelMut.isPending}
-              style={{ ...smallBtnStyle, color: '#fa5252' }}
-            >
-              {cancelMut.isPending ? '취소 중…' : '취소'}
-            </button>
-          )}
-        </div>
+        cancellable && (
+          <button
+            type="button"
+            onClick={() => cancelMut.mutate(item.budgetId)}
+            disabled={cancelMut.isPending}
+            style={{ ...smallBtnStyle, color: '#fa5252', flexShrink: 0 }}
+          >
+            {cancelMut.isPending ? '취소 중…' : '취소'}
+          </button>
+        )
       )}
     </div>
   )
@@ -490,23 +392,6 @@ const smallBtnStyle: React.CSSProperties = {
   borderRadius: 8,
   border: '1px solid #e5e8eb',
   fontSize: 13,
-  fontWeight: 600,
-  color: '#4b5563',
-  cursor: 'pointer',
-  WebkitTapHighlightColor: 'transparent',
-}
-
-const ghostBtnStyle: React.CSSProperties = {
-  all: 'unset',
-  flex: 1,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 4,
-  padding: '11px 0',
-  borderRadius: 10,
-  border: '1px solid #e5e8eb',
-  fontSize: 14,
   fontWeight: 600,
   color: '#4b5563',
   cursor: 'pointer',

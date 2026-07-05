@@ -22,14 +22,12 @@ const shortDate = (iso: string) => iso.slice(2).replaceAll('-', '.')
 
 export default function MainPage() {
   const navigate = useNavigate()
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('events')
   const [index, setIndex] = useState(0)
   const { data, isLoading, error } = useParticipatingEvents()
   const events = data?.content ?? []
   const active = events[index] ?? events[0]
-  const locale = numLocale(i18n.resolvedLanguage)
-  const won = (n: number) => n.toLocaleString(locale)
   // 서버에 GET /v1/events/participating 미구현 상태 — 1000(INVALID_INPUT) 로 떨어짐.
   // 사용자에겐 에러 노출 대신 empty state 로 우회 (환경 별 무의미한 노이즈 제거).
   const treatAsEmpty = !!error
