@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactElement } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 /** Figma 디자인의 Solid 아이콘 세트 — currentColor로 활성/비활성 색을 전환한다. */
 const ICON_PATHS: Record<string, ReactElement> = {
@@ -33,16 +34,17 @@ const ICON_PATHS: Record<string, ReactElement> = {
 
 interface NavItem {
   key: keyof typeof ICON_PATHS
-  label: string
+  /** i18n key — nav.<labelKey> */
+  labelKey: string
   /** 이동 경로 (없으면 아직 미구현 — 비활성) */
   to?: string
 }
 
 const ITEMS: NavItem[] = [
-  { key: 'home', label: '홈', to: '/main' },
-  { key: 'calendar', label: '캘린더', to: '/calendar' },
-  { key: 'explore', label: '탐색', to: '/explore' },
-  { key: 'map', label: '지도', to: '/events' },
+  { key: 'home', labelKey: 'nav.home', to: '/main' },
+  { key: 'calendar', labelKey: 'nav.calendar', to: '/calendar' },
+  { key: 'explore', labelKey: 'nav.explore', to: '/explore' },
+  { key: 'map', labelKey: 'nav.map', to: '/events' },
 ]
 
 interface Props {
@@ -57,15 +59,17 @@ interface Props {
 export default function BottomNav({ onCreate }: Props) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { t } = useTranslation()
 
   const renderItem = (item: NavItem) => {
     const active = item.to ? pathname === item.to : false
+    const label = t(item.labelKey)
     return (
       <button
         key={item.key}
         type="button"
         onClick={() => item.to && navigate(item.to)}
-        aria-label={item.label}
+        aria-label={label}
         aria-current={active ? 'page' : undefined}
         style={{
           width: 76,
@@ -85,7 +89,7 @@ export default function BottomNav({ onCreate }: Props) {
           {ICON_PATHS[item.key]}
         </svg>
         <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '-0.02em' }}>
-          {item.label}
+          {label}
         </span>
       </button>
     )
@@ -119,7 +123,7 @@ export default function BottomNav({ onCreate }: Props) {
       <button
         type="button"
         onClick={onCreate}
-        aria-label="이벤트 만들기"
+        aria-label={t('nav.create')}
         style={{
           width: 40,
           height: 40,

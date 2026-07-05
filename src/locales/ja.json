@@ -16,7 +16,40 @@
   "home": {
     "tagline": "透明な共同資金管理のためのデジタル金庫",
     "ctaStart": "始める",
-    "ctaLogin": "簡単ログイン"
+    "ctaLogin": "簡単ログイン",
+    "ctaDomestic": "韓国国内本人認証で開始",
+    "ctaForeign": "パスポートで認証を開始"
+  },
+  "plaid": {
+    "consent": {
+      "title": "保有口座を\n一度に取得します",
+      "description": "Plaidを通じて本人名義の海外口座情報を\n安全に取得します",
+      "provider": "情報提供機関",
+      "providerValue": "本人名義の海外銀行",
+      "collected": "収集項目",
+      "collectedValue": "口座名 · 末尾4桁 · 残高 · 通貨",
+      "purpose": "利用目的",
+      "purposeValue": "預金トークンのチャージ・払い戻し口座登録",
+      "retention": "保有期間",
+      "retentionValue": "連携解除まで",
+      "cta": "同意して口座を取得"
+    },
+    "accounts": {
+      "title": "チャージ口座を\n選択してください",
+      "subtitle": "預金トークンのチャージ・払い戻しに使用されます",
+      "totalCount": "全{{count}}件",
+      "loading": "口座を取得中…",
+      "submit": "この口座で登録",
+      "submitting": "登録中…",
+      "selectPrompt": "口座を選択してください"
+    }
+  },
+  "login": {
+    "title": "PINを入力してください",
+    "subtitle": "登録時に設定した6桁のPINです。",
+    "submit": "ログイン",
+    "submitting": "ログイン中…",
+    "forgotPin": "PINをお忘れですか？本人認証からやり直す"
   },
   "kycForeign": {
     "title": "パスポート認証",

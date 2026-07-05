@@ -16,7 +16,40 @@
   "home": {
     "tagline": "Két an toàn kỹ thuật số cho quản lý quỹ chung minh bạch",
     "ctaStart": "Bắt đầu",
-    "ctaLogin": "Đăng nhập nhanh"
+    "ctaLogin": "Đăng nhập nhanh",
+    "ctaDomestic": "Bắt đầu bằng xác minh nội địa (Hàn Quốc)",
+    "ctaForeign": "Xác minh bằng hộ chiếu"
+  },
+  "plaid": {
+    "consent": {
+      "title": "Liên kết tất cả\ntài khoản của bạn",
+      "description": "Truy xuất an toàn thông tin tài khoản\nnước ngoài của bạn qua Plaid",
+      "provider": "Nhà cung cấp dữ liệu",
+      "providerValue": "Các ngân hàng đứng tên bạn",
+      "collected": "Dữ liệu thu thập",
+      "collectedValue": "Tên tài khoản · 4 số cuối · Số dư · Tiền tệ",
+      "purpose": "Mục đích",
+      "purposeValue": "Đăng ký tài khoản để nạp và hoàn tiền token gửi",
+      "retention": "Thời gian lưu",
+      "retentionValue": "Cho đến khi bạn ngắt kết nối tài khoản",
+      "cta": "Đồng ý và lấy tài khoản"
+    },
+    "accounts": {
+      "title": "Chọn tài khoản\nnạp token",
+      "subtitle": "Được sử dụng để nạp và hoàn tiền token gửi",
+      "totalCount": "{{count}} tài khoản",
+      "loading": "Đang tải tài khoản…",
+      "submit": "Đăng ký tài khoản này",
+      "submitting": "Đang đăng ký…",
+      "selectPrompt": "Vui lòng chọn một tài khoản"
+    }
+  },
+  "login": {
+    "title": "Nhập PIN của bạn",
+    "subtitle": "Mã PIN 6 chữ số bạn đã đặt khi đăng ký.",
+    "submit": "Đăng nhập",
+    "submitting": "Đang đăng nhập…",
+    "forgotPin": "Quên PIN? Xác minh lại"
   },
   "kycForeign": {
     "title": "Xác minh hộ chiếu",
