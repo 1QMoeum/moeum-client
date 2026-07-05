@@ -2,6 +2,10 @@ import { Route, Routes } from 'react-router-dom'
 import AuthBootstrap from '@/components/auth/AuthBootstrap'
 import { useAutoRegisterFcmToken, useForegroundFcmNotifications } from '@/hooks/fcm'
 import HomePage from '@/pages/HomePage'
+import HanaSplashPage from '@/pages/HanaSplashPage'
+import HanaHomePage from '@/pages/HanaHomePage'
+import HanaAssetsPage from '@/pages/HanaAssetsPage'
+import MoeumEntrySplashPage from '@/pages/MoeumEntrySplashPage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
 import MyPage from '@/pages/MyPage'
@@ -34,7 +38,12 @@ export default function App() {
   return (
     <AuthBootstrap>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        {/* 하나원큐 인앱 진입 플로우: 스플래시 → 홈 → 자산 탭 → 모음 진입 스플래시 → 모음(/start) */}
+        <Route path="/" element={<HanaSplashPage />} />
+        <Route path="/hana/home" element={<HanaHomePage />} />
+        <Route path="/hana/assets" element={<HanaAssetsPage />} />
+        <Route path="/hana/moeum" element={<MoeumEntrySplashPage />} />
+        <Route path="/start" element={<HomePage />} />
         <Route path="/main" element={<MainPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/mypage" element={<MyPage />} />
