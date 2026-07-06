@@ -201,9 +201,16 @@ export default function EventMap() {
         }),
       )
 
-      // 코드 없이 생성된 이벤트(수기 시드 등)는 경계 없이 깃발만 표시
-      if (!d.legalDongCode) return
-      loadLegalDongFeature(d.legalDongCode)
+      // 법정동코드가 있으면 그대로, 없으면(AI 플랜 등 코드가 안 복사된 이벤트) 대표 좌표를
+      // 역지오코딩해 코드를 채운다. 그래도 못 구하면 경계 없이 깃발만 표시.
+      const codeReady: Promise<string> = d.legalDongCode
+        ? Promise.resolve(d.legalDongCode)
+        : reverseGeocode(d.representative.latitude, d.representative.longitude)
+            .then((r) => r.legalDongCode)
+            .catch(() => '')
+
+      codeReady
+        .then((code) => (alive && code ? loadLegalDongFeature(code) : null))
         .then((feature) => {
           if (!alive || !feature) return
           toKakaoPaths(feature.geometry).forEach((ring) => {
