@@ -625,7 +625,7 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
           <>
             <Hr />
             <InfoBlock
-              label="진행 날짜"
+              label="이벤트 기간"
               value={`${dotDate(event.eventStartDate)} ~ ${dotDate(event.eventEndDate)}`}
             />
           </>
