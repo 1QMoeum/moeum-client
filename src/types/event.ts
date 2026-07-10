@@ -76,6 +76,7 @@ export interface ViewportEvent {
   eventId: number
   title: string
   category: EventCategory
+  representativeImageUrl: string | null
   fundingRate: number
   currentAmount: number
   targetAmount: number
@@ -210,8 +211,10 @@ export interface EventDetailResponse {
   /** 총대(생성자)의 하나은행 본인인증 여부 */
   creatorHanaVerified: boolean
   title: string
-  /** 이벤트 소개 본문(글). 소개 탭 본문 + 원 아래 문구(클램프)로 사용. */
+  /** 생성 시 적는 짧은 이벤트 소개. 원(대표 이미지) 아래 문구로만 사용. */
   description: string
+  /** 소개 탭 본문(글). 이벤트 수정에서 별도로 작성·저장. 미작성 시 null */
+  detailDescription: string | null
   /** 소개 첨부 이미지(갤러리). seq 순서로 정렬해 표시. 수정 시 fileId 로 기존 이미지 유지. */
   introImages?: IntroImage[]
   category: EventCategory
@@ -232,9 +235,9 @@ export interface EventDetailResponse {
   /** 모금 종료일 (YYYY-MM-DD) */
   endDate: string
   /** 진행(이벤트) 시작 날짜 (YYYY-MM-DD). 생성 시엔 없고 수정에서 입력. 미설정 시 null */
-  eventStartDate: string | null
-  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ eventStartDate). 미설정 시 null */
-  eventEndDate: string | null
+  operatingStartDate: string | null
+  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ operatingStartDate). 미설정 시 null */
+  operatingEndDate: string | null
   /** 진행 시작 시간 ("HH:mm:ss", 미설정 시 null) */
   operatingStartTime: string | null
   /** 진행 종료 시간 ("HH:mm:ss", 미설정 시 null) */
@@ -248,20 +251,17 @@ export interface EventDetailResponse {
 }
 
 /** ===== 이벤트 수정 (PATCH /v1/events/{eventId}) — 총대만 =====
- *  소개·기간·진행시간 갱신. 응답은 EventDetailResponse 전체. */
+ *  소개 글·진행 날짜/시간·소개 사진 갱신. 모금 기간(startDate/endDate)·목표금액·위치·카테고리는
+ *  수정 대상이 아니다. 응답은 EventDetailResponse 전체. */
 export interface UpdateEventRequest {
-  /** 이벤트 소개 본문(최대 5000자, 선택) */
-  description?: string
+  /** 소개 탭 본문(글, 최대 5000자, 선택). 생성 시 description 과는 별개 필드. */
+  detailDescription?: string
   /** 소개 첨부 이미지 fileId 목록(선택). 사전 업로드된 fileId, 완전 교체. */
   introImageFileIds?: number[]
-  /** 모금 시작일 (YYYY-MM-DD) */
-  startDate: string
-  /** 모금 종료일 (YYYY-MM-DD, ≥ startDate) */
-  endDate: string
   /** 진행(이벤트) 시작 날짜 (YYYY-MM-DD, 선택). 수정에서 처음 입력. */
-  eventStartDate?: string
-  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ eventStartDate, 선택) */
-  eventEndDate?: string
+  operatingStartDate?: string
+  /** 진행(이벤트) 종료 날짜 (YYYY-MM-DD, ≥ operatingStartDate, 선택) */
+  operatingEndDate?: string
   /** 진행 시작 시간 (HH:mm, 선택) */
   operatingStartTime?: string
   /** 진행 종료 시간 (HH:mm, 선택) */

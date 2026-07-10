@@ -166,6 +166,7 @@ export default function EventMap() {
         eventId: detail.eventId,
         title: detail.title,
         category: detail.category,
+        representativeImageUrl: detail.representativeImageUrl,
         fundingRate: detail.fundingRate,
         currentAmount: detail.currentAmount,
         targetAmount: detail.targetAmount,

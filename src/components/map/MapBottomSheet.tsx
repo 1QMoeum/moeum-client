@@ -129,6 +129,7 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
         eventId: e.eventId,
         title: e.title,
         sub: '',
+        imageUrl: e.representativeImageUrl || undefined,
         category: e.category,
         lat: e.latitude,
         lng: e.longitude,

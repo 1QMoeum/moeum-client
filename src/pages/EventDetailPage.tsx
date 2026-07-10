@@ -621,12 +621,12 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
         <Hr />
         <InfoBlock label="모금 기간" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
 
-        {event.eventStartDate && event.eventEndDate && (
+        {event.operatingStartDate && event.operatingEndDate && (
           <>
             <Hr />
             <InfoBlock
               label="이벤트 기간"
-              value={`${dotDate(event.eventStartDate)} ~ ${dotDate(event.eventEndDate)}`}
+              value={`${dotDate(event.operatingStartDate)} ~ ${dotDate(event.operatingEndDate)}`}
             />
           </>
         )}
@@ -648,7 +648,8 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
   )
 }
 
-/** 이벤트 소개 본문 — 소개 사진(갤러리, seq순) + 소개 글. 둘 다 이벤트 수정으로 채운다. */
+/** 이벤트 소개 본문 — 소개 사진(갤러리, seq순) + 소개 글(detailDescription).
+ *  둘 다 이벤트 수정으로 채운다. 생성 시 짧은 소개(description)는 원 아래 문구 전용. */
 function IntroContentBody({ event }: { event: EventDetailResponse }) {
   const imgs = [...(event.introImages ?? [])].sort((a, b) => a.seq - b.seq)
 
@@ -672,8 +673,8 @@ function IntroContentBody({ event }: { event: EventDetailResponse }) {
           ))}
         </div>
       )}
-      {event.description && <p style={introTextStyle}>{event.description}</p>}
-      {imgs.length === 0 && !event.description && (
+      {event.detailDescription && <p style={introTextStyle}>{event.detailDescription}</p>}
+      {imgs.length === 0 && !event.detailDescription && (
         <p style={{ ...introTextStyle, color: '#adb5bd' }}>아직 소개가 등록되지 않았어요.</p>
       )}
     </>

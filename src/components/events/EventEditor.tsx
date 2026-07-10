@@ -50,19 +50,17 @@ interface Props {
 }
 
 /**
- * 이벤트 수정(총대) — 소개 본문(글) · 소개 사진(갤러리) · 기간 · 진행시간.
+ * 이벤트 수정(총대) — 소개 글(detailDescription) · 소개 사진(갤러리) · 진행 날짜/시간.
+ * 생성 시 적은 짧은 소개(description)와 모금 기간(startDate/endDate)은 수정 대상이 아니다.
  * 저장 시 새 사진은 /v1/files 로 업로드해 fileId 를 얻고, 기존 사진은 fileId 를 그대로 실어
  * 순서대로 introImageFileIds 를 만들어 보낸다(이미지 목록 완전 교체).
  */
 export default function EventEditor({ event, onClose }: Props) {
-  const [description, setDescription] = useState(event.description ?? '')
+  const [detailDescription, setDetailDescription] = useState(event.detailDescription ?? '')
   const [images, setImages] = useState<Img[]>(() => initImages(event))
-  // 시작일·종료일은 생성 후 변경 불가 — 원래 값을 그대로 유지해 전송한다.
-  const startDate = event.startDate
-  const endDate = event.endDate
   // 진행(이벤트) 날짜 범위 — 생성 시엔 없고 여기서 처음 입력·수정한다.
-  const [eventStartDate, setEventStartDate] = useState(event.eventStartDate ?? '')
-  const [eventEndDate, setEventEndDate] = useState(event.eventEndDate ?? '')
+  const [eventStartDate, setEventStartDate] = useState(event.operatingStartDate ?? '')
+  const [eventEndDate, setEventEndDate] = useState(event.operatingEndDate ?? '')
   const [startTime, setStartTime] = useState(toHm(event.operatingStartTime))
   const [endTime, setEndTime] = useState(toHm(event.operatingEndTime))
   const [pickError, setPickError] = useState<string | null>(null)
@@ -81,13 +79,12 @@ export default function EventEditor({ event, onClose }: Props) {
     [images],
   )
 
-  const periodValid = startDate !== '' && endDate !== '' && endDate >= startDate
   const timePaired = (startTime === '') === (endTime === '')
   // 진행 날짜는 선택 — 둘 다 비었거나(미입력) 둘 다 채워 종료 ≥ 시작이어야 유효.
   const eventDatePaired = (eventStartDate === '') === (eventEndDate === '')
   const eventDateOrdered = !eventStartDate || !eventEndDate || eventEndDate >= eventStartDate
   const eventDateValid = eventDatePaired && eventDateOrdered
-  const valid = periodValid && timePaired && eventDateValid
+  const valid = timePaired && eventDateValid
 
   const onPick = (files: FileList | null) => {
     if (!files) return
@@ -118,12 +115,10 @@ export default function EventEditor({ event, onClose }: Props) {
       )
       updateMut.mutate(
         {
-          description: description.trim() || undefined,
+          detailDescription: detailDescription.trim() || undefined,
           introImageFileIds,
-          startDate,
-          endDate,
-          eventStartDate: eventStartDate || undefined,
-          eventEndDate: eventEndDate || undefined,
+          operatingStartDate: eventStartDate || undefined,
+          operatingEndDate: eventEndDate || undefined,
           operatingStartTime: startTime || undefined,
           operatingEndTime: endTime || undefined,
         },
@@ -160,12 +155,12 @@ export default function EventEditor({ event, onClose }: Props) {
         </header>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* 소개 본문 */}
+          {/* 소개 탭 본문(글) — 생성 시 짧은 소개(description)와 별개 */}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={fieldLabelStyle}>이벤트 소개</span>
+            <span style={fieldLabelStyle}>소개 글</span>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={detailDescription}
+              onChange={(e) => setDetailDescription(e.target.value)}
               placeholder="이벤트를 소개하는 내용을 적어주세요."
               rows={5}
               maxLength={5000}

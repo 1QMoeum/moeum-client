@@ -19,6 +19,7 @@ function evt(
     eventId,
     title,
     category,
+    representativeImageUrl: null,
     fundingRate,
     currentAmount: Math.round((targetAmount * fundingRate) / 100),
     targetAmount,
