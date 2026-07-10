@@ -11,7 +11,7 @@ import { useParticipatingEvents } from '@/hooks/events'
 import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
-import { fundingPercent } from '@/types/event'
+import { dDayLabel, fundingPercent } from '@/types/event'
 import type { ParticipatingEvent } from '@/types/event'
 
 type Tab = 'events' | 'wallet'
@@ -263,7 +263,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
             letterSpacing: '-0.02em',
           }}
         >
-          {`D-${event.dDay}`}
+          {dDayLabel(event.endDate)}
         </span>
         <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#86869f' }}>
           {t('main.targetPrefix', { amount: won(event.targetAmount) })}
@@ -483,18 +483,26 @@ function WalletView() {
   }
   if (!wallet) return null
 
+  // 이벤트 탭(EventSlide)과 같은 위치/타이포 — 상단 정렬, 제목 19/700, 보조줄 14, 금액 38+22.
   return (
     <section
       style={{
         display: 'flex',
-        flex: 1,
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px 24px 0',
+        padding: '24px 24px 0',
       }}
     >
-      <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: '-0.02em', color: '#151519' }}>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 19,
+          fontWeight: 700,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          color: '#151519',
+        }}
+      >
         {t('main.hanaToken')}
       </h1>
       <button
@@ -506,8 +514,9 @@ function WalletView() {
           display: 'flex',
           alignItems: 'center',
           gap: 3,
-          margin: '2px 0 0',
+          marginTop: 4,
           fontSize: 14,
+          lineHeight: 1.5,
           letterSpacing: '-0.02em',
           color: '#86869f',
           cursor: 'pointer',
@@ -521,10 +530,19 @@ function WalletView() {
         <ChevronRight size={14} strokeWidth={2.4} />
       </button>
       <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
-        <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', color: '#0c0d0d', fontVariantNumeric: 'tabular-nums' }}>
+        <span
+          style={{
+            fontSize: 38,
+            fontWeight: 700,
+            lineHeight: 1.5,
+            letterSpacing: '-0.02em',
+            color: '#0c0d0d',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {won(wallet.tokenBalance)}
         </span>
-        <span style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
+        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
       <button
@@ -533,7 +551,7 @@ function WalletView() {
         aria-label={t('main.viewWalletAria')}
         style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
-        <TokenSphere size={240} />
+        <TokenSphere size={256} />
       </button>
 
       <div style={{ display: 'flex', gap: 24, marginTop: 44 }}>

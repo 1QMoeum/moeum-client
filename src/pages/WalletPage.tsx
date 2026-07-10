@@ -9,9 +9,9 @@ import { ErrorCode } from '@/constants/errorCodes'
 import Button from '@/components/ui/Button'
 import BankAvatar from '@/components/wallet/BankAvatar'
 import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
+import WalletTokenCard from '@/components/wallet/WalletTokenCard'
 import type { WalletResponse, BankAccountResponse } from '@/types/api'
 
-const GRADIENT = 'linear-gradient(103deg, #56d2c9 0%, #665bf7 100%)'
 const VIOLET = '#665bf7'
 const VIOLET_100 = '#e3e1ff'
 const GRAY_900 = '#151519'
@@ -94,7 +94,7 @@ export default function WalletPage() {
 }
 
 function WalletView({ wallet }: { wallet: WalletResponse }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const userType = useAuthStore((s) => s.userType)
   const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
@@ -102,7 +102,6 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
   const [showAccounts, setShowAccounts] = useState(false)
   const { data: account } = useMyAccount(true)
   const { data: balance, isPending: balancePending } = useAccountBalance(account)
-  const numberLocale = i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'
 
   const copyAddress = async () => {
     try {
@@ -116,66 +115,12 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {/* 잔액 카드 (그라데이션 + 프로스티드 액션 패널) */}
-      <section
-        style={{
-          position: 'relative',
-          borderRadius: 20,
-          background: GRADIENT,
-          padding: '24px 20px 20px',
-          boxShadow: '0 12px 32px -12px rgba(102, 91, 247, 0.4)',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 28 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: '#f6f6fa', letterSpacing: '-0.02em' }}>
-            {t('wallet.tokenName')}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 30, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-              {wallet.tokenBalance.toLocaleString(numberLocale)}
-            </span>
-            <span style={{ fontSize: 16, fontWeight: 500, color: '#e0e0ed', letterSpacing: '-0.02em' }}>
-              {t('wallet.tokenUnit')}
-            </span>
-          </div>
-        </div>
-
-        <div
-          style={{
-            position: 'relative',
-            display: 'flex',
-            gap: 12,
-            padding: 14,
-            borderRadius: 16,
-            // blur 미지원 웹뷰에서도 프로스티드 유리로 보이도록 반투명 그라데이션 + 하이라이트로 구성.
-            // backdrop-filter 는 지원 환경에서의 향상 효과로만 유지.
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.20))',
-            border: '1px solid rgba(255,255,255,0.4)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-          }}
-        >
-          {/* 위로 향한 노치 */}
-          <span
-            aria-hidden
-            style={{
-              position: 'absolute',
-              top: -7,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '8px solid transparent',
-              borderRight: '8px solid transparent',
-              borderBottom: '8px solid rgba(255, 255, 255, 0.34)',
-            }}
-          />
-          <PillButton label={t('wallet.chargeCta')} onClick={() => navigate('/wallet/charge')} />
-          <PillButton label={t('wallet.convertCta')} filled onClick={() => navigate('/wallet/convert')} />
-        </div>
-      </section>
+      {/* 잔액 카드 — 마이페이지와 동일한 글래스 트레이 카드 */}
+      <WalletTokenCard
+        balance={wallet.tokenBalance}
+        onCharge={() => navigate('/wallet/charge')}
+        onWithdraw={() => navigate('/wallet/convert')}
+      />
 
       {/* 지갑 주소 + 익스플로러 */}
       <section style={{ background: '#ffffff', borderRadius: 16, boxShadow: CARD_SHADOW, padding: '4px 16px' }}>
@@ -268,39 +213,6 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
 
       <AccountSelectSheet open={showAccounts} onClose={() => setShowAccounts(false)} />
     </div>
-  )
-}
-
-function PillButton({ label, filled, onClick }: { label: string; filled?: boolean; onClick: () => void }) {
-  const [pressed, setPressed] = useState(false)
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      style={{
-        all: 'unset',
-        flex: 1,
-        boxSizing: 'border-box',
-        textAlign: 'center',
-        padding: '12px',
-        borderRadius: 24,
-        cursor: 'pointer',
-        fontSize: 16,
-        fontWeight: 500,
-        letterSpacing: '-0.01em',
-        color: filled ? '#ffffff' : '#474c52',
-        background: filled ? VIOLET : '#ffffff',
-        boxShadow: '0 0 8px rgba(21, 21, 21, 0.04)',
-        transform: pressed ? 'scale(0.97)' : 'scale(1)',
-        transition: 'transform 0.12s ease',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {label}
-    </button>
   )
 }
 

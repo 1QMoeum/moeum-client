@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import BrandAvatar from '@/components/wallet/BrandAvatar'
+import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
+import WalletTokenCard from '@/components/wallet/WalletTokenCard'
 import { useMyPage } from '@/hooks/mypage'
 import { useOperatingEvents, useParticipatingEvents } from '@/hooks/events'
 import { useMyAccount, useLinkableAccounts } from '@/hooks/account'
@@ -47,11 +49,23 @@ export default function MyPage() {
   const navigate = useNavigate()
   const { data, isPending, error } = useMyPage()
   const accessToken = useAuthStore((s) => s.accessToken)
+  const userType = useAuthStore((s) => s.userType)
   const { data: linkableAccounts, isPending: accountsPending } = useLinkableAccounts(!!accessToken)
   const { data: connectedAccount } = useMyAccount(!!accessToken)
+  const [showAccounts, setShowAccounts] = useState(false)
 
+  const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
   const counts = data?.counts
   const recentEvents = data?.recentParticipatingEvents ?? []
+
+  // 연동(대표) 계좌에 해당하는 linkable 행 — 목록 전체 대신 이 한 줄만 노출한다.
+  const connectedRow = useMemo(
+    () =>
+      connectedAccount
+        ? linkableAccounts?.find((a) => isSameAccount(connectedAccount.accountNumber, a.id))
+        : undefined,
+    [linkableAccounts, connectedAccount],
+  )
 
   /** 충전/전환 — 내 지갑을 히스토리에 깔고 tx 화면을 얹어, 뒤로가기가 내 지갑에 안착하게 한다. */
   const goWalletTx = (mode: 'charge' | 'convert') => {
@@ -147,7 +161,7 @@ export default function MyPage() {
             </button>
 
             {/* 지갑 카드 — 카드(지갑) 탭 시 내 지갑으로 이동 */}
-            <WalletCard
+            <WalletTokenCard
               balance={data?.wallet?.tokenBalance ?? null}
               hasWallet={data ? data.wallet !== null : true}
               onOpen={() => navigate('/wallet')}
@@ -183,26 +197,39 @@ export default function MyPage() {
             </div>
           </section>
 
-          {/* 내 계좌 — 동의한 provider 계좌 목록 (연동 계좌엔 대표 칩) */}
+          {/* 내 계좌 — 연동(대표) 계좌 한 줄만. 탭하면 계좌 선택 시트(충전 플로우와 동일)로 변경. */}
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <SectionTitle>내 계좌</SectionTitle>
-              {linkableAccounts && (
-                <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#27282c' }}>
-                  전체 {linkableAccounts.length}개
-                </span>
-              )}
-            </div>
+            <SectionTitle>내 계좌</SectionTitle>
             {accountsPending && (
               <div style={{ height: 76, borderRadius: 12, background: '#eef0f3' }} />
             )}
-            {linkableAccounts?.map((a) => (
-              <MyAccountRow
-                key={a.id}
-                account={a}
-                primary={!!connectedAccount && isSameAccount(connectedAccount.accountNumber, a.id)}
-              />
-            ))}
+            {!accountsPending &&
+              (connectedRow ? (
+                <MyAccountRow account={connectedRow} primary onClick={() => setShowAccounts(true)} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => (connectedAccount ? setShowAccounts(true) : navigate(consentPath))}
+                  style={{
+                    width: '100%',
+                    background: '#fff',
+                    border: 'none',
+                    borderRadius: 12,
+                    padding: '18px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#151519' }}>
+                    {connectedAccount ? '계좌 변경하기' : '계좌 연동하기'}
+                  </span>
+                  <CaretRight />
+                </button>
+              ))}
           </section>
 
           {/* 최근 참여 이벤트 */}
@@ -222,6 +249,9 @@ export default function MyPage() {
           </section>
         </div>
       </main>
+
+      {/* 계좌 선택 시트 — 충전 플로우와 동일하게 다른 계좌 조회·변경 */}
+      <AccountSelectSheet open={showAccounts} onClose={() => setShowAccounts(false)} />
     </div>
   )
 }
@@ -231,155 +261,36 @@ function countText(n: number | undefined): string {
   return n == null ? '—' : `${n}개`
 }
 
-/** 둥근 모서리 + 가운데 V 노치가 파인 글래스 트레이 마스크 (viewBox 363×123). */
-const TRAY_MASK = `url("data:image/svg+xml,${encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 363 123' preserveAspectRatio='none'><path d='M16 0 H150 L181.5 30 L213 0 H347 Q363 0 363 16 V107 Q363 123 347 123 H16 Q0 123 0 107 V16 Q0 0 16 0 Z'/></svg>",
-)}")`
-
-/** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). balance=null 이면 지갑 미생성.
- *  카드(지갑) 영역 탭 → onOpen(내 지갑 이동). */
-function WalletCard({
-  balance,
-  hasWallet,
-  onOpen,
-  onCharge,
-  onWithdraw,
-}: {
-  balance: number | null
-  hasWallet: boolean
-  onOpen: () => void
-  onCharge: () => void
-  onWithdraw: () => void
-}) {
-  const trayStyle: CSSProperties & { WebkitBackdropFilter?: string; WebkitMaskImage?: string } = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 123,
-    background: 'rgba(255,255,255,0.3)',
-    backdropFilter: 'blur(10px) saturate(1.1)',
-    WebkitBackdropFilter: 'blur(10px) saturate(1.1)',
-    maskImage: TRAY_MASK,
-    WebkitMaskImage: TRAY_MASK,
-    maskSize: '100% 100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-  }
-
-  return (
-    <div
-      style={{
-        position: 'relative',
-        height: 221,
-        borderRadius: 12,
-        background: 'rgba(188,183,255,0.1)',
-        boxShadow: '0 0 16px rgba(0,0,0,0.04)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* 그라데이션 토큰 카드 — 탭하면 내 지갑으로 */}
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label="내 지갑 보기"
-        style={{
-          all: 'unset',
-          boxSizing: 'border-box',
-          position: 'absolute',
-          left: 17,
-          right: 17,
-          top: 20,
-          height: 185,
-          borderRadius: 12,
-          background: 'linear-gradient(103deg, #56d2c9 0%, var(--color-accent) 100%)',
-          boxShadow: '0 0 16px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-          cursor: 'pointer',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <div style={{ position: 'absolute', left: 24, right: 24, top: 12 }}>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#f6f6fa' }}>
-            하나 예금토큰
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 24,
-                fontWeight: 700,
-                lineHeight: 1.5,
-                letterSpacing: '-0.02em',
-                color: '#fff',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {balance == null ? (hasWallet ? '…' : '0') : won(balance)}
-            </span>
-            <span style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#e0e0ed' }}>
-              Hana-KRW
-            </span>
-          </div>
-        </div>
-      </button>
-
-      {/* 글래스 트레이 — 가운데 노치가 있는 반투명 패널 */}
-      <div style={trayStyle}>
-        <PillButton label="충전하기" variant="white" onClick={onCharge} />
-        <PillButton label="전환하기" variant="violet" onClick={onWithdraw} />
-      </div>
-    </div>
-  )
-}
-
-function PillButton({
-  label,
-  variant,
+/** 내 계좌 행 — 브랜드 아바타 + 상품명/마스킹 번호 + 잔액. 연동(충전) 계좌엔 대표 칩.
+ *  탭하면 계좌 선택 시트를 열어 다른 계좌로 변경할 수 있다. */
+function MyAccountRow({
+  account,
+  primary,
   onClick,
 }: {
-  label: string
-  variant: 'white' | 'violet'
+  account: LinkableAccount
+  primary: boolean
   onClick: () => void
 }) {
-  const white = variant === 'white'
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label="계좌 변경"
       style={{
-        padding: '12px 32px',
-        borderRadius: 24,
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: 16,
-        fontWeight: 500,
-        lineHeight: 1.5,
-        letterSpacing: '-0.02em',
-        background: white ? '#fff' : 'var(--color-accent)',
-        color: white ? '#474c52' : '#fff',
-        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {label}
-    </button>
-  )
-}
-
-/** 내 계좌 행 — 브랜드 아바타 + 상품명/마스킹 번호 + 잔액. 연동(충전) 계좌엔 대표 칩. */
-function MyAccountRow({ account, primary }: { account: LinkableAccount; primary: boolean }) {
-  return (
-    <div
-      style={{
+        width: '100%',
+        boxSizing: 'border-box',
         background: '#fff',
+        border: 'none',
         borderRadius: 12,
         padding: 16,
         display: 'flex',
         alignItems: 'center',
         gap: 16,
+        cursor: 'pointer',
+        textAlign: 'left',
         boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
       <BrandAvatar brand={account.brand} size={40} />
@@ -426,7 +337,8 @@ function MyAccountRow({ account, primary }: { account: LinkableAccount; primary:
       >
         {account.balanceText}
       </span>
-    </div>
+      <CaretRight />
+    </button>
   )
 }
 

@@ -44,6 +44,22 @@ export function fundingPercent(currentAmount: number, targetAmount: number): num
   return Math.min(100, Math.round((currentAmount / targetAmount) * 100))
 }
 
+/**
+ * 마감일(YYYY-MM-DD) 기준 D-day 라벨. 서버 `dDay` 는 기준이 불안정해(음수로 내려오는 사례)
+ * 신뢰하지 않고 로컬 자정 기준으로 직접 계산한다.
+ * 마감 전 "D-n" · 마감 당일 "D-DAY" · 지난 뒤 "D+n".
+ */
+export function dDayLabel(endDate: string): string {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  // "T00:00:00" 을 붙여 로컬 자정으로 파싱 (날짜만 주면 UTC 로 해석돼 하루 밀릴 수 있음)
+  const end = new Date(`${endDate}T00:00:00`)
+  const diff = Math.round((end.getTime() - today.getTime()) / 86_400_000)
+  if (diff > 0) return `D-${diff}`
+  if (diff === 0) return 'D-DAY'
+  return `D+${-diff}`
+}
+
 /** 줌아웃 집계 — 법정동 대표 이벤트 */
 export interface RepresentativeEvent {
   eventId: number
@@ -440,7 +456,7 @@ export interface ParticipatingEvent {
   startDate: string
   /** 마감일 (YYYY-MM-DD) */
   endDate: string
-  /** 마감까지 남은 일수 (D-n) */
+  /** 마감까지 남은 일수 — 서버값 기준 불안정. 화면은 endDate 로 직접 계산(dDayLabel). */
   dDay: number
 }
 
@@ -466,7 +482,7 @@ export interface OperatingEvent {
   startDate: string
   /** 마감일 (YYYY-MM-DD) */
   endDate: string
-  /** 마감까지 남은 일수 (D-n) */
+  /** 마감까지 남은 일수 — 서버값 기준 불안정. 화면은 endDate 로 직접 계산(dDayLabel). */
   dDay: number
 }
 

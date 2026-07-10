@@ -45,6 +45,9 @@ export const DOMESTIC_BANK_BRAND: Record<string, BankBrand> = {
   'S은행': { short: 'S', display: 'S은행', color: '#0046FF', fg: '#ffffff' },
   'K은행': { short: 'K', display: 'K은행', color: '#FFBC00', fg: '#191f28' },
   'N은행': { short: 'N', display: 'N은행', color: '#04AA59', fg: '#ffffff' },
+  // 백엔드가 은행 식별을 별도 필드 없이 상품명 문자열로 주기로 함 —
+  // "하나원큐" 외 "하나은행 xx" 류 명칭도 하나로 잡는 광역 별칭 (구체 키들 뒤에 둬 우선순위 보장)
+  '하나': { short: '하나', display: '하나은행', color: '#008B84', fg: '#ffffff' },
 }
 
 const DOMESTIC_FALLBACK: BankBrand = { short: '·', display: '계좌', color: '#b0b8c1', fg: '#ffffff' }

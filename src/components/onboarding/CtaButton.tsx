@@ -23,6 +23,9 @@ export default function CtaButton({ label, onClick, variant = 'primary', disable
       style={{
         all: 'unset',
         boxSizing: 'border-box',
+        // button 은 display:flex 여도 부모 너비로 늘어나지 않으므로 width 명시 필수.
+        // (flex row 안에서는 flex:1 의 basis 0 이 우선돼 균등 분할 유지)
+        width: '100%',
         flex: 1,
         height: 56,
         borderRadius: 32,
