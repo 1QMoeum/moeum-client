@@ -3,10 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toErrorMessage } from '@/api/client'
 import { useKycLoginForeign } from '@/hooks/auth'
-import Screen from '@/components/ui/Screen'
-import Button from '@/components/ui/Button'
-import ErrorBanner from '@/components/ui/ErrorBanner'
-import PinInput from '@/components/auth/PinInput'
+import PinScreen from '@/components/auth/PinScreen'
+import CtaButton from '@/components/onboarding/CtaButton'
 
 interface NavState {
   passport?: File
@@ -16,7 +14,7 @@ interface NavState {
 /**
  * 외국인 재인증 로그인 — refresh 잃은 사용자가 여권 + 셀피 + PIN 으로 다시 토큰을 받는 경로.
  * 정상 진입은 KycForeignPage 에서 state 로 파일이 넘어옴 — 이 경우 파일 UI 없이 PIN 만 노출.
- * URL 직접 진입한 fallback 케이스에만 업로드 UI 를 노출한다.
+ * URL 직접 진입한 fallback 케이스에만 업로드 UI 를 노출한다. 6자리 입력 시 자동 로그인.
  */
 export default function KycLoginForeignPage() {
   const navigate = useNavigate()
@@ -27,90 +25,55 @@ export default function KycLoginForeignPage() {
   const selfieInputRef = useRef<HTMLInputElement>(null)
   const [passport, setPassport] = useState<File | null>(initial?.passport ?? null)
   const [selfie, setSelfie] = useState<File | null>(initial?.selfie ?? null)
-  const [pin, setPin] = useState('')
   const { mutate: login, isPending, error } = useKycLoginForeign()
   // 위저드에서 정상 진입하면 파일이 이미 있음 — 업로드 UI 는 URL 직접 진입 fallback 케이스에만 노출.
   const needsUpload = !initial?.passport || !initial?.selfie
 
-  const handlePickPassport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.files?.[0] ?? null
-    if (picked) setPassport(picked)
-  }
-  const handlePickSelfie = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.files?.[0] ?? null
-    if (picked) setSelfie(picked)
-  }
-
-  const handleSubmit = () => {
-    if (!passport || !selfie || pin.length !== 6) return
+  const handleComplete = (pin: string) => {
+    if (!passport || !selfie) return
     login({ passport, selfie, pin }, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
   return (
-    <Screen>
-      <h1 style={{ margin: 0, fontSize: 24 }}>{t('kycLoginForeign.title')}</h1>
-      <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-        {t('kycLoginForeign.subtitle')}
-      </p>
-
+    <PinScreen
+      onBack={() => navigate(-1)}
+      title={t('kycLoginForeign.title')}
+      desc={t('kycLoginForeign.subtitle')}
+      errorMessage={error ? toErrorMessage(error) : null}
+      pending={isPending}
+      pendingLabel={t('kycLoginForeign.submitting')}
+      onComplete={handleComplete}
+    >
       {needsUpload && (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <input
             ref={passportInputRef}
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            onChange={handlePickPassport}
+            onChange={(e) => setPassport(e.target.files?.[0] ?? null)}
             style={{ display: 'none' }}
           />
           <input
             ref={selfieInputRef}
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            onChange={handlePickSelfie}
+            onChange={(e) => setSelfie(e.target.files?.[0] ?? null)}
             style={{ display: 'none' }}
           />
-
-          {!passport ? (
-            <Button
-              variant="ghost"
-              onClick={() => passportInputRef.current?.click()}
-              disabled={isPending}
-            >
-              {t('kycForeign.uploadLabel')}
-            </Button>
-          ) : (
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
-              {passport.name}
-            </p>
-          )}
-
-          {!selfie ? (
-            <Button
-              variant="ghost"
-              onClick={() => selfieInputRef.current?.click()}
-              disabled={isPending}
-            >
-              {t('kycForeign.uploadSelfie')}
-            </Button>
-          ) : (
-            <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>
-              {selfie.name}
-            </p>
-          )}
-        </>
+          <CtaButton
+            variant="secondary"
+            label={passport ? `✓ ${passport.name}` : t('kycForeign.uploadLabel')}
+            onClick={() => passportInputRef.current?.click()}
+            disabled={isPending}
+          />
+          <CtaButton
+            variant="secondary"
+            label={selfie ? `✓ ${selfie.name}` : t('kycForeign.uploadSelfie')}
+            onClick={() => selfieInputRef.current?.click()}
+            disabled={isPending}
+          />
+        </div>
       )}
-
-      <PinInput value={pin} onChange={setPin} disabled={isPending} />
-
-      {error && <ErrorBanner message={toErrorMessage(error)} />}
-
-      <Button
-        variant="solid"
-        onClick={handleSubmit}
-        disabled={isPending || !passport || !selfie || pin.length !== 6}
-      >
-        {isPending ? t('kycLoginForeign.submitting') : t('kycLoginForeign.submit')}
-      </Button>
-    </Screen>
+    </PinScreen>
   )
 }

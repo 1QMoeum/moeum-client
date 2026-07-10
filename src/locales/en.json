@@ -49,7 +49,8 @@
     "subtitle": "The 6-digit PIN you set at signup.",
     "submit": "Log in",
     "submitting": "Logging in…",
-    "forgotPin": "Forgot your PIN? Verify again"
+    "forgotPin": "Forgot your PIN?",
+    "topTitle": "Log in"
   },
   "kycForeign": {
     "title": "Verify your passport",
@@ -69,7 +70,8 @@
       "title": "This is a Korean passport",
       "message": "Korean nationals should use the domestic verification flow.",
       "goDomestic": "Go to domestic verification"
-    }
+    },
+    "topTitle": "Identity verification"
   },
   "verifyConfirm": {
     "title": "Is this correct?",
@@ -83,13 +85,17 @@
     "title": "{{name}}, please set a 6-digit PIN",
     "subtitle": "You can use this PIN for quick login next time.",
     "submit": "Complete signup",
-    "submitting": "Signing up..."
+    "submitting": "Signing up...",
+    "topTitle": "Sign up",
+    "confirmTitle": "Enter it once more",
+    "mismatch": "The PINs don't match. Please set it again."
   },
   "kycLoginForeign": {
     "title": "Enter your PIN",
     "subtitle": "Enter your 6-digit PIN to finish logging in.",
     "submit": "Login",
-    "submitting": "Logging in..."
+    "submitting": "Logging in...",
+    "topTitle": "Log in"
   },
   "notif": {
     "title": "Enable notifications",

@@ -3,12 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toErrorMessage } from '@/api/client'
 import { useVerifyForeignFace, useVerifyForeignPassport } from '@/hooks/auth'
-import Screen from '@/components/ui/Screen'
-import Button from '@/components/ui/Button'
+import OnboardingLayout from '@/components/onboarding/OnboardingLayout'
+import StepHeader from '@/components/onboarding/StepHeader'
+import CtaButton from '@/components/onboarding/CtaButton'
 import ErrorBanner from '@/components/ui/ErrorBanner'
 import LanguageSelector from '@/components/ui/LanguageSelector'
 
 type Step = 1 | 2 | 3
+
+const CARD_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  padding: 20,
+  background: '#fff',
+  borderRadius: 12,
+  boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+}
 
 /**
  * 외국인 KYC 진입 화면 — 3-스텝 wizard, 서버 API 도 2단계로 분리.
@@ -56,16 +67,6 @@ export default function KycForeignPage() {
     faceMutation.reset()
   }
 
-  const handleVerifyPassport = () => {
-    if (!passport) return
-    passportMutation.mutate(passport)
-  }
-
-  const handleVerifyFace = () => {
-    if (!passport || !selfie) return
-    faceMutation.mutate({ passport, selfie })
-  }
-
   const handleContinue = () => {
     if (!passport || !selfie || !passportMutation.data) return
     navigate(passportMutation.data.newUser ? '/signup/foreign' : '/kyc-login/foreign', {
@@ -84,29 +85,54 @@ export default function KycForeignPage() {
     2: t('kycForeign.step2Title'),
     3: t('kycForeign.step3Title'),
   }
+  const stepDescs: Record<Step, string> = {
+    1: t('kycForeign.subtitle'),
+    2: t('kycForeign.selfieHint'),
+    3: t('kycForeign.confirmSubtitle'),
+  }
+
+  const korRedirect = passportMutation.error?.status === 2015
+
+  // 스텝별 하단 주 액션 — 검증 전엔 제출, 검증 후엔 다음/계속
+  const footer = (() => {
+    if (step === 1) {
+      if (korRedirect) {
+        return <CtaButton label={t('kycForeign.korRedirect.goDomestic')} onClick={() => navigate('/kyc')} />
+      }
+      if (passportMutation.data) {
+        return <CtaButton label={t('kycForeign.next')} onClick={() => setStep(2)} />
+      }
+      return (
+        <CtaButton
+          label={passportMutation.isPending ? t('kycForeign.processing') : t('kycForeign.submit')}
+          onClick={() => passport && passportMutation.mutate(passport)}
+          disabled={passportMutation.isPending || !passport}
+        />
+      )
+    }
+    if (step === 2) {
+      if (faceMutation.data) {
+        return <CtaButton label={t('kycForeign.next')} onClick={() => setStep(3)} />
+      }
+      return (
+        <CtaButton
+          label={faceMutation.isPending ? t('kycForeign.processing') : t('kycForeign.submit')}
+          onClick={() => passport && selfie && faceMutation.mutate({ passport, selfie })}
+          disabled={faceMutation.isPending || !selfie}
+        />
+      )
+    }
+    return <CtaButton label={t('verifyConfirm.continue')} onClick={handleContinue} />
+  })()
 
   return (
-    <Screen>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <LanguageSelector />
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-        {[1, 2, 3].map((n) => (
-          <div
-            key={n}
-            style={{
-              width: n === step ? 32 : 12,
-              height: 8,
-              borderRadius: 4,
-              background: n <= step ? 'var(--color-primary)' : 'var(--color-border)',
-              transition: 'width 0.2s',
-            }}
-          />
-        ))}
-      </div>
-
-      <h1 style={{ margin: 0, fontSize: 24 }}>{stepTitles[step]}</h1>
+    <OnboardingLayout
+      title={t('kycForeign.topTitle')}
+      onBack={() => (step === 1 ? navigate(-1) : setStep((s) => (s - 1) as Step))}
+      actions={<LanguageSelector />}
+      footer={footer}
+    >
+      <StepHeader step={`0${step}`} title={stepTitles[step]} desc={stepDescs[step]} />
 
       <input
         ref={passportInputRef}
@@ -125,159 +151,110 @@ export default function KycForeignPage() {
 
       {step === 1 && (
         <>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-            {t('kycForeign.subtitle')}
-          </p>
-
           {passportPreviewUrl ? (
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-              <img src={passportPreviewUrl} alt="passport preview" style={{ width: '100%', display: 'block' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 0 8px rgba(21,21,21,0.06)' }}>
+                <img src={passportPreviewUrl} alt="passport preview" style={{ width: '100%', display: 'block' }} />
+              </div>
+              {!passportMutation.data && (
+                <RetakeButton
+                  label={t('kycForeign.retake')}
+                  onClick={() => passportInputRef.current?.click()}
+                  disabled={passportMutation.isPending}
+                />
+              )}
             </div>
           ) : (
-            <Button
-              variant="ghost"
-              onClick={() => passportInputRef.current?.click()}
-              disabled={passportMutation.isPending}
-            >
-              {t('kycForeign.uploadLabel')}
-            </Button>
-          )}
-          {passportPreviewUrl && !passportMutation.data && (
-            <Button
-              variant="ghost"
-              onClick={() => passportInputRef.current?.click()}
-              disabled={passportMutation.isPending}
-            >
-              {t('kycForeign.retake')}
-            </Button>
+            <UploadBox label={t('kycForeign.uploadLabel')} onClick={() => passportInputRef.current?.click()} />
           )}
 
-          {passportMutation.error?.status === 2015 ? (
-            <section style={panelStyle}>
-              <h2 style={{ margin: 0, fontSize: 17 }}>{t('kycForeign.korRedirect.title')}</h2>
-              <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+          {korRedirect ? (
+            <section style={CARD_STYLE}>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: '#151519', letterSpacing: '-0.02em' }}>
+                {t('kycForeign.korRedirect.title')}
+              </h2>
+              <p style={{ margin: 0, fontSize: 14, color: '#5c5c72', letterSpacing: '-0.02em', lineHeight: 1.5 }}>
                 {t('kycForeign.korRedirect.message')}
               </p>
-              <Button variant="solid" onClick={() => navigate('/kyc')}>
-                {t('kycForeign.korRedirect.goDomestic')}
-              </Button>
             </section>
           ) : passportMutation.error ? (
             <ErrorBanner message={toErrorMessage(passportMutation.error)} />
           ) : null}
 
-          {passportMutation.data ? (
-            <section style={panelStyle}>
-              <h2 style={{ margin: 0, fontSize: 17 }}>{t('verifyConfirm.title')}</h2>
+          {passportMutation.data && (
+            <section style={CARD_STYLE}>
               <ConfirmRow label={t('verifyConfirm.name')} value={passportMutation.data.name} />
               <ConfirmRow label={t('verifyConfirm.country')} value={passportMutation.data.passportCountry} />
               <ConfirmRow label={t('verifyConfirm.expiry')} value={passportMutation.data.expiryAt} />
-              <Button variant="solid" onClick={() => setStep(2)}>
-                {t('kycForeign.next')}
-              </Button>
             </section>
-          ) : (
-            <Button
-              variant="solid"
-              onClick={handleVerifyPassport}
-              disabled={passportMutation.isPending || !passport}
-            >
-              {passportMutation.isPending ? t('kycForeign.processing') : t('kycForeign.submit')}
-            </Button>
           )}
         </>
       )}
 
       {step === 2 && (
         <>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-            {t('kycForeign.selfieHint')}
-          </p>
-
           {selfiePreviewUrl ? (
-            <div
-              style={{
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid var(--color-border)',
-                maxWidth: 240,
-                alignSelf: 'center',
-              }}
-            >
-              <img src={selfiePreviewUrl} alt="selfie preview" style={{ width: '100%', display: 'block' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+              <div
+                style={{
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  width: 200,
+                  height: 200,
+                  boxShadow: '0 0 8px rgba(21,21,21,0.06)',
+                }}
+              >
+                <img
+                  src={selfiePreviewUrl}
+                  alt="selfie preview"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+              {!faceMutation.data && (
+                <RetakeButton
+                  label={t('kycForeign.retake')}
+                  onClick={() => selfieInputRef.current?.click()}
+                  disabled={faceMutation.isPending}
+                />
+              )}
             </div>
           ) : (
-            <Button
-              variant="ghost"
-              onClick={() => selfieInputRef.current?.click()}
-              disabled={faceMutation.isPending}
-            >
-              {t('kycForeign.uploadSelfie')}
-            </Button>
-          )}
-          {selfiePreviewUrl && !faceMutation.data && (
-            <Button
-              variant="ghost"
-              onClick={() => selfieInputRef.current?.click()}
-              disabled={faceMutation.isPending}
-            >
-              {t('kycForeign.retake')}
-            </Button>
+            <UploadBox label={t('kycForeign.uploadSelfie')} onClick={() => selfieInputRef.current?.click()} />
           )}
 
           {faceMutation.error && <ErrorBanner message={toErrorMessage(faceMutation.error)} />}
 
-          {faceMutation.data ? (
-            <section style={panelStyle}>
-              <h2 style={{ margin: 0, fontSize: 17 }}>{t('verifyConfirm.title')}</h2>
+          {faceMutation.data && (
+            <section style={CARD_STYLE}>
               <ConfirmRow
                 label={t('verifyConfirm.faceSimilarity')}
                 value={`${faceMutation.data.similarity.toFixed(1)}%`}
               />
-              <Button variant="solid" onClick={() => setStep(3)}>
-                {t('kycForeign.next')}
-              </Button>
             </section>
-          ) : (
-            <Button
-              variant="solid"
-              onClick={handleVerifyFace}
-              disabled={faceMutation.isPending || !selfie}
-            >
-              {faceMutation.isPending ? t('kycForeign.processing') : t('kycForeign.submit')}
-            </Button>
           )}
-
-          <Button variant="ghost" onClick={() => setStep(1)} disabled={faceMutation.isPending}>
-            {t('common.back')}
-          </Button>
         </>
       )}
 
       {step === 3 && passportMutation.data && faceMutation.data && passport && selfie && (
         <>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-            {t('kycForeign.confirmSubtitle')}
-          </p>
-
           <div style={{ display: 'flex', gap: 12 }}>
             {passportPreviewUrl && (
               <img
                 src={passportPreviewUrl}
                 alt="passport"
-                style={{ width: '50%', borderRadius: 8, border: '1px solid var(--color-border)' }}
+                style={{ width: '50%', borderRadius: 12, objectFit: 'cover' }}
               />
             )}
             {selfiePreviewUrl && (
               <img
                 src={selfiePreviewUrl}
                 alt="selfie"
-                style={{ width: '50%', borderRadius: 8, border: '1px solid var(--color-border)' }}
+                style={{ width: '50%', borderRadius: 12, objectFit: 'cover' }}
               />
             )}
           </div>
 
-          <section style={panelStyle}>
+          <section style={CARD_STYLE}>
             <ConfirmRow label={t('verifyConfirm.name')} value={passportMutation.data.name} />
             <ConfirmRow label={t('verifyConfirm.country')} value={passportMutation.data.passportCountry} />
             <ConfirmRow label={t('verifyConfirm.expiry')} value={passportMutation.data.expiryAt} />
@@ -285,35 +262,72 @@ export default function KycForeignPage() {
               label={t('verifyConfirm.faceSimilarity')}
               value={`${faceMutation.data.similarity.toFixed(1)}%`}
             />
-            <Button variant="solid" onClick={handleContinue}>
-              {t('verifyConfirm.continue')}
-            </Button>
           </section>
-
-          <Button variant="ghost" onClick={() => setStep(2)}>
-            {t('common.back')}
-          </Button>
         </>
       )}
-    </Screen>
+    </OnboardingLayout>
   )
 }
 
-const panelStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-  padding: 16,
-  background: 'var(--color-surface)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 12,
+/** 업로드 유도 박스 — 점선 테두리 흰색 카드. */
+function UploadBox({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        all: 'unset',
+        boxSizing: 'border-box',
+        width: '100%',
+        height: 140,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#fff',
+        border: '1.5px dashed #d8d8e4',
+        borderRadius: 12,
+        color: '#86869f',
+        fontSize: 15,
+        fontWeight: 500,
+        letterSpacing: '-0.02em',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+/** 다시 찍기 — 절제된 텍스트 버튼. */
+function RetakeButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        all: 'unset',
+        alignSelf: 'center',
+        fontSize: 14,
+        color: '#86869f',
+        letterSpacing: '-0.02em',
+        textDecoration: 'underline',
+        textUnderlineOffset: 3,
+        cursor: disabled ? 'default' : 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {label}
+    </button>
+  )
 }
 
 function ConfirmRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
-      <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-      <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 15, letterSpacing: '-0.02em' }}>
+      <span style={{ color: '#86869f' }}>{label}</span>
+      <span style={{ color: '#151519', fontWeight: 500 }}>{value}</span>
     </div>
   )
 }

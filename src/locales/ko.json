@@ -45,11 +45,12 @@
     }
   },
   "login": {
-    "title": "PIN을 입력해주세요",
-    "subtitle": "가입할 때 설정한 6자리 PIN입니다.",
+    "title": "비밀번호 입력",
+    "subtitle": "가입할 때 설정한 6자리를 입력해주세요.",
     "submit": "로그인",
     "submitting": "로그인 중…",
-    "forgotPin": "PIN을 잊으셨나요? 본인인증으로 다시 시작"
+    "forgotPin": "비밀번호를 잊으셨나요?",
+    "topTitle": "로그인"
   },
   "kycForeign": {
     "title": "여권 인증",
@@ -69,7 +70,8 @@
       "title": "한국 여권이시네요",
       "message": "한국 국민은 국내 본인인증을 이용해주세요.",
       "goDomestic": "국내 본인인증하러 가기"
-    }
+    },
+    "topTitle": "본인인증"
   },
   "verifyConfirm": {
     "title": "정보가 맞나요?",
@@ -83,13 +85,17 @@
     "title": "{{name}}님, 6자리 PIN을 설정해주세요",
     "subtitle": "다음 로그인부터 이 PIN으로 빠르게 들어올 수 있어요.",
     "submit": "가입 완료",
-    "submitting": "가입 중..."
+    "submitting": "가입 중...",
+    "topTitle": "회원가입",
+    "confirmTitle": "한 번 더 입력해주세요",
+    "mismatch": "PIN이 일치하지 않아요. 다시 설정해주세요."
   },
   "kycLoginForeign": {
     "title": "PIN을 입력해주세요",
     "subtitle": "6자리 PIN을 입력해 로그인을 마무리해 주세요.",
     "submit": "로그인",
-    "submitting": "로그인 중..."
+    "submitting": "로그인 중...",
+    "topTitle": "로그인"
   },
   "notif": {
     "title": "알림을 허용해 주세요",

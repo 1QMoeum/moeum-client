@@ -3,10 +3,7 @@ import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toErrorMessage } from '@/api/client'
 import { useSignupForeign } from '@/hooks/auth'
-import Screen from '@/components/ui/Screen'
-import Button from '@/components/ui/Button'
-import ErrorBanner from '@/components/ui/ErrorBanner'
-import PinInput from '@/components/auth/PinInput'
+import PinScreen from '@/components/auth/PinScreen'
 
 interface NavState {
   passport: File
@@ -16,6 +13,7 @@ interface NavState {
 
 /**
  * 외국인 회원가입 — 여권 + 셀피 + PIN. KYC 안 거치고 직접 진입하면 홈으로 돌려보낸다.
+ * 오입력 방지를 위해 같은 PIN 을 두 번 입력받아 확인한다. 6자리 입력 시 자동 진행.
  */
 export default function SignupForeignPage() {
   const navigate = useNavigate()
@@ -23,14 +21,27 @@ export default function SignupForeignPage() {
   const { t } = useTranslation()
   const { mutate: signup, isPending, error } = useSignupForeign()
   const state = location.state as NavState | null
-  const [pin, setPin] = useState('')
+  /** 1차 입력값 — null 이면 아직 설정 단계 */
+  const [firstPin, setFirstPin] = useState<string | null>(null)
+  const [mismatch, setMismatch] = useState(false)
 
   if (!state?.passport || !state?.selfie) {
     return <Navigate to="/" replace />
   }
 
-  const handleSubmit = () => {
-    if (pin.length !== 6) return
+  const confirming = firstPin !== null
+
+  const handleComplete = (pin: string) => {
+    if (!confirming) {
+      setMismatch(false)
+      setFirstPin(pin)
+      return
+    }
+    if (pin !== firstPin) {
+      setFirstPin(null)
+      setMismatch(true)
+      return
+    }
     signup(
       { passport: state.passport, selfie: state.selfie, pin },
       { onSuccess: () => navigate('/', { replace: true }) },
@@ -38,21 +49,15 @@ export default function SignupForeignPage() {
   }
 
   return (
-    <Screen>
-      <h1 style={{ margin: 0, fontSize: 24 }}>
-        {t('signupForeign.title', { name: state.name })}
-      </h1>
-      <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
-        {t('signupForeign.subtitle')}
-      </p>
-
-      <PinInput value={pin} onChange={setPin} disabled={isPending} />
-
-      {error && <ErrorBanner message={toErrorMessage(error)} />}
-
-      <Button variant="solid" onClick={handleSubmit} disabled={isPending || pin.length !== 6}>
-        {isPending ? t('signupForeign.submitting') : t('signupForeign.submit')}
-      </Button>
-    </Screen>
+    <PinScreen
+      key={confirming ? 'confirm' : 'set'}
+      onBack={() => (confirming ? setFirstPin(null) : navigate(-1))}
+      title={confirming ? t('signupForeign.confirmTitle') : t('signupForeign.title', { name: state.name })}
+      desc={confirming ? undefined : t('signupForeign.subtitle')}
+      errorMessage={error ? toErrorMessage(error) : mismatch ? t('signupForeign.mismatch') : null}
+      pending={isPending}
+      pendingLabel={t('signupForeign.submitting')}
+      onComplete={handleComplete}
+    />
   )
 }

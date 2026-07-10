@@ -7,6 +7,28 @@ interface Props {
   disabled?: boolean
   /** 키패드 숫자 배열을 매번 섞어 위치 추측(숄더 서핑)을 막는다. 기본 true. */
   shuffle?: boolean
+  /** 키패드 위 도트 표시 여부. 도트를 화면 상단에 따로 배치할 땐 false + PinDots 사용. */
+  showDots?: boolean
+}
+
+/** PIN 자릿수 도트 — 키패드와 분리 배치용 (화면 중앙 상단 등). */
+export function PinDots({ value }: { value: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 16, height: 14, alignItems: 'center', justifyContent: 'center' }}>
+      {Array.from({ length: 6 }, (_, i) => (
+        <span
+          key={i}
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: '50%',
+            background: i < value.length ? VIOLET : DOT_EMPTY,
+            transition: 'background 0.15s',
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
 const VIOLET = '#665bf7'
@@ -28,7 +50,7 @@ function shuffled(): string[] {
  * - 하단: 3x4 숫자 키패드. 숫자는 섞어서 배치, 우하단은 지우기(⌫).
  * value/onChange 로 외부 상태를 제어한다(로그인·가입·지갑 공용).
  */
-export default function PinInput({ value, onChange, disabled, shuffle = true }: Props) {
+export default function PinInput({ value, onChange, disabled, shuffle = true, showDots = true }: Props) {
   const dots = useMemo(() => Array.from({ length: 6 }, (_, i) => i < value.length), [value])
   // 마운트 시 한 번만 섞는다(입력 중에는 위치가 유지되도록).
   const digits = useMemo(() => (shuffle ? shuffled() : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']), [shuffle])
@@ -53,27 +75,29 @@ export default function PinInput({ value, onChange, disabled, shuffle = true }: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 36, alignItems: 'center', width: '100%' }}>
       {/* 도트 표시 */}
-      <div style={{ display: 'flex', gap: 20, height: 12, alignItems: 'center' }}>
-        {dots.map((filled, i) => (
-          <span
-            key={i}
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              background: filled ? VIOLET : DOT_EMPTY,
-              transition: 'background 0.15s',
-            }}
-          />
-        ))}
-      </div>
+      {showDots && (
+        <div style={{ display: 'flex', gap: 20, height: 12, alignItems: 'center' }}>
+          {dots.map((filled, i) => (
+            <span
+              key={i}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: filled ? VIOLET : DOT_EMPTY,
+                transition: 'background 0.15s',
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* 키패드 */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          rowGap: 8,
+          rowGap: 4,
           columnGap: 8,
           width: '100%',
           maxWidth: 320,
@@ -91,14 +115,14 @@ export default function PinInput({ value, onChange, disabled, shuffle = true }: 
                 disabled={disabled || value.length === 0}
                 onClick={backspace}
               >
-                <Delete size={26} strokeWidth={1.8} color="#86869f" />
+                <Delete size={26} strokeWidth={1.8} color={VIOLET} />
               </KeyButton>
             )
           }
           const d = cell.value as string
           return (
             <KeyButton key={i} ariaLabel={d} disabled={disabled} onClick={() => press(d)}>
-              <span style={{ fontSize: 26, fontWeight: 500, color: VIOLET, letterSpacing: '-0.02em' }}>{d}</span>
+              <span style={{ fontSize: 24, fontWeight: 600, color: '#2f2f3b', letterSpacing: '-0.02em' }}>{d}</span>
             </KeyButton>
           )
         })}
