@@ -24,14 +24,18 @@ export function useMyWallet(enabled: boolean) {
 /** charge/withdraw 의 mutation 변수 (금액만 받고, idempotencyKey 는 훅이 생성). */
 type WalletTxVars = { amount: number }
 
-/** 성공 응답의 갱신된 잔액을 지갑 캐시에 반영하고 재검증. */
+/**
+ * 성공 응답의 갱신된 잔액을 지갑 캐시에 반영.
+ * 트랜잭션 응답의 tokenBalance 가 처리 후 확정 잔액이므로 이 값을 그대로 쓴다.
+ * 즉시 invalidate 하면 안 된다 — 지갑 조회(/v1/users/me/wallet)의 잔액은 서버 DB 캐시값이라
+ * 온체인 반영 전의 옛 잔액이 돌아와 방금 쓴 확정값을 덮어쓴다.
+ */
 function useApplyTxResult() {
   const qc = useQueryClient()
   return (res: WalletTxResponse) => {
     qc.setQueryData<WalletResponse>(WALLET_KEY, (prev) =>
       prev ? { ...prev, tokenBalance: res.tokenBalance } : prev,
     )
-    void qc.invalidateQueries({ queryKey: WALLET_KEY })
   }
 }
 

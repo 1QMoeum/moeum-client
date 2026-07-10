@@ -2,8 +2,13 @@ import { useMemo } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ErrorBanner from '@/components/ui/ErrorBanner'
+import BrandAvatar from '@/components/wallet/BrandAvatar'
 import { useMyPage } from '@/hooks/mypage'
 import { useOperatingEvents, useParticipatingEvents } from '@/hooks/events'
+import { useMyAccount, useLinkableAccounts } from '@/hooks/account'
+import type { LinkableAccount } from '@/hooks/account'
+import { useAuthStore } from '@/store/auth'
+import { isSameAccount } from '@/lib/account'
 import { toErrorMessage } from '@/api/client'
 import { categoryImage } from '@/types/event'
 import type { EventListItem } from '@/types/event'
@@ -41,9 +46,18 @@ function participationLabel(status: string): string {
 export default function MyPage() {
   const navigate = useNavigate()
   const { data, isPending, error } = useMyPage()
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const { data: linkableAccounts, isPending: accountsPending } = useLinkableAccounts(!!accessToken)
+  const { data: connectedAccount } = useMyAccount(!!accessToken)
 
   const counts = data?.counts
   const recentEvents = data?.recentParticipatingEvents ?? []
+
+  /** 충전/전환 — 내 지갑을 히스토리에 깔고 tx 화면을 얹어, 뒤로가기가 내 지갑에 안착하게 한다. */
+  const goWalletTx = (mode: 'charge' | 'convert') => {
+    navigate('/wallet')
+    navigate(mode === 'charge' ? '/wallet/charge' : '/wallet/convert')
+  }
 
   // 참여중 카운트 — 내가 총대인(운영중) 이벤트는 '운영중'에만 세도록 목록과 동일 규칙으로 계산한다.
   // (목록은 프론트에서 필터하므로 백엔드 counts.participating 대신 필터 후 개수를 쓴다.)
@@ -132,12 +146,13 @@ export default function MyPage() {
               <CaretRight />
             </button>
 
-            {/* 지갑 카드 */}
+            {/* 지갑 카드 — 카드(지갑) 탭 시 내 지갑으로 이동 */}
             <WalletCard
               balance={data?.wallet?.tokenBalance ?? null}
               hasWallet={data ? data.wallet !== null : true}
-              onCharge={() => navigate('/wallet/charge')}
-              onWithdraw={() => navigate('/wallet/convert')}
+              onOpen={() => navigate('/wallet')}
+              onCharge={() => goWalletTx('charge')}
+              onWithdraw={() => goWalletTx('convert')}
             />
 
             {/* 참여 현황 */}
@@ -166,6 +181,28 @@ export default function MyPage() {
                 onClick={() => navigate('/mypage/events/bookmarked')}
               />
             </div>
+          </section>
+
+          {/* 내 계좌 — 동의한 provider 계좌 목록 (연동 계좌엔 대표 칩) */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <SectionTitle>내 계좌</SectionTitle>
+              {linkableAccounts && (
+                <span style={{ fontSize: 14, lineHeight: 1.5, letterSpacing: '-0.02em', color: '#27282c' }}>
+                  전체 {linkableAccounts.length}개
+                </span>
+              )}
+            </div>
+            {accountsPending && (
+              <div style={{ height: 76, borderRadius: 12, background: '#eef0f3' }} />
+            )}
+            {linkableAccounts?.map((a) => (
+              <MyAccountRow
+                key={a.id}
+                account={a}
+                primary={!!connectedAccount && isSameAccount(connectedAccount.accountNumber, a.id)}
+              />
+            ))}
           </section>
 
           {/* 최근 참여 이벤트 */}
@@ -199,15 +236,18 @@ const TRAY_MASK = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 363 123' preserveAspectRatio='none'><path d='M16 0 H150 L181.5 30 L213 0 H347 Q363 0 363 16 V107 Q363 123 347 123 H16 Q0 123 0 107 V16 Q0 0 16 0 Z'/></svg>",
 )}")`
 
-/** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). balance=null 이면 지갑 미생성. */
+/** 그라데이션 예금토큰 카드 + 글래스 트레이(충전/전환 버튼). balance=null 이면 지갑 미생성.
+ *  카드(지갑) 영역 탭 → onOpen(내 지갑 이동). */
 function WalletCard({
   balance,
   hasWallet,
+  onOpen,
   onCharge,
   onWithdraw,
 }: {
   balance: number | null
   hasWallet: boolean
+  onOpen: () => void
   onCharge: () => void
   onWithdraw: () => void
 }) {
@@ -240,9 +280,14 @@ function WalletCard({
         overflow: 'hidden',
       }}
     >
-      {/* 그라데이션 토큰 카드 */}
-      <div
+      {/* 그라데이션 토큰 카드 — 탭하면 내 지갑으로 */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label="내 지갑 보기"
         style={{
+          all: 'unset',
+          boxSizing: 'border-box',
           position: 'absolute',
           left: 17,
           right: 17,
@@ -252,6 +297,8 @@ function WalletCard({
           background: 'linear-gradient(103deg, #56d2c9 0%, var(--color-accent) 100%)',
           boxShadow: '0 0 16px rgba(0,0,0,0.04)',
           overflow: 'hidden',
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
         <div style={{ position: 'absolute', left: 24, right: 24, top: 12 }}>
@@ -276,7 +323,7 @@ function WalletCard({
             </span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* 글래스 트레이 — 가운데 노치가 있는 반투명 패널 */}
       <div style={trayStyle}>
@@ -318,6 +365,68 @@ function PillButton({
     >
       {label}
     </button>
+  )
+}
+
+/** 내 계좌 행 — 브랜드 아바타 + 상품명/마스킹 번호 + 잔액. 연동(충전) 계좌엔 대표 칩. */
+function MyAccountRow({ account, primary }: { account: LinkableAccount; primary: boolean }) {
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+      }}
+    >
+      <BrandAvatar brand={account.brand} size={40} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 500,
+              lineHeight: 1.5,
+              letterSpacing: '-0.02em',
+              color: '#151519',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {account.name}
+          </span>
+          {primary && <Chip label="대표" />}
+        </span>
+        <span
+          style={{
+            fontSize: 14,
+            lineHeight: 1.5,
+            letterSpacing: '-0.02em',
+            color: '#86869f',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {account.displayNumber}
+        </span>
+      </div>
+      <span
+        style={{
+          fontSize: 16,
+          fontWeight: 600,
+          lineHeight: 1.5,
+          letterSpacing: '-0.02em',
+          color: '#151519',
+          fontVariantNumeric: 'tabular-nums',
+          flexShrink: 0,
+        }}
+      >
+        {account.balanceText}
+      </span>
+    </div>
   )
 }
 

@@ -104,13 +104,6 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
   const { data: balance, isPending: balancePending } = useAccountBalance(account)
   const numberLocale = i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US'
 
-  const accountBalanceText =
-    balance?.currency === 'KRW'
-      ? `${balance.available.toLocaleString('ko-KR')}${t('wallet.balanceUnit')}`
-      : balance
-        ? `${balance.available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${balance.currency}`
-        : undefined
-
   const copyAddress = async () => {
     try {
       await navigator.clipboard.writeText(wallet.walletAddress)
@@ -155,7 +148,11 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
             gap: 12,
             padding: 14,
             borderRadius: 16,
-            background: 'rgba(255, 255, 255, 0.18)',
+            // blur 미지원 웹뷰에서도 프로스티드 유리로 보이도록 반투명 그라데이션 + 하이라이트로 구성.
+            // backdrop-filter 는 지원 환경에서의 향상 효과로만 유지.
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.20))',
+            border: '1px solid rgba(255,255,255,0.4)',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
             backdropFilter: 'blur(6px)',
             WebkitBackdropFilter: 'blur(6px)',
           }}
@@ -172,7 +169,7 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
               height: 0,
               borderLeft: '8px solid transparent',
               borderRight: '8px solid transparent',
-              borderBottom: '8px solid rgba(255, 255, 255, 0.18)',
+              borderBottom: '8px solid rgba(255, 255, 255, 0.34)',
             }}
           />
           <PillButton label={t('wallet.chargeCta')} onClick={() => navigate('/wallet/charge')} />
@@ -269,15 +266,7 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
         {t('wallet.privateKeyNote')}
       </p>
 
-      <AccountSelectSheet
-        open={showAccounts}
-        accounts={account ? [account] : []}
-        balances={account && accountBalanceText ? { [account.accountId]: accountBalanceText } : undefined}
-        selectedId={account?.accountId ?? null}
-        onSelect={() => setShowAccounts(false)}
-        onManage={() => navigate(consentPath)}
-        onClose={() => setShowAccounts(false)}
-      />
+      <AccountSelectSheet open={showAccounts} onClose={() => setShowAccounts(false)} />
     </div>
   )
 }

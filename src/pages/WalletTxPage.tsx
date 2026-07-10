@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronDown, ArrowRight, ExternalLink } from 'lucide-react'
 import { useMyWallet, useChargeWallet, useWithdrawWallet } from '@/hooks/wallet'
 import { useMyAccount, useAccountBalance } from '@/hooks/account'
+import { useLogin } from '@/hooks/auth'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
 import { toErrorMessage } from '@/api/client'
@@ -33,15 +34,18 @@ function formatStamp(d: Date): string {
 
 /**
  * 충전(원→토큰)·전환(토큰→원) 공용 페이지.
- * 금액 입력 → 비밀번호 확인(PinSheet) → 트랜잭션 → 완료 화면.
- * mode 로 방향/문구/단위만 갈라진다.
+ * 금액 입력 → 비밀번호 확인(PinSheet) → PIN 검증(간편 로그인) → 트랜잭션 → 완료 화면.
+ * PIN 검증은 /v1/auth/login(refresh+PIN)으로 한다 — PIN 을 실제로 확인하는 동시에
+ * access 토큰을 재발급받아, 화면에 머무는 동안 토큰이 만료돼도 트랜잭션이
+ * '인증 필요' 로 실패하지 않게 한다. mode 로 방향/문구/단위만 갈라진다.
  */
 export default function WalletTxPage({ mode }: { mode: Mode }) {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const accessToken = useAuthStore((s) => s.accessToken)
+  const refreshToken = useAuthStore((s) => s.refreshToken)
   const userType = useAuthStore((s) => s.userType)
-  const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
+  const clearTokens = useAuthStore((s) => s.clearTokens)
 
   const { data: wallet, error: walletError } = useMyWallet(!!accessToken)
   const { data: account } = useMyAccount(!!accessToken)
@@ -50,6 +54,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
   const charge = useChargeWallet()
   const withdraw = useWithdrawWallet()
   const tx = mode === 'charge' ? charge : withdraw
+  const login = useLogin()
 
   const [amountStr, setAmountStr] = useState('')
   const [showPin, setShowPin] = useState(false)
@@ -72,6 +77,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
   const canSubmit = amount > 0 && !overBalance && !result
 
   const errorText = (() => {
+    if (login.error) return toErrorMessage(login.error)
     if (!tx.error) return null
     if (tx.error.status === ErrorCode.INSUFFICIENT_BALANCE) return t('wallet.insufficientBalance')
     return toErrorMessage(tx.error)
@@ -80,14 +86,34 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
   const accountBalanceText =
     availableKrw != null ? `${availableKrw.toLocaleString(numberLocale)}${t('wallet.balanceUnit')}` : undefined
 
-  const runTx = () => {
-    tx.mutate(
-      { amount },
+  const runTx = (pin: string) => {
+    if (!refreshToken) {
+      navigate('/login', { replace: true })
+      return
+    }
+    // 1) PIN 검증 + access 재발급 (간편 로그인) → 2) 트랜잭션.
+    // useLogin 의 onSuccess(setTokens)가 먼저 실행되므로 트랜잭션은 새 토큰으로 나간다.
+    login.mutate(
+      { refreshToken, pin },
       {
-        onSuccess: (data) => {
-          setResult(data)
-          setTxStamp(formatStamp(new Date()))
-          setShowPin(false)
+        onSuccess: () => {
+          tx.mutate(
+            { amount },
+            {
+              onSuccess: (data) => {
+                setResult(data)
+                setTxStamp(formatStamp(new Date()))
+                setShowPin(false)
+              },
+            },
+          )
+        },
+        onError: (e) => {
+          // refresh 만료/위조 — 재인증부터 다시
+          if (e.status === ErrorCode.REFRESH_INVALID) {
+            clearTokens()
+            navigate(userType === 'FOREIGN' ? '/kyc/foreign' : '/kyc', { replace: true })
+          }
         },
       },
     )
@@ -311,7 +337,12 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
       <Footer>
         <Button
           variant="solid"
-          onClick={() => canSubmit && setShowPin(true)}
+          onClick={() => {
+            if (!canSubmit) return
+            login.reset()
+            tx.reset()
+            setShowPin(true)
+          }}
           disabled={!canSubmit}
           style={{ borderRadius: 24, padding: '16px 20px' }}
         >
@@ -321,24 +352,16 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
 
       <PinSheet
         open={showPin}
-        pending={tx.isPending}
+        pending={login.isPending || tx.isPending}
         error={errorText}
         onComplete={runTx}
         onClose={() => {
-          if (!tx.isPending) setShowPin(false)
+          if (!login.isPending && !tx.isPending) setShowPin(false)
         }}
         onForgot={() => navigate('/login')}
       />
 
-      <AccountSelectSheet
-        open={showAccounts}
-        accounts={account ? [account] : []}
-        balances={account && accountBalanceText ? { [account.accountId]: accountBalanceText } : undefined}
-        selectedId={account?.accountId ?? null}
-        onSelect={() => setShowAccounts(false)}
-        onManage={() => navigate(consentPath)}
-        onClose={() => setShowAccounts(false)}
-      />
+      <AccountSelectSheet open={showAccounts} onClose={() => setShowAccounts(false)} />
     </TxScreen>
   )
 }

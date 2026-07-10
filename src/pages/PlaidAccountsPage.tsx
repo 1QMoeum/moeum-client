@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/api/client'
 import { plaidApi } from '@/api/plaid'
-import { accountApi } from '@/api/account'
+import { useConnectAccount } from '@/hooks/account'
 import { useAuthStore } from '@/store/auth'
 import Button from '@/components/ui/Button'
 import { resolvePlaidBrand } from '@/constants/bankBrand'
@@ -23,8 +23,8 @@ export default function PlaidAccountsPage() {
 
   const [accounts, setAccounts] = useState<PlaidAccountListItem[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { mutate: connect, isPending: submitting } = useConnectAccount()
 
   useEffect(() => {
     let cancelled = false
@@ -51,21 +51,13 @@ export default function PlaidAccountsPage() {
     return <Navigate to="/" replace />
   }
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     if (!selectedId) return
     setError(null)
-    setSubmitting(true)
-    try {
-      await accountApi.connect(selectedId)
-      navigate('/onboarding', { replace: true })
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(`${e.message} (${e.status ?? '?'})`)
-      } else if (e instanceof Error) {
-        setError(e.message)
-      }
-      setSubmitting(false)
-    }
+    connect(selectedId, {
+      onSuccess: () => navigate('/onboarding', { replace: true }),
+      onError: (e) => setError(`${e.message} (${e.status ?? '?'})`),
+    })
   }
 
   const count = accounts?.length ?? 0

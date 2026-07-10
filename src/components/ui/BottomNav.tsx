@@ -95,14 +95,17 @@ export default function BottomNav({ onCreate }: Props) {
     )
   }
 
+  // background 는 blur 미지원 웹뷰에서도 알약이 보이도록 충분히 불투명하게 두고
+  // (0.25 는 blur 없으면 거의 안 보임), backdrop-filter 는 향상 효과로만 유지.
   const pillStyle: CSSProperties & { WebkitBackdropFilter?: string } = {
     display: 'flex',
     alignItems: 'center',
     borderRadius: 32,
-    background: 'rgba(255,255,255,0.25)',
+    background: 'rgba(255,255,255,0.72)',
+    border: '1px solid rgba(255,255,255,0.6)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    boxShadow: '0 0 24px rgba(0,0,0,0.04)',
+    boxShadow: '0 6px 24px rgba(0,0,0,0.10)',
   }
 
   return (

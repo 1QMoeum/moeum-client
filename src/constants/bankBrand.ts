@@ -33,3 +33,25 @@ export function resolvePlaidBrand(institutionId: string | null | undefined, fall
   }
   return FALLBACK
 }
+
+/**
+ * 국내(마이데이터) 은행 브랜드 — 계좌 상품명 부분 일치로 판별.
+ * 하나원큐는 별도 로고 컴포넌트(HanaLogo)를 쓰므로 컨슈머가 short === '하나' 로 분기한다.
+ */
+export const DOMESTIC_BANK_BRAND: Record<string, BankBrand> = {
+  '하나원큐': { short: '하나', display: '하나은행', color: '#008B84', fg: '#ffffff' },
+  '새한': { short: '새한', display: '새한은행', color: '#8b7ff2', fg: '#ffffff' },
+  '한민': { short: '한민', display: '한민은행', color: '#FFB800', fg: '#191f28' },
+  'S은행': { short: 'S', display: 'S은행', color: '#0046FF', fg: '#ffffff' },
+  'K은행': { short: 'K', display: 'K은행', color: '#FFBC00', fg: '#191f28' },
+  'N은행': { short: 'N', display: 'N은행', color: '#04AA59', fg: '#ffffff' },
+}
+
+const DOMESTIC_FALLBACK: BankBrand = { short: '·', display: '계좌', color: '#b0b8c1', fg: '#ffffff' }
+
+export function resolveDomesticBrand(accountName: string): BankBrand {
+  for (const key of Object.keys(DOMESTIC_BANK_BRAND)) {
+    if (accountName.includes(key)) return DOMESTIC_BANK_BRAND[key]
+  }
+  return DOMESTIC_FALLBACK
+}

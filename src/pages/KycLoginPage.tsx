@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { toErrorMessage } from '@/api/client'
 import { useKycLogin } from '@/hooks/auth'
+import { useAuthStore } from '@/store/auth'
 import Screen from '@/components/ui/Screen'
 import Button from '@/components/ui/Button'
 import ErrorBanner from '@/components/ui/ErrorBanner'
@@ -18,6 +19,7 @@ export default function KycLoginPage() {
   const location = useLocation()
 
   const { mutate: kycLogin, isPending, error } = useKycLogin()
+  const hasOnboarded = useAuthStore((s) => s.hasOnboarded)
   const state = location.state as NavState | null
   const [pin, setPin] = useState('')
 
@@ -29,7 +31,8 @@ export default function KycLoginPage() {
     if (pin.length !== 6) return
     kycLogin(
       { identityVerificationId: state.identityVerificationId, pin },
-      { onSuccess: () => navigate('/onboarding', { replace: true }) },
+      // 온보딩은 첫 로그인에만 — 이미 본 디바이스는 바로 메인으로
+      { onSuccess: () => navigate(hasOnboarded ? '/main' : '/onboarding', { replace: true }) },
     )
   }
 

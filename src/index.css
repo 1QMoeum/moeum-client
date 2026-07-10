@@ -83,6 +83,30 @@
   }
 }
 
+/* 홈 지갑 탭 — 유리볼 속 구슬 부유 애니메이션.
+   transform 만 사용해 웹뷰에서도 GPU 가속으로 부드럽게 동작한다.
+   구슬별 진폭·주기는 인라인 CSS 변수(--float-*)로 조절. */
+@keyframes moeum-marble-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(var(--float-x, 3px), var(--float-y, -6px));
+  }
+  66% {
+    transform: translate(calc(var(--float-x, 3px) * -0.5), calc(var(--float-y, -6px) * 0.35));
+  }
+}
+.moeum-marble {
+  animation: moeum-marble-float var(--float-dur, 5s) ease-in-out var(--float-delay, 0s) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .moeum-marble {
+    animation: none;
+  }
+}
+
 html,
 body,
 #root {

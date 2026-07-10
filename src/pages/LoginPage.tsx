@@ -19,6 +19,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const refreshToken = useAuthStore((s) => s.refreshToken)
   const userType = useAuthStore((s) => s.userType)
+  const hasOnboarded = useAuthStore((s) => s.hasOnboarded)
   const clearTokens = useAuthStore((s) => s.clearTokens)
 
   const { mutate: login, isPending, error } = useLogin()
@@ -36,7 +37,8 @@ export default function LoginPage() {
     login(
       { refreshToken, pin },
       {
-        onSuccess: () => navigate('/onboarding', { replace: true }),
+        // 온보딩은 첫 로그인에만 — 이미 본 디바이스는 바로 메인으로
+        onSuccess: () => navigate(hasOnboarded ? '/main' : '/onboarding', { replace: true }),
         onError: (e) => {
           // refresh 만료/위조면 KYC 부터 다시 (사용자 유형에 맞는 경로로)
           if (e.status === ErrorCode.REFRESH_INVALID) {

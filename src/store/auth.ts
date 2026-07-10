@@ -8,8 +8,11 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   userType: UserType | null
+  /** 온보딩 화면을 이미 본 디바이스인지 — 첫 로그인에만 온보딩을 보여주기 위해 persist */
+  hasOnboarded: boolean
   setTokens: (access: string, refresh: string) => void
   setUserType: (userType: UserType) => void
+  setHasOnboarded: () => void
   clearTokens: () => void
 }
 
@@ -25,20 +28,27 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       userType: null,
+      hasOnboarded: false,
       setTokens: (accessToken, refreshToken) => {
         setAccessToken(accessToken)
         set({ accessToken, refreshToken })
       },
       setUserType: (userType) => set({ userType }),
+      setHasOnboarded: () => set({ hasOnboarded: true }),
       clearTokens: () => {
         setAccessToken(null)
-        set({ accessToken: null, refreshToken: null, userType: null })
+        // 로그아웃/토큰 초기화 = 다른 사용자가 쓸 수 있으므로 온보딩 이력도 초기화
+        set({ accessToken: null, refreshToken: null, userType: null, hasOnboarded: false })
       },
     }),
     {
       name: 'moeum-auth',
       // access 는 persist 에서 제외 — 짧고 자주 바뀜
-      partialize: (s) => ({ refreshToken: s.refreshToken, userType: s.userType }),
+      partialize: (s) => ({
+        refreshToken: s.refreshToken,
+        userType: s.userType,
+        hasOnboarded: s.hasOnboarded,
+      }),
       onRehydrateStorage: () => (state) => {
         // 새로고침 후 access 가 비어있을 때 refresh 로 자동 갱신은
         // 라우터 가드/AuthBootstrap 에서 처리 (Task #7).

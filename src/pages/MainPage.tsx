@@ -1,6 +1,6 @@
 import { Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
-import type { UIEvent } from 'react'
+import type { CSSProperties, UIEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import BottomNav from '@/components/ui/BottomNav'
@@ -8,6 +8,7 @@ import ProgressRing from '@/components/home/ProgressRing'
 import { useMyWallet } from '@/hooks/wallet'
 import { useMyAccount } from '@/hooks/account'
 import { useParticipatingEvents } from '@/hooks/events'
+import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
 import { fundingPercent } from '@/types/event'
@@ -42,7 +43,10 @@ export default function MainPage() {
     <div
       style={{
         background: 'var(--color-bg)',
-        minHeight: '100vh',
+        // 한 화면에 고정 — 100vh 는 웹뷰 주소창 영역까지 포함해 살짝 넘쳐 스크롤되므로
+        // html/body/#root(height:100%) 기준의 100% + overflow:hidden 으로 페이지 스크롤을 없앤다.
+        height: '100%',
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -56,6 +60,7 @@ export default function MainPage() {
           padding: '0 0 108px',
           display: 'flex',
           flex: 1,
+          minHeight: 0,
           flexDirection: 'column',
         }}
       >
@@ -449,6 +454,7 @@ function WalletView() {
   const userType = useAuthStore((s) => s.userType)
   const { data: wallet, isPending, error } = useMyWallet(!!accessToken)
   const { data: account } = useMyAccount(!!accessToken)
+  const [showAccounts, setShowAccounts] = useState(false)
   const won = (n: number) => n.toLocaleString(numLocale(i18n.resolvedLanguage))
 
   const noWallet = error?.status === ErrorCode.WALLET_NOT_FOUND
@@ -488,21 +494,22 @@ function WalletView() {
         padding: '16px 24px 0',
       }}
     >
-      <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+      <h1 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: '-0.02em', color: '#151519' }}>
         {t('main.hanaToken')}
       </h1>
       <button
         type="button"
-        onClick={() => navigate(consentPath)}
+        onClick={() => (account ? setShowAccounts(true) : navigate(consentPath))}
         aria-label={account ? t('main.changeAccountAria') : t('main.linkAccountAria')}
         style={{
           all: 'unset',
           display: 'flex',
           alignItems: 'center',
           gap: 3,
-          margin: '8px 0 0',
-          fontSize: 15,
-          color: 'var(--color-text-secondary)',
+          margin: '2px 0 0',
+          fontSize: 14,
+          letterSpacing: '-0.02em',
+          color: '#86869f',
           cursor: 'pointer',
           fontVariantNumeric: 'tabular-nums',
           WebkitTapHighlightColor: 'transparent',
@@ -511,13 +518,13 @@ function WalletView() {
         {account
           ? `${account.accountType === 'HANA' ? t('main.linkedBankHana') : t('main.linkedBankOther')} ${account.accountNumber}`
           : t('main.linkAccountCta')}
-        <ChevronRight size={15} strokeWidth={2.4} />
+        <ChevronRight size={14} strokeWidth={2.4} />
       </button>
-      <p style={{ margin: '14px 0 24px', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', color: '#0c0d0d', fontVariantNumeric: 'tabular-nums' }}>
           {won(wallet.tokenBalance)}
         </span>
-        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)' }}>{t('main.unit')}</span>
+        <span style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
       <button
@@ -526,22 +533,83 @@ function WalletView() {
         aria-label={t('main.viewWalletAria')}
         style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
-        <TokenSphere size={256} />
+        <TokenSphere size={240} />
       </button>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
-        <ActionPill label={t('main.withdraw')} variant="outline" onClick={() => navigate('/wallet/convert')} />
-        <ActionPill label={t('main.charge')} variant="filled" onClick={() => navigate('/wallet/charge')} />
+      <div style={{ display: 'flex', gap: 24, marginTop: 44 }}>
+        <ActionPill label={t('main.charge')} variant="outline" onClick={() => navigate('/wallet/charge')} />
+        <ActionPill label={t('main.convert')} variant="filled" onClick={() => navigate('/wallet/convert')} />
       </div>
+
+      <AccountSelectSheet open={showAccounts} onClose={() => setShowAccounts(false)} />
     </section>
   )
 }
 
-/** 유리 구슬 속 토큰 방울들 — 예금토큰 잔액의 장식 비주얼. */
+/** 구슬 하나의 배치·색·부유 파라미터. 좌표/크기는 구체 지름 대비 %. */
+interface Marble {
+  left: string
+  top: string
+  size: string
+  color: string
+  /** 부유 주기(초). 구슬마다 다르게 줘 동기화된 느낌을 없앤다. */
+  dur: number
+  delay: number
+  x: number
+  y: number
+}
+
+/** 수면 위 구슬 — 선명한 단색 원. */
+const FLOATING_MARBLES: Marble[] = [
+  { left: '16%', top: '33%', size: '23%', color: '#7ce0d3', dur: 5.2, delay: 0, x: 3, y: -6 },
+  { left: '32%', top: '25%', size: '27%', color: '#a99df7', dur: 6.1, delay: 0.4, x: -4, y: -8 },
+  { left: '53%', top: '35%', size: '20%', color: '#9d8ff5', dur: 5.6, delay: 0.9, x: 3, y: -5 },
+  { left: '60%', top: '29%', size: '10%', color: '#b7adf9', dur: 4.4, delay: 0.2, x: 2, y: -7 },
+  { left: '69%', top: '34%', size: '12%', color: '#82e3d6', dur: 4.8, delay: 0.6, x: -2, y: -6 },
+  { left: '66%', top: '36%', size: '20%', color: '#a49af6', dur: 5.9, delay: 0.3, x: 3, y: -4 },
+]
+
+/** 물속 구슬 — radial-gradient 로 가장자리를 부드럽게, 반투명 수면 아래에서 뿌옇게 비친다. */
+const SUNKEN_MARBLES: Marble[] = [
+  { left: '35%', top: '54%', size: '33%', color: '#b3aaf8', dur: 7.2, delay: 0.2, x: 4, y: -5 },
+  { left: '17%', top: '58%', size: '18%', color: '#beb6fa', dur: 6.4, delay: 1.1, x: -3, y: -4 },
+  { left: '62%', top: '66%', size: '18%', color: '#9fe6dc', dur: 6.8, delay: 0.5, x: 3, y: -4 },
+  { left: '42%', top: '76%', size: '18%', color: '#c3bcfa', dur: 7.6, delay: 0.8, x: -3, y: -3 },
+  { left: '25%', top: '72%', size: '11%', color: '#b6adf9', dur: 5.8, delay: 1.4, x: 2, y: -3 },
+]
+
+/** .moeum-marble 이 읽는 부유 파라미터 CSS 변수. */
+type FloatVars = CSSProperties & {
+  '--float-dur': string
+  '--float-delay': string
+  '--float-x': string
+  '--float-y': string
+}
+
+function MarbleDot({ marble, sunken }: { marble: Marble; sunken?: boolean }) {
+  const style: FloatVars = {
+    position: 'absolute',
+    left: marble.left,
+    top: marble.top,
+    width: marble.size,
+    height: marble.size,
+    borderRadius: '50%',
+    // 물속 구슬은 filter: blur 없이 radial-gradient 감쇠로 부드러운 가장자리를 만든다 (웹뷰 호환).
+    background: sunken
+      ? `radial-gradient(circle closest-side, ${marble.color} 55%, transparent 100%)`
+      : marble.color,
+    '--float-dur': `${marble.dur}s`,
+    '--float-delay': `${marble.delay}s`,
+    '--float-x': `${marble.x}px`,
+    '--float-y': `${marble.y}px`,
+  }
+  return <span className="moeum-marble" style={style} />
+}
+
+/** 유리볼 속 토큰 구슬들 — 수면 위 구슬은 선명하게 떠 있고 물속 구슬은 뿌옇게 잠겨 있다.
+ *  filter/backdrop-filter 에 의존하지 않아 하나 인앱 웹뷰에서도 동일하게 렌더되고,
+ *  구슬들은 CSS 애니메이션으로 천천히 떠다닌다 (prefers-reduced-motion 시 정지). */
 function TokenSphere({ size }: { size: number }) {
-  const blob = (css: React.CSSProperties) => (
-    <span style={{ position: 'absolute', borderRadius: '50%', ...css }} />
-  )
   return (
     <div
       aria-hidden
@@ -551,25 +619,52 @@ function TokenSphere({ size }: { size: number }) {
         borderRadius: '50%',
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(180deg, #fdfdfe 0%, #f1f1f6 100%)',
-        border: '1px solid rgba(0,0,0,0.05)',
-        boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.9), inset 0 -10px 24px rgba(124,111,240,0.10), 0 12px 28px rgba(0,0,0,0.07)',
+        background: 'radial-gradient(circle at 33% 26%, #ffffff 0%, #f8f8fc 55%, #eef0f6 100%)',
+        border: '1px solid rgba(255,255,255,0.7)',
+        boxShadow:
+          'inset 0 4px 14px rgba(255,255,255,0.95), inset 0 -14px 30px rgba(124,111,240,0.10), 0 14px 30px rgba(102,91,247,0.14)',
       }}
     >
-      {blob({ left: '30%', top: '26%', width: '26%', height: '26%', background: '#a99df7' })}
-      {blob({ left: '54%', top: '32%', width: '13%', height: '13%', background: '#8f80f2' })}
-      {blob({ left: '14%', top: '38%', width: '20%', height: '20%', background: '#7fd8cf' })}
-      {blob({ left: '64%', top: '42%', width: '9%', height: '9%', background: '#67c8be' })}
-      {/* 아래쪽 큰 방울 무리 — 젤리처럼 뭉개진 느낌 */}
-      {blob({ left: '10%', top: '46%', width: '80%', height: '46%', background: 'linear-gradient(135deg, #8f80f2 0%, #7c6ff0 60%, #6fd0c6 100%)', filter: 'blur(14px)', opacity: 0.9 })}
-      {blob({ left: '38%', top: '40%', width: '30%', height: '30%', background: '#7c6ff0', filter: 'blur(6px)', opacity: 0.85 })}
-      {/* 유리 하이라이트 */}
-      {blob({ left: '14%', top: '8%', width: '36%', height: '18%', background: 'rgba(255,255,255,0.75)', filter: 'blur(10px)' })}
+      {/* 구슬 전부 (수면 오버레이 아래) — 수면 밑으로 잠긴 부분은 오버레이가 뿌옇게 덮는다 */}
+      {SUNKEN_MARBLES.map((m) => (
+        <MarbleDot key={`${m.left}-${m.top}`} marble={m} sunken />
+      ))}
+      {FLOATING_MARBLES.map((m) => (
+        <MarbleDot key={`${m.left}-${m.top}`} marble={m} />
+      ))}
+
+      {/* 수면 — 반투명 화이트로 아래쪽을 뿌옇게. blur 는 지원 환경 향상 효과로만. */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: '50%',
+          bottom: 0,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.66) 0%, rgba(255,255,255,0.36) 100%)',
+          borderTop: '1.5px solid rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
+        }}
+      />
+
+      {/* 상단 유리 하이라이트 */}
+      <span
+        style={{
+          position: 'absolute',
+          left: '20%',
+          top: '10%',
+          width: '34%',
+          height: '15%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%)',
+        }}
+      />
     </div>
   )
 }
 
-/** 지갑 탭 하단 액션 버튼 (출금/충전). */
+/** 지갑 탭 하단 액션 버튼 (충전하기 = 흰색 / 전환하기 = 보라 채움). */
 function ActionPill({
   label,
   variant,
@@ -587,15 +682,15 @@ function ActionPill({
       style={{
         all: 'unset',
         boxSizing: 'border-box',
-        padding: '14px 32px',
-        borderRadius: 999,
-        fontSize: 15,
-        fontWeight: 600,
-        letterSpacing: '-0.01em',
+        padding: '12px 32px',
+        borderRadius: 24,
+        fontSize: 16,
+        fontWeight: 500,
+        letterSpacing: '-0.02em',
         cursor: 'pointer',
-        color: '#191f28',
-        background: filled ? '#e9e9ee' : '#fff',
-        border: `1px solid ${filled ? '#e9e9ee' : '#ececf0'}`,
+        color: filled ? '#ffffff' : '#474c52',
+        background: filled ? '#665bf7' : '#ffffff',
+        boxShadow: '0 0 8px rgba(21,21,21,0.04)',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
