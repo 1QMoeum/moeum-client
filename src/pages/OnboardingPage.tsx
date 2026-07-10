@@ -8,11 +8,9 @@ import OnboardingLayout from '@/components/onboarding/OnboardingLayout'
 import StepHeader from '@/components/onboarding/StepHeader'
 import CtaButton from '@/components/onboarding/CtaButton'
 import AccountCard from '@/components/onboarding/AccountCard'
-import HanaLogo from '@/components/icons/HanaLogo'
+import BankAvatar from '@/components/wallet/BankAvatar'
 import EnableNotificationModal from '@/components/notification/EnableNotificationModal'
 import { getNotificationPermissionStatus } from '@/lib/firebase'
-import { resolvePlaidBrand } from '@/constants/bankBrand'
-import type { BankAccountResponse } from '@/types/api'
 
 /**
  * 온보딩 03 — 인증 + (선택적으로) 계좌 연동 후 랜딩.
@@ -110,7 +108,7 @@ export default function OnboardingPage() {
             {t('done.linkedCardLabel')}
           </h3>
           <AccountCard
-            logo={<AccountLogo account={account} />}
+            logo={<BankAvatar account={account} size={40} />}
             name={account.accountHolder}
             subtext={account.accountNumber}
             balanceText={balanceText}
@@ -174,34 +172,3 @@ function QuietTextButton({
   )
 }
 
-/** 연동 계좌 로고 — 하나은행은 자사 로고, Plaid 는 기관 브랜드, 그 외 타행 배지. */
-function AccountLogo({ account }: { account: BankAccountResponse }) {
-  const { t } = useTranslation()
-  if (account.accountType === 'HANA') return <HanaLogo size={40} />
-
-  const plaidBrand =
-    account.accountType === 'PLAID'
-      ? resolvePlaidBrand(account.bankCode, account.accountHolder)
-      : null
-
-  return (
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        background: plaidBrand?.color ?? '#0046FF',
-        color: plaidBrand?.fg ?? '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 700,
-        fontSize: plaidBrand ? 16 : 12,
-        letterSpacing: '-0.02em',
-        flexShrink: 0,
-      }}
-    >
-      {plaidBrand?.short ?? t('done.otherBankBadge')}
-    </div>
-  )
-}

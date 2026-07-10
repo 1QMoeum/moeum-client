@@ -488,6 +488,7 @@ function WalletView() {
     <section
       style={{
         display: 'flex',
+        flex: 1,
         flexDirection: 'column',
         alignItems: 'center',
         padding: '24px 24px 0',

@@ -4,7 +4,7 @@ import { accountApi } from '@/api/account'
 import { mydataApi } from '@/api/mydata'
 import { plaidApi } from '@/api/plaid'
 import { useAuthStore } from '@/store/auth'
-import { maskAccountNum } from '@/lib/account'
+import { isSameAccount, maskAccountNum } from '@/lib/account'
 import { resolveDomesticBrand, resolvePlaidBrand, type BankBrand } from '@/constants/bankBrand'
 import type { BankAccountResponse } from '@/types/api'
 
@@ -95,6 +95,24 @@ export function useLinkableAccounts(enabled: boolean) {
       })
     },
   })
+}
+
+/**
+ * 연동 계좌(BankAccountResponse)의 브랜드 판별.
+ * 서버 응답엔 은행 이름이 없어(HANA/OTHER/PLAID 만) OTHER 는 동의 계좌 목록에서
+ * 계좌번호 매칭으로 실제 은행(한민·새한 등)을 찾는다. 못 찾으면 null(타행 배지 폴백).
+ */
+export function useAccountBrand(
+  account: BankAccountResponse | null | undefined,
+): 'HANA' | BankBrand | null {
+  const { data: linkables } = useLinkableAccounts(account?.accountType === 'OTHER')
+  if (!account) return null
+  if (account.accountType === 'HANA') return 'HANA'
+  if (account.accountType === 'PLAID') {
+    return resolvePlaidBrand(account.bankCode, account.accountHolder)
+  }
+  const match = linkables?.find((a) => isSameAccount(account.accountNumber, a.id))
+  return match?.brand ?? null
 }
 
 export function useConnectAccount() {
