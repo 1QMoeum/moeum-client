@@ -6,6 +6,7 @@ import BrandAvatar from '@/components/wallet/BrandAvatar'
 import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
 import WalletTokenCard from '@/components/wallet/WalletTokenCard'
 import { useMyPage } from '@/hooks/mypage'
+import { useLogout } from '@/hooks/auth'
 import { useOperatingEvents, useParticipatingEvents } from '@/hooks/events'
 import { useMyAccount, useLinkableAccounts } from '@/hooks/account'
 import type { LinkableAccount } from '@/hooks/account'
@@ -50,9 +51,25 @@ export default function MyPage() {
   const { data, isPending, error } = useMyPage()
   const accessToken = useAuthStore((s) => s.accessToken)
   const userType = useAuthStore((s) => s.userType)
+  const refreshToken = useAuthStore((s) => s.refreshToken)
+  const clearTokens = useAuthStore((s) => s.clearTokens)
+  const { mutate: logout, isPending: loggingOut } = useLogout()
   const { data: linkableAccounts, isPending: accountsPending } = useLinkableAccounts(!!accessToken)
   const { data: connectedAccount } = useMyAccount(!!accessToken)
   const [showAccounts, setShowAccounts] = useState(false)
+
+  /** 로그아웃 — 서버 무효화 성공/실패와 무관하게 토큰을 지우고 처음 화면으로 보낸다. */
+  const handleLogout = () => {
+    if (loggingOut) return
+    if (!refreshToken) {
+      clearTokens()
+      navigate('/', { replace: true })
+      return
+    }
+    logout(refreshToken, {
+      onSettled: () => navigate('/', { replace: true }),
+    })
+  }
 
   const consentPath = userType === 'FOREIGN' ? '/plaid/consent' : '/mydata/consent'
   const counts = data?.counts
@@ -247,6 +264,31 @@ export default function MyPage() {
               <EmptyRecent loading={isPending} />
             )}
           </section>
+
+          {/* 로그아웃 */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            style={{
+              width: '100%',
+              background: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              padding: '16px 0',
+              fontSize: 16,
+              fontWeight: 500,
+              lineHeight: 1.5,
+              letterSpacing: '-0.02em',
+              color: '#5c5c72',
+              textAlign: 'center',
+              cursor: loggingOut ? 'wait' : 'pointer',
+              boxShadow: '0 0 8px rgba(21,21,21,0.04)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            {loggingOut ? '로그아웃 중…' : '로그아웃'}
+          </button>
         </div>
       </main>
 
