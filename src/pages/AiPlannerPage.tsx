@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { AlertCircle, ChevronLeft, Pencil } from 'lucide-react'
 import { useRecommendVenues, useVenueDetail } from '@/hooks/venues'
+import { useKakaoMap } from '@/hooks/useKakaoMap'
 import { useAuthStore } from '@/store/auth'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
-import { isAdVenue, venueImageSrc, venueTypeLabel } from '@/types/venue'
+import { venueImageSrc, venueTypeLabel } from '@/types/venue'
 import type { AiPlanVenue, RecommendedVenue } from '@/types/venue'
 
 const EXAMPLE_QUERIES = [
@@ -13,9 +14,6 @@ const EXAMPLE_QUERIES = [
   '홍대 근처 전광판 광고 업체 추천해주세요',
   '부산 서면에서 배너 광고 할 수 있는 곳 알려줘',
 ]
-
-type SortKey = 'recommend' | 'priceAsc'
-type TypeFilter = 'all' | 'cafe' | 'ad'
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 /** 원 → "80만원" 표기 (만원 미만은 원 단위 그대로) */
@@ -34,8 +32,8 @@ export default function AiPlannerPage() {
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'input' | 'results'>('input')
   const [detail, setDetail] = useState<{ venue: RecommendedVenue; badge: string } | null>(null)
-  const [sortKey, setSortKey] = useState<SortKey>('recommend')
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  /** 로딩 중 뒤로가기로 취소했으면 늦게 도착한 응답이 결과 화면으로 전환하지 않도록 막는다 */
+  const cancelledRef = useRef(false)
 
   const results = useMemo(() => recommend.data?.results ?? [], [recommend.data])
 
@@ -51,14 +49,6 @@ export default function AiPlannerPage() {
     }
     return map
   }, [results])
-
-  const visible = useMemo(() => {
-    let list = results
-    if (typeFilter === 'cafe') list = list.filter((v) => !isAdVenue(v.venueType))
-    if (typeFilter === 'ad') list = list.filter((v) => isAdVenue(v.venueType))
-    if (sortKey === 'priceAsc') list = [...list].sort((a, b) => a.price - b.price)
-    return list
-  }, [results, sortKey, typeFilter])
 
   if (!accessToken) {
     return <Navigate to="/" replace />
@@ -80,7 +70,12 @@ export default function AiPlannerPage() {
   const submit = () => {
     const q = query.trim()
     if (q === '' || recommend.isPending) return
-    recommend.mutate(q, { onSuccess: () => setView('results') })
+    cancelledRef.current = false
+    recommend.mutate(q, {
+      onSuccess: () => {
+        if (!cancelledRef.current) setView('results')
+      },
+    })
   }
 
   if (detail) {
@@ -90,6 +85,18 @@ export default function AiPlannerPage() {
         badge={detail.badge}
         onBack={() => setDetail(null)}
         onStart={() => startWithVenue(detail.venue)}
+      />
+    )
+  }
+
+  // 플랜 생성 중 — 전용 로딩 화면 (피그마 02). 뒤로가기는 요청 취소 후 입력 화면으로.
+  if (recommend.isPending) {
+    return (
+      <PlanLoading
+        onBack={() => {
+          cancelledRef.current = true
+          recommend.reset()
+        }}
       />
     )
   }
@@ -271,36 +278,19 @@ export default function AiPlannerPage() {
               AI 추천 플랜
             </span>
 
-            {/* 정렬 · 유형 필터 */}
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-              <FilterChip label="추천순" active={sortKey === 'recommend'} onClick={() => setSortKey('recommend')} />
-              <FilterChip label="예산 낮은 순" active={sortKey === 'priceAsc'} onClick={() => setSortKey('priceAsc')} />
-              <FilterChip
-                label="카페"
-                active={typeFilter === 'cafe'}
-                onClick={() => setTypeFilter((f) => (f === 'cafe' ? 'all' : 'cafe'))}
-              />
-              <FilterChip
-                label="광고"
-                active={typeFilter === 'ad'}
-                onClick={() => setTypeFilter((f) => (f === 'ad' ? 'all' : 'ad'))}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '14px 0 32px' }}>
-              {visible.length === 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 0 32px' }}>
+              {results.length === 0 && (
                 <span style={{ fontSize: 13.5, color: '#8b95a1', textAlign: 'center', padding: '32px 0' }}>
                   조건에 맞는 플랜이 없어요. 조건을 바꿔 다시 시도해보세요.
                 </span>
               )}
-              {visible.map((v) => {
-                const rank = results.indexOf(v) + 1
+              {results.map((v, i) => {
                 const badge = badges.get(v.venueId) ?? 'AI 추천'
                 return (
                   <PlanCard
                     key={v.venueId}
                     venue={v}
-                    rank={rank}
+                    rank={i + 1}
                     badge={badge}
                     onDetail={() => setDetail({ venue: v, badge })}
                     onStart={() => startWithVenue(v)}
@@ -315,28 +305,76 @@ export default function AiPlannerPage() {
   )
 }
 
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+/** 플랜 생성 로딩 — "맞춤형 플랜을 생성하는 중이에요!" + 일러스트. 뒤로가기로 취소 가능. */
+function PlanLoading({ onBack }: { onBack: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      style={{
-        all: 'unset',
-        flexShrink: 0,
-        padding: '8px 14px',
-        borderRadius: 999,
-        fontSize: 13,
-        fontWeight: 500,
-        letterSpacing: '-0.01em',
-        cursor: 'pointer',
-        color: active ? '#fff' : '#8b95a1',
-        background: active ? '#5b6270' : '#f5f5f7',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {label}
-    </button>
+    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          flex: 1,
+          maxWidth: 480,
+          width: '100%',
+          margin: '0 auto',
+          padding: '8px 20px 0',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+        }}
+      >
+        <header style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 8 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="뒤로"
+            style={{
+              all: 'unset',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              cursor: 'pointer',
+              color: '#191f28',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <ChevronLeft size={26} />
+          </button>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#191f28', letterSpacing: '-0.02em' }}>
+            AI 플래너
+          </h1>
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '28px 4px 0' }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 22,
+              fontWeight: 700,
+              color: '#191f28',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.35,
+            }}
+          >
+            맞춤형 플랜을
+            <br />
+            생성하는 중이에요!
+          </h2>
+          <span style={{ fontSize: 14, color: '#6b7684', letterSpacing: '-0.01em' }}>조금만 기다려주세요.</span>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }}>
+          <img
+            src="/ai-plan-loading.png"
+            alt=""
+            width={260}
+            style={{ height: 'auto', animation: 'aiPlanPulse 1.6s ease-in-out infinite' }}
+          />
+        </div>
+        <style>{`@keyframes aiPlanPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }`}</style>
+      </div>
+    </main>
   )
 }
 
@@ -569,15 +607,26 @@ function PlanDetail({
                 {detail?.description || '소개 정보가 없어요.'}
               </p>
             )}
-            {detail?.address && (
-              <span style={{ fontSize: 12.5, color: '#8b95a1' }}>📍 {detail.address}</span>
-            )}
             {detail?.rentalStartTime && detail.rentalEndTime && (
               <span style={{ fontSize: 12.5, color: '#8b95a1' }}>
                 🕐 대관 {detail.rentalStartTime.slice(0, 5)} ~ {detail.rentalEndTime.slice(0, 5)}
               </span>
             )}
           </div>
+
+          {/* 위치 — 지도 + 장소명 + 주소 */}
+          {detail && detail.latitude != null && detail.longitude != null && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#191f28' }}>위치</span>
+              <VenueMap latitude={detail.latitude} longitude={detail.longitude} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#191f28' }}>{venue.title}</span>
+                {detail.address && (
+                  <span style={{ fontSize: 12.5, color: '#8b95a1' }}>{detail.address}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 추천 이유 */}
           {venue.reason && (
@@ -611,6 +660,32 @@ function PlanDetail({
         </div>
       </div>
     </main>
+  )
+}
+
+/** 플랜 상세의 위치 미리보기 지도 — 마커 1개, 조작 비활성(스크롤 방해 방지). */
+function VenueMap({ latitude, longitude }: { latitude: number; longitude: number }) {
+  const { containerRef, map, error } = useKakaoMap(4)
+
+  useEffect(() => {
+    if (!map) return
+    const position = new kakao.maps.LatLng(latitude, longitude)
+    map.setCenter(position)
+    map.setDraggable(false)
+    map.setZoomable(false)
+    const marker = new kakao.maps.Marker({ position })
+    marker.setMap(map)
+    return () => marker.setMap(null)
+  }, [map, latitude, longitude])
+
+  if (error) return null
+
+  return (
+    <div
+      ref={containerRef}
+      aria-hidden
+      style={{ width: '100%', height: 160, borderRadius: 12, overflow: 'hidden', background: '#f1f3f5' }}
+    />
   )
 }
 
