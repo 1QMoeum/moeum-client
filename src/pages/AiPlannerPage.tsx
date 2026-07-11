@@ -6,6 +6,8 @@ import { useKakaoMap } from '@/hooks/useKakaoMap'
 import { useAuthStore } from '@/store/auth'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
+import FadeImage from '@/components/ui/FadeImage'
+import IllustrationLoading from '@/components/ui/IllustrationLoading'
 import { venueImageSrc, venueTypeLabel } from '@/types/venue'
 import type { AiPlanVenue, RecommendedVenue } from '@/types/venue'
 
@@ -92,7 +94,10 @@ export default function AiPlannerPage() {
   // 플랜 생성 중 — 전용 로딩 화면 (피그마 02). 뒤로가기는 요청 취소 후 입력 화면으로.
   if (recommend.isPending) {
     return (
-      <PlanLoading
+      <IllustrationLoading
+        topTitle="AI 플래너"
+        title={'맞춤형 플랜을\n생성하는 중이에요!'}
+        desc="조금만 기다려주세요."
         onBack={() => {
           cancelledRef.current = true
           recommend.reset()
@@ -202,7 +207,7 @@ export default function AiPlannerPage() {
                 padding: '16px',
                 border: '1.5px solid #ececf0',
                 borderRadius: 16,
-                fontSize: 14.5,
+                fontSize: 16, // 16px 미만이면 iOS 사파리가 포커스 시 화면을 확대한다
                 color: '#191f28',
                 letterSpacing: '-0.01em',
                 lineHeight: 1.5,
@@ -305,79 +310,6 @@ export default function AiPlannerPage() {
   )
 }
 
-/** 플랜 생성 로딩 — "맞춤형 플랜을 생성하는 중이에요!" + 일러스트. 뒤로가기로 취소 가능. */
-function PlanLoading({ onBack }: { onBack: () => void }) {
-  return (
-    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
-      <div
-        style={{
-          flex: 1,
-          maxWidth: 480,
-          width: '100%',
-          margin: '0 auto',
-          padding: '8px 20px 0',
-          display: 'flex',
-          flexDirection: 'column',
-          boxSizing: 'border-box',
-        }}
-      >
-        <header style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 8 }}>
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="뒤로"
-            style={{
-              all: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              cursor: 'pointer',
-              color: '#191f28',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-          >
-            <ChevronLeft size={26} />
-          </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#191f28', letterSpacing: '-0.02em' }}>
-            AI 플래너
-          </h1>
-        </header>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '28px 4px 0' }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#191f28',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.35,
-            }}
-          >
-            맞춤형 플랜을
-            <br />
-            생성하는 중이에요!
-          </h2>
-          <span style={{ fontSize: 14, color: '#6b7684', letterSpacing: '-0.01em' }}>조금만 기다려주세요.</span>
-        </div>
-
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }}>
-          <img
-            src="/ai-plan-loading.png"
-            alt=""
-            width={260}
-            style={{ height: 'auto', animation: 'aiPlanPulse 1.6s ease-in-out infinite' }}
-          />
-        </div>
-        <style>{`@keyframes aiPlanPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }`}</style>
-      </div>
-    </main>
-  )
-}
-
 function PlanBadge({ label }: { label: string }) {
   const best = label === 'BEST'
   return (
@@ -440,7 +372,7 @@ function PlanCard({
           }}
         >
           {venueImageSrc(venue.imageUrl) ? (
-            <img src={venueImageSrc(venue.imageUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <FadeImage src={venueImageSrc(venue.imageUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             '📍'
           )}
@@ -542,7 +474,11 @@ function PlanDetail({
         {/* 상단 이미지 */}
         <div style={{ position: 'relative', height: 240, background: '#e9ecef', overflow: 'hidden' }}>
           {venueImageSrc(venue.imageUrl) && (
-            <img src={venueImageSrc(venue.imageUrl)} alt={venue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <FadeImage
+              src={venueImageSrc(venue.imageUrl)}
+              alt={venue.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           )}
           <button
             type="button"

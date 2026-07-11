@@ -11,6 +11,7 @@ import { ErrorCode } from '@/constants/errorCodes'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
 import BottomSheet from '@/components/ui/BottomSheet'
+import IllustrationLoading from '@/components/ui/IllustrationLoading'
 import LocationPicker, { type PickedLocation } from '@/components/map/LocationPicker'
 import { EVENT_CATEGORIES, categoryLabel, categoryImage, type CreateEventRequest } from '@/types/event'
 import { venueTypeLabel } from '@/types/venue'
@@ -33,7 +34,7 @@ const INPUT_STYLE: React.CSSProperties = {
   background: '#fff',
   border: '1.5px solid #f0f0f4',
   borderRadius: 14,
-  fontSize: 15,
+  fontSize: 16, // 16px 미만이면 iOS 사파리가 포커스 시 화면을 확대한다
   color: '#191f28',
   letterSpacing: '-0.01em',
   outline: 'none',
@@ -208,6 +209,17 @@ export default function CreateEventPage() {
     if (!stepValid[step]) return
     if (step === 'confirm') submit()
     else setStepIdx((i) => i + 1)
+  }
+
+  // ===== 생성 중 — 일러스트 로딩 (빈 화면 방지) =====
+  if (create.isPending) {
+    return (
+      <IllustrationLoading
+        topTitle="이벤트 생성"
+        title={'새로운 이벤트를\n만들고 있어요!'}
+        desc="조금만 기다려주세요."
+      />
+    )
   }
 
   // ===== 완료 화면 — 새로운 이벤트가 만들어졌어요! =====
