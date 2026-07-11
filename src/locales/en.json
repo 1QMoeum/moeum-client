@@ -45,12 +45,13 @@
     }
   },
   "login": {
-    "title": "Enter your PIN",
+    "title": "Tap your PIN",
     "subtitle": "The 6-digit PIN you set at signup.",
     "submit": "Log in",
     "submitting": "Logging in…",
-    "forgotPin": "Forgot your PIN?",
-    "topTitle": "Log in"
+    "forgotPin": "I forgot my PIN",
+    "topTitle": "Log in",
+    "headline": "Welcome back!"
   },
   "kycForeign": {
     "title": "Verify your passport",

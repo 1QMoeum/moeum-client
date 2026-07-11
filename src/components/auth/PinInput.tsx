@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
-import { Delete } from 'lucide-react'
+import { Delete, ScanFace } from 'lucide-react'
 
 interface Props {
   value: string
@@ -9,6 +9,8 @@ interface Props {
   shuffle?: boolean
   /** 키패드 위 도트 표시 여부. 도트를 화면 상단에 따로 배치할 땐 false + PinDots 사용. */
   showDots?: boolean
+  /** 좌하단 Face ID 키 탭 핸들러. 주면 빈 칸 대신 Face ID 아이콘을 렌더한다(피그마 973:6745). */
+  onFaceId?: () => void
 }
 
 /** PIN 자릿수 도트 — 키패드와 분리 배치용 (화면 중앙 상단 등). */
@@ -50,7 +52,7 @@ function shuffled(): string[] {
  * - 하단: 3x4 숫자 키패드. 숫자는 섞어서 배치, 우하단은 지우기(⌫).
  * value/onChange 로 외부 상태를 제어한다(로그인·가입·지갑 공용).
  */
-export default function PinInput({ value, onChange, disabled, shuffle = true, showDots = true }: Props) {
+export default function PinInput({ value, onChange, disabled, shuffle = true, showDots = true, onFaceId }: Props) {
   const dots = useMemo(() => Array.from({ length: 6 }, (_, i) => i < value.length), [value])
   // 마운트 시 한 번만 섞는다(입력 중에는 위치가 유지되도록).
   const digits = useMemo(() => (shuffle ? shuffled() : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']), [shuffle])
@@ -97,15 +99,22 @@ export default function PinInput({ value, onChange, disabled, shuffle = true, sh
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          rowGap: 4,
+          rowGap: 0,
           columnGap: 8,
           width: '100%',
-          maxWidth: 320,
+          maxWidth: 402,
         }}
       >
         {cells.map((cell, i) => {
           if (cell.kind === 'empty') {
-            return <span key={i} aria-hidden style={{ height: 60 }} />
+            if (onFaceId) {
+              return (
+                <KeyButton key={i} ariaLabel="Face ID로 인증" disabled={disabled} onClick={onFaceId}>
+                  <ScanFace size={26} strokeWidth={1.8} color={VIOLET} />
+                </KeyButton>
+              )
+            }
+            return <span key={i} aria-hidden style={{ height: 56 }} />
           }
           if (cell.kind === 'back') {
             return (
@@ -122,7 +131,7 @@ export default function PinInput({ value, onChange, disabled, shuffle = true, sh
           const d = cell.value as string
           return (
             <KeyButton key={i} ariaLabel={d} disabled={disabled} onClick={() => press(d)}>
-              <span style={{ fontSize: 24, fontWeight: 600, color: '#2f2f3b', letterSpacing: '-0.02em' }}>{d}</span>
+              <span style={{ fontSize: 24, fontWeight: 500, color: VIOLET, letterSpacing: '-0.02em' }}>{d}</span>
             </KeyButton>
           )
         })}
@@ -151,7 +160,7 @@ function KeyButton({
       style={{
         all: 'unset',
         boxSizing: 'border-box',
-        height: 60,
+        height: 56,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -50,8 +50,8 @@ export default function LoginPage() {
 
   return (
     <PinScreen
+      headline={t('login.headline')}
       title={t('login.title')}
-      desc={t('login.subtitle')}
       errorMessage={error ? toErrorMessage(error) : null}
       pending={isPending}
       pendingLabel={t('login.submitting')}
@@ -62,9 +62,10 @@ export default function LoginPage() {
           onClick={restartWithKyc}
           style={{
             all: 'unset',
-            padding: '6px 10px',
-            fontSize: 14,
-            color: '#86869f',
+            padding: '6px 12px',
+            fontSize: 16,
+            fontWeight: 500,
+            color: '#665bf7',
             letterSpacing: '-0.02em',
             cursor: 'pointer',
             WebkitTapHighlightColor: 'transparent',

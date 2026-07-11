@@ -37,8 +37,8 @@ export default function KycLoginForeignPage() {
   return (
     <PinScreen
       onBack={() => navigate(-1)}
-      title={t('kycLoginForeign.title')}
-      desc={t('kycLoginForeign.subtitle')}
+      headline={t('kycLoginForeign.title')}
+      title={t('login.title')}
       errorMessage={error ? toErrorMessage(error) : null}
       pending={isPending}
       pendingLabel={t('kycLoginForeign.submitting')}

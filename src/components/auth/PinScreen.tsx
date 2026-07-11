@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
-import PinInput, { PinDots } from '@/components/auth/PinInput'
+import PinInput from '@/components/auth/PinInput'
 
 interface Props {
   /** 뒤로가기 핸들러. 없으면 캐럿을 숨긴다. */
   onBack?: () => void
-  /** 중앙 타이틀 — 여러 줄이면 \n 구분 */
+  /** 상단 좌측 헤드라인 (예: "○○님,\n다시 만나서 반가워요!") */
+  headline?: string
+  /** 패널 타이틀 (예: "비밀번호를 눌러주세요") */
   title: string
   desc?: string
   /** 있으면 도트 아래 빨간 문구 표시 + 입력을 비운다 */
@@ -17,19 +19,20 @@ interface Props {
   pendingLabel?: string
   /** 6자리 입력 완료 시 자동 호출 */
   onComplete: (pin: string) => void
-  /** 도트 아래 부가 요소 (업로드 UI 등) — 중앙 정렬 */
+  /** 패널 위쪽 영역 부가 요소 (업로드 UI 등) */
   children?: ReactNode
-  /** 키패드 카드 아래 보조 액션 (비밀번호 분실 링크 등) */
+  /** 키패드 아래 보조 액션 (비밀번호 분실 링크 등) */
   bottomAction?: ReactNode
 }
 
 /**
- * PIN 입력 화면 공용 레이아웃 — 금융앱 표준 패턴.
- * 타이틀·도트는 상단 중앙, 키패드는 하단 밀착. 별도 확인 버튼 없이
- * 6자리 입력이 끝나면 자동 제출한다. 실패하면 입력을 비우고 다시 받는다.
+ * PIN 입력 화면 — 피그마 973:6745. 하단 흰색 바텀시트 패널 안에
+ * 타이틀·도트·키패드를 모두 담는다. 별도 확인 버튼 없이 6자리 입력이
+ * 끝나면 자동 제출하고, 실패하면 입력을 비우고 다시 받는다.
  */
 export default function PinScreen({
   onBack,
+  headline,
   title,
   desc,
   errorMessage,
@@ -99,11 +102,38 @@ export default function PinScreen({
           )}
         </header>
 
-        {/* 타이틀은 상단, 키패드는 하단 — 사이 간격은 최대 260px 로 제한해 긴 화면에서도 안 벌어진다 */}
+        {headline && (
+          <h2
+            style={{
+              margin: 0,
+              padding: '24px 20px 0',
+              fontSize: 24,
+              fontWeight: 600,
+              lineHeight: 1.5,
+              letterSpacing: '-0.02em',
+              color: '#1c1d1f',
+              whiteSpace: 'pre-line',
+            }}
+          >
+            {headline}
+          </h2>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        {children && (
+          <div style={{ padding: '0 20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {children}
+          </div>
+        )}
+
+        {/* 비밀번호 패널 — 흰색 바텀시트 (피그마: 타이틀 + 도트 + 키패드 일체) */}
         <div
           style={{
-            flex: 1,
-            padding: '24px 20px calc(20px + env(safe-area-inset-bottom))',
+            background: '#fff',
+            borderRadius: '32px 32px 0 0',
+            boxShadow: '0 0 16px rgba(21,21,21,0.04)',
+            padding: '40px 20px calc(20px + env(safe-area-inset-bottom))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -113,11 +143,11 @@ export default function PinScreen({
           <h1
             style={{
               margin: 0,
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.45,
+              fontSize: 20,
+              fontWeight: 600,
+              lineHeight: 1.5,
               letterSpacing: '-0.02em',
-              color: '#1c1d1f',
+              color: '#151519',
               whiteSpace: 'pre-line',
             }}
           >
@@ -126,8 +156,8 @@ export default function PinScreen({
           {desc && (
             <p
               style={{
-                margin: '10px 0 0',
-                fontSize: 15,
+                margin: '6px 0 0',
+                fontSize: 14,
                 lineHeight: 1.5,
                 letterSpacing: '-0.02em',
                 color: '#5c5c72',
@@ -138,16 +168,28 @@ export default function PinScreen({
             </p>
           )}
 
-          <div style={{ marginTop: 32 }}>
-            <PinDots value={pin} />
+          {/* 자릿수 도트 — 패널 안 작은 도트 */}
+          <div style={{ display: 'flex', gap: 20, marginTop: 20, height: 8, alignItems: 'center' }}>
+            {Array.from({ length: 6 }, (_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: i < pin.length ? '#665bf7' : '#e0e0ed',
+                  transition: 'background 0.15s',
+                }}
+              />
+            ))}
           </div>
 
           <span
             aria-live="polite"
             style={{
-              marginTop: 16,
-              minHeight: 22,
-              fontSize: 14,
+              marginTop: 10,
+              minHeight: 20,
+              fontSize: 13.5,
               letterSpacing: '-0.02em',
               color: errorMessage ? '#e03e3e' : '#86869f',
             }}
@@ -155,29 +197,12 @@ export default function PinScreen({
             {errorMessage || (pending ? pendingLabel : '')}
           </span>
 
-          {children}
-
-          <div aria-hidden style={{ flex: 1, minHeight: 32, maxHeight: 260, width: '100%' }} />
-
-          {/* 키패드 — 흰색 라운드 카드 (서비스 공통 카드 모티프) */}
-          <div
-            style={{
-              marginTop: 0,
-              width: '100%',
-              maxWidth: 372,
-              boxSizing: 'border-box',
-              background: '#fff',
-              borderRadius: 24,
-              boxShadow: '0 0 16px rgba(21,21,21,0.04)',
-              padding: '20px 16px',
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <PinInput value={pin} onChange={setPin} disabled={pending} showDots={false} />
+          <div style={{ width: '100%', maxWidth: 402, marginTop: 8 }}>
+            {/* Face ID 키는 피그마 배치용 — 웹 데모라 동작 없음(앱 전환 시 생체인증 연결 지점) */}
+            <PinInput value={pin} onChange={setPin} disabled={pending} showDots={false} onFaceId={() => {}} />
           </div>
 
-          {bottomAction && <div style={{ marginTop: 18 }}>{bottomAction}</div>}
+          {bottomAction && <div style={{ marginTop: 16 }}>{bottomAction}</div>}
         </div>
       </div>
     </main>

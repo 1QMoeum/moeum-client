@@ -45,12 +45,13 @@
     }
   },
   "login": {
-    "title": "비밀번호 입력",
+    "title": "비밀번호를 눌러주세요",
     "subtitle": "가입할 때 설정한 6자리를 입력해주세요.",
     "submit": "로그인",
     "submitting": "로그인 중…",
-    "forgotPin": "비밀번호를 잊으셨나요?",
-    "topTitle": "로그인"
+    "forgotPin": "비밀번호를 몰라요",
+    "topTitle": "로그인",
+    "headline": "다시 만나서\n반가워요!"
   },
   "kycForeign": {
     "title": "여권 인증",

@@ -33,8 +33,8 @@ export default function KycLoginPage() {
   return (
     <PinScreen
       onBack={() => navigate(-1)}
-      title="비밀번호 입력"
-      desc={`${state.name}님, 가입할 때 설정한\n6자리 비밀번호를 입력해주세요.`}
+      headline={`${state.name}님,\n다시 만나서 반가워요!`}
+      title="비밀번호를 눌러주세요"
       errorMessage={error ? toErrorMessage(error) : null}
       pending={isPending}
       pendingLabel="로그인 중…"

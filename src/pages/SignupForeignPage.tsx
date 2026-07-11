@@ -52,7 +52,8 @@ export default function SignupForeignPage() {
     <PinScreen
       key={confirming ? 'confirm' : 'set'}
       onBack={() => (confirming ? setFirstPin(null) : navigate(-1))}
-      title={confirming ? t('signupForeign.confirmTitle') : t('signupForeign.title', { name: state.name })}
+      headline={t('signupForeign.title', { name: state.name })}
+      title={confirming ? t('signupForeign.confirmTitle') : t('login.title')}
       desc={confirming ? undefined : t('signupForeign.subtitle')}
       errorMessage={error ? toErrorMessage(error) : mismatch ? t('signupForeign.mismatch') : null}
       pending={isPending}

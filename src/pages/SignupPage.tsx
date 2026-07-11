@@ -52,12 +52,11 @@ export default function SignupPage() {
     <PinScreen
       key={confirming ? 'confirm' : 'set'}
       onBack={() => (confirming ? setFirstPin(null) : navigate(-1))}
-      title={confirming ? '비밀번호 확인' : '비밀번호 설정'}
-      desc={
-        confirming
-          ? '한 번 더 입력해주세요.'
-          : `${state.name}님, 로그인에 사용할\n6자리 비밀번호를 입력해주세요.`
+      headline={
+        confirming ? '입력한 비밀번호를\n확인할게요' : `${state.name}님, 반가워요!\n간편 비밀번호를 만들어주세요`
       }
+      title={confirming ? '한 번 더 눌러주세요' : '사용할 비밀번호를 눌러주세요'}
+      desc={confirming ? undefined : '로그인할 때 쓰는 6자리예요.'}
       errorMessage={
         error ? toErrorMessage(error) : mismatch ? '비밀번호가 일치하지 않아요. 다시 설정해주세요.' : null
       }
