@@ -154,7 +154,7 @@ export default function LocationPicker({ value, onChange }: Props) {
             border: 'none',
             outline: 'none',
             background: 'transparent',
-            fontSize: 14.5,
+            fontSize: 16, // 16px 미만이면 iOS 사파리가 포커스 시 화면을 확대한다
             color: '#191f28',
             letterSpacing: '-0.01em',
           }}
