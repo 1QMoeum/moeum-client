@@ -8,7 +8,7 @@ import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
 import FadeImage from '@/components/ui/FadeImage'
 import IllustrationLoading from '@/components/ui/IllustrationLoading'
-import { venueImageSrc, venueTypeLabel } from '@/types/venue'
+import { venueImageSrc, venueThumbSrc, venueTypeLabel } from '@/types/venue'
 import type { AiPlanVenue, RecommendedVenue } from '@/types/venue'
 
 const EXAMPLE_QUERIES = [
@@ -372,7 +372,12 @@ function PlanCard({
           }}
         >
           {venueImageSrc(venue.imageUrl) ? (
-            <FadeImage src={venueImageSrc(venue.imageUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <FadeImage
+              src={venueThumbSrc(venue.imageUrl, 200)}
+              fallbackSrc={venueImageSrc(venue.imageUrl)}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
             '📍'
           )}
@@ -475,7 +480,8 @@ function PlanDetail({
         <div style={{ position: 'relative', height: 240, background: '#e9ecef', overflow: 'hidden' }}>
           {venueImageSrc(venue.imageUrl) && (
             <FadeImage
-              src={venueImageSrc(venue.imageUrl)}
+              src={venueThumbSrc(venue.imageUrl, 960)}
+              fallbackSrc={venueImageSrc(venue.imageUrl)}
               alt={venue.title}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
