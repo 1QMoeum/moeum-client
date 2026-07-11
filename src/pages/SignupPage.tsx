@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { toErrorMessage } from '@/api/client'
 import { useSignup } from '@/hooks/auth'
+import { useAuthStore } from '@/store/auth'
 import PinScreen from '@/components/auth/PinScreen'
 
 interface NavState {
@@ -18,6 +19,7 @@ export default function SignupPage() {
   const location = useLocation()
 
   const { mutate: signup, isPending, error } = useSignup()
+  const setUserName = useAuthStore((s) => s.setUserName)
   const state = location.state as NavState | null
   /** 1차 입력값 — null 이면 아직 설정 단계 */
   const [firstPin, setFirstPin] = useState<string | null>(null)
@@ -44,7 +46,12 @@ export default function SignupPage() {
     }
     signup(
       { identityVerificationId: state.identityVerificationId, pin },
-      { onSuccess: () => navigate('/mydata/consent', { replace: true }) },
+      {
+        onSuccess: () => {
+          setUserName(state.name) // 간편 로그인 인사말용
+          navigate('/mydata/consent', { replace: true })
+        },
+      },
     )
   }
 

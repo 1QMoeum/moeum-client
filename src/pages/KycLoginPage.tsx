@@ -16,6 +16,7 @@ export default function KycLoginPage() {
 
   const { mutate: kycLogin, isPending, error } = useKycLogin()
   const hasOnboarded = useAuthStore((s) => s.hasOnboarded)
+  const setUserName = useAuthStore((s) => s.setUserName)
   const state = location.state as NavState | null
 
   if (!state?.identityVerificationId) {
@@ -25,8 +26,13 @@ export default function KycLoginPage() {
   const handleComplete = (pin: string) => {
     kycLogin(
       { identityVerificationId: state.identityVerificationId, pin },
-      // 온보딩은 첫 로그인에만 — 이미 본 디바이스는 바로 메인으로
-      { onSuccess: () => navigate(hasOnboarded ? '/main' : '/onboarding', { replace: true }) },
+      {
+        onSuccess: () => {
+          setUserName(state.name) // 간편 로그인 인사말용
+          // 온보딩은 첫 로그인에만 — 이미 본 디바이스는 바로 메인으로
+          navigate(hasOnboarded ? '/main' : '/onboarding', { replace: true })
+        },
+      },
     )
   }
 

@@ -8,10 +8,13 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   userType: UserType | null
+  /** 사용자 이름 — KYC/가입 시점에 저장, 간편 로그인 인사말에 사용 (persist) */
+  userName: string | null
   /** 온보딩 화면을 이미 본 디바이스인지 — 첫 로그인에만 온보딩을 보여주기 위해 persist */
   hasOnboarded: boolean
   setTokens: (access: string, refresh: string) => void
   setUserType: (userType: UserType) => void
+  setUserName: (name: string) => void
   setHasOnboarded: () => void
   clearTokens: () => void
 }
@@ -28,17 +31,19 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       userType: null,
+      userName: null,
       hasOnboarded: false,
       setTokens: (accessToken, refreshToken) => {
         setAccessToken(accessToken)
         set({ accessToken, refreshToken })
       },
       setUserType: (userType) => set({ userType }),
+      setUserName: (userName) => set({ userName }),
       setHasOnboarded: () => set({ hasOnboarded: true }),
       clearTokens: () => {
         setAccessToken(null)
-        // 로그아웃/토큰 초기화 = 다른 사용자가 쓸 수 있으므로 온보딩 이력도 초기화
-        set({ accessToken: null, refreshToken: null, userType: null, hasOnboarded: false })
+        // 로그아웃/토큰 초기화 = 다른 사용자가 쓸 수 있으므로 온보딩 이력·이름도 초기화
+        set({ accessToken: null, refreshToken: null, userType: null, userName: null, hasOnboarded: false })
       },
     }),
     {
@@ -47,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (s) => ({
         refreshToken: s.refreshToken,
         userType: s.userType,
+        userName: s.userName,
         hasOnboarded: s.hasOnboarded,
       }),
       onRehydrateStorage: () => (state) => {

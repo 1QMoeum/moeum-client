@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toErrorMessage } from '@/api/client'
 import { useSignupForeign } from '@/hooks/auth'
+import { useAuthStore } from '@/store/auth'
 import PinScreen from '@/components/auth/PinScreen'
 
 interface NavState {
@@ -20,6 +21,7 @@ export default function SignupForeignPage() {
   const location = useLocation()
   const { t } = useTranslation()
   const { mutate: signup, isPending, error } = useSignupForeign()
+  const setUserName = useAuthStore((s) => s.setUserName)
   const state = location.state as NavState | null
   /** 1차 입력값 — null 이면 아직 설정 단계 */
   const [firstPin, setFirstPin] = useState<string | null>(null)
@@ -44,7 +46,12 @@ export default function SignupForeignPage() {
     }
     signup(
       { passport: state.passport, selfie: state.selfie, pin },
-      { onSuccess: () => navigate('/', { replace: true }) },
+      {
+        onSuccess: () => {
+          setUserName(state.name) // 간편 로그인 인사말용
+          navigate('/', { replace: true })
+        },
+      },
     )
   }
 
