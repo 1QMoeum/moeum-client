@@ -49,7 +49,8 @@
     "submit": "Log in",
     "submitting": "Logging in…",
     "forgotPin": "I forgot my PIN",
-    "headline": "Welcome back!"
+    "headline": "Welcome back!",
+    "headlineNamed": "{{name}}, welcome back!"
   },
   "kycForeign": {
     "title": "Verify your passport",

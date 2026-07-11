@@ -15,6 +15,7 @@ export default function LoginPage() {
   const { t } = useTranslation()
   const refreshToken = useAuthStore((s) => s.refreshToken)
   const userType = useAuthStore((s) => s.userType)
+  const userName = useAuthStore((s) => s.userName)
   const hasOnboarded = useAuthStore((s) => s.hasOnboarded)
   const clearTokens = useAuthStore((s) => s.clearTokens)
 
@@ -50,7 +51,7 @@ export default function LoginPage() {
 
   return (
     <PinScreen
-      headline={t('login.headline')}
+      headline={userName ? t('login.headlineNamed', { name: userName }) : t('login.headline')}
       title={t('login.title')}
       errorMessage={error ? toErrorMessage(error) : null}
       pending={isPending}
