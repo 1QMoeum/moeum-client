@@ -46,11 +46,9 @@
   },
   "login": {
     "title": "Tap your PIN",
-    "subtitle": "The 6-digit PIN you set at signup.",
     "submit": "Log in",
     "submitting": "Logging in…",
     "forgotPin": "I forgot my PIN",
-    "topTitle": "Log in",
     "headline": "Welcome back!"
   },
   "kycForeign": {
@@ -87,16 +85,13 @@
     "subtitle": "You can use this PIN for quick login next time.",
     "submit": "Complete signup",
     "submitting": "Signing up...",
-    "topTitle": "Sign up",
     "confirmTitle": "Enter it once more",
     "mismatch": "The PINs don't match. Please set it again."
   },
   "kycLoginForeign": {
     "title": "Enter your PIN",
-    "subtitle": "Enter your 6-digit PIN to finish logging in.",
     "submit": "Login",
-    "submitting": "Logging in...",
-    "topTitle": "Log in"
+    "submitting": "Logging in..."
   },
   "notif": {
     "title": "Enable notifications",

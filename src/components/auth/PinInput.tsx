@@ -13,25 +13,6 @@ interface Props {
   onFaceId?: () => void
 }
 
-/** PIN 자릿수 도트 — 키패드와 분리 배치용 (화면 중앙 상단 등). */
-export function PinDots({ value }: { value: string }) {
-  return (
-    <div style={{ display: 'flex', gap: 16, height: 14, alignItems: 'center', justifyContent: 'center' }}>
-      {Array.from({ length: 6 }, (_, i) => (
-        <span
-          key={i}
-          style={{
-            width: 14,
-            height: 14,
-            borderRadius: '50%',
-            background: i < value.length ? VIOLET : DOT_EMPTY,
-            transition: 'background 0.15s',
-          }}
-        />
-      ))}
-    </div>
-  )
-}
 
 const VIOLET = '#665bf7'
 const DOT_EMPTY = '#e0e0ed'
