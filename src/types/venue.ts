@@ -47,6 +47,17 @@ export function venueImageSrc(imageUrl: string | null | undefined): string | und
   return `${VENUE_IMAGE_BASE}/${imageUrl.replace(/^\/+/, '')}`
 }
 
+/**
+ * 리사이즈 프록시를 거친 썸네일 src. 크롤링 원본이 리사이즈 없이 커서 로드가 느리므로
+ * 공개 이미지 프록시(wsrv.nl)로 지정 폭 webp 를 받는다. 프록시 장애 시 호출부에서
+ * venueImageSrc 원본으로 폴백할 것 (FadeImage fallbackSrc).
+ */
+export function venueThumbSrc(imageUrl: string | null | undefined, width: number): string | undefined {
+  const src = venueImageSrc(imageUrl)
+  if (!src) return undefined
+  return `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=${width}&q=75&output=webp`
+}
+
 /** 추천 결과 한 줄. 유사도(similarity)순으로 내려온다. */
 export interface RecommendedVenue {
   venueId: number
