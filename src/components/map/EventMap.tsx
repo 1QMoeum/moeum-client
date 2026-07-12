@@ -384,15 +384,16 @@ export default function EventMap() {
           top: 0,
           left: 0,
           right: 0,
-          padding: '8px 16px 0',
+          padding: '0 16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 12,
           pointerEvents: 'none',
           zIndex: 5, // 카카오 지도 내부 레이어(양수 z-index) 위로
         }}
       >
-        <header style={{ display: 'flex', alignItems: 'center', gap: 2, pointerEvents: 'auto' }}>
+        {/* 다른 탭 헤더와 동일 규격 — 높이 56, 타이틀 20/600 */}
+        <header style={{ display: 'flex', alignItems: 'center', gap: 4, height: 56, pointerEvents: 'auto' }}>
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -402,16 +403,16 @@ export default function EventMap() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               cursor: 'pointer',
-              color: '#191f28',
+              color: '#27282c',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
-            <ChevronLeft size={25} />
+            <ChevronLeft size={24} />
           </button>
-          <h1 style={{ margin: 0, fontSize: 17.5, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#27282c', letterSpacing: '-0.02em' }}>
             지도
           </h1>
         </header>
@@ -438,7 +439,7 @@ export default function EventMap() {
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              fontSize: 14.5,
+              fontSize: 14,
               color: '#191f28',
               letterSpacing: '-0.01em',
             }}
@@ -601,7 +602,7 @@ function CategoryChip({
         gap: 5,
         padding: img ? '6px 13px 6px 8px' : '7px 13px',
         borderRadius: 999,
-        fontSize: 12.5,
+        fontSize: 14,
         fontWeight: 600,
         letterSpacing: '-0.01em',
         cursor: 'pointer',
