@@ -4,7 +4,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')
 
-// build 시 vite 가 정적 파일에 env 주입을 안 하므로 하드코딩. .env.local 과 동기화 유지.
+// build 시 vite 가 정적 파일에 env 주입을 안 하므로 하드코딩. .env.development.local 과 동기화 유지.
 firebase.initializeApp({
   apiKey: 'AIzaSyAmZmbJuDeDAd_8gEQHu0NJ7w6AnSGvwQg',
   authDomain: 'moeum-55870.firebaseapp.com',
