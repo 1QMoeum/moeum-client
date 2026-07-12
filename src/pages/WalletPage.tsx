@@ -61,7 +61,12 @@ export default function WalletPage() {
         <header style={{ display: 'flex', alignItems: 'center', gap: 4, height: 56 }}>
           <button
             type="button"
-            onClick={() => navigate('/main')}
+            // 마이페이지 등 진입한 화면으로 복귀. 히스토리가 없으면(딥링크) 홈으로.
+            onClick={() => {
+              const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+              if (idx > 0) navigate(-1)
+              else navigate('/main')
+            }}
             aria-label={t('wallet.back')}
             style={{
               all: 'unset',
@@ -207,7 +212,7 @@ function WalletView({ wallet }: { wallet: WalletResponse }) {
         </button>
       </section>
 
-      <p style={{ margin: 0, padding: '0 4px', fontSize: 12, lineHeight: 1.6, color: '#adb5bd', letterSpacing: '-0.01em' }}>
+      <p style={{ margin: 0, padding: '0 4px', fontSize: 14, lineHeight: 1.6, color: '#adb5bd', letterSpacing: '-0.01em' }}>
         {t('wallet.privateKeyNote')}
       </p>
 
@@ -284,7 +289,7 @@ function ConnectedAccount({
               borderRadius: 4,
               background: VIOLET_100,
               color: VIOLET,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 500,
               letterSpacing: '-0.01em',
             }}
