@@ -44,7 +44,7 @@ export default function IllustrationLoading({ topTitle, onBack, title, desc }: P
                 height: 40,
                 borderRadius: 12,
                 cursor: 'pointer',
-                color: '#191f28',
+                color: '#1c1d1f',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
@@ -57,7 +57,7 @@ export default function IllustrationLoading({ topTitle, onBack, title, desc }: P
               padding: onBack ? 0 : '8px 4px',
               fontSize: 18,
               fontWeight: 600,
-              color: '#191f28',
+              color: '#1c1d1f',
               letterSpacing: '-0.02em',
             }}
           >
@@ -65,29 +65,30 @@ export default function IllustrationLoading({ topTitle, onBack, title, desc }: P
           </h1>
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '28px 4px 0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '28px 4px 0' }}>
           <h2
             style={{
               margin: 0,
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#191f28',
+              fontSize: 24,
+              fontWeight: 600,
+              color: '#1c1d1f',
               letterSpacing: '-0.02em',
-              lineHeight: 1.35,
+              lineHeight: 1.5,
               whiteSpace: 'pre-line',
             }}
           >
             {title}
           </h2>
-          {desc && <span style={{ fontSize: 14, color: '#6b7684', letterSpacing: '-0.01em' }}>{desc}</span>}
+          {desc && <span style={{ fontSize: 16, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>{desc}</span>}
         </div>
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 80 }}>
           <img
             src="/ai-plan-loading.png"
             alt=""
-            width={260}
-            style={{ height: 'auto', animation: 'moeumIllustPulse 1.6s ease-in-out infinite' }}
+            width={240}
+            height={240}
+            style={{ animation: 'moeumIllustPulse 1.6s ease-in-out infinite' }}
           />
         </div>
         <style>{`@keyframes moeumIllustPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }`}</style>
