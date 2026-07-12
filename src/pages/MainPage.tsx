@@ -272,7 +272,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
       <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
-            fontSize: 38,
+            fontSize: 36,
             fontWeight: 700,
             lineHeight: 1.5,
             letterSpacing: '-0.02em',
@@ -315,7 +315,7 @@ function EventImage({ event }: { event: ParticipatingEvent }) {
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #ffe1ec 0%, #f3d4f0 55%, #dcd6f7 100%)',
         color: 'rgba(124,111,240,0.55)',
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 700,
       }}
     >
@@ -533,7 +533,7 @@ function WalletView() {
       <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
-            fontSize: 38,
+            fontSize: 36,
             fontWeight: 700,
             lineHeight: 1.5,
             letterSpacing: '-0.02em',
@@ -739,11 +739,11 @@ function EmptyWalletCard({ onLink }: { onLink: () => void }) {
         WebkitTapHighlightColor: 'transparent',
       }}
     >
-      <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#191f28' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 700, color: '#191f28' }}>
         <WalletIcon size={18} strokeWidth={2.2} color="#8B5CF6" />
         {t('main.walletEmptyTitle')}
       </span>
-      <span style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--color-text-secondary)' }}>
+      <span style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--color-text-secondary)' }}>
         {t('main.walletEmptyDesc')}
         <ChevronRight size={13} strokeWidth={2.4} style={{ verticalAlign: -2, marginLeft: 2 }} />
       </span>
@@ -762,7 +762,7 @@ function ErrorCard({ message }: { message: string }) {
         alignItems: 'center',
         gap: 10,
         color: '#e03e3e',
-        fontSize: 13.5,
+        fontSize: 14,
       }}
     >
       <AlertCircle size={18} strokeWidth={2.2} style={{ flexShrink: 0 }} />

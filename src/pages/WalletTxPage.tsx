@@ -158,7 +158,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
                 <span style={{ fontSize: 20, fontWeight: 700, color: VIOLET, letterSpacing: '-0.02em' }}>
                   {amount.toLocaleString(numberLocale)} {unit}
                 </span>
-                <span style={{ fontSize: 13, color: GRAY_500, letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: 14, color: GRAY_500, letterSpacing: '-0.01em' }}>
                   {result.tokenBalance.toLocaleString(numberLocale)} {unit}
                 </span>
               </div>
@@ -166,7 +166,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontSize: 14, color: GRAY_500, letterSpacing: '-0.01em' }}>{dateLabel}</span>
               <span
-                style={{ fontSize: 15, fontWeight: 600, color: GRAY_900, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}
+                style={{ fontSize: 16, fontWeight: 600, color: GRAY_900, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}
               >
                 {txStamp}
               </span>
@@ -180,7 +180,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 600,
                 color: VIOLET,
                 textDecoration: 'none',
@@ -237,12 +237,12 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
           <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: GRAY_900, letterSpacing: '-0.02em' }}>
             {pageTitle}
           </h2>
-          <p style={{ margin: 0, fontSize: 15, color: GRAY_500, letterSpacing: '-0.01em' }}>{pageSubtitle}</p>
+          <p style={{ margin: 0, fontSize: 16, color: GRAY_500, letterSpacing: '-0.01em' }}>{pageSubtitle}</p>
         </div>
 
         {/* 현재 보유 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: GRAY_600, letterSpacing: '-0.01em' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: GRAY_600, letterSpacing: '-0.01em' }}>
             {t('wallet.currentHolding')}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -254,7 +254,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
 
         {/* 금액 입력 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: GRAY_600, letterSpacing: '-0.01em' }}>{amountLabel}</span>
+          <span style={{ fontSize: 16, fontWeight: 600, color: GRAY_600, letterSpacing: '-0.01em' }}>{amountLabel}</span>
           <div
             style={{
               display: 'flex',
@@ -291,14 +291,14 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
           </div>
 
           {mode === 'convert' && (
-            <span style={{ fontSize: 13, color: overBalance ? '#e03e3e' : GRAY_500, letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, color: overBalance ? '#e03e3e' : GRAY_500, letterSpacing: '-0.01em' }}>
               {overBalance
                 ? t('wallet.overBalance')
                 : t('wallet.convertableUpTo', { amount: tokenBalance.toLocaleString(numberLocale) })}
             </span>
           )}
           {mode === 'charge' && availableKrw != null && (
-            <span style={{ fontSize: 13, color: overAvailable ? '#f08c00' : GRAY_500, letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, color: overAvailable ? '#f08c00' : GRAY_500, letterSpacing: '-0.01em' }}>
               {t('wallet.availableUpTo', { amount: availableKrw.toLocaleString(numberLocale) })}
             </span>
           )}

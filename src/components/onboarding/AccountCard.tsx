@@ -75,7 +75,7 @@ export default function AccountCard({
         {trailing && <span style={{ flexShrink: 0, display: 'flex' }}>{trailing}</span>}
       </div>
       {note && (
-        <span style={{ fontSize: 13, letterSpacing: '-0.01em', color: '#e03e3e' }}>{note}</span>
+        <span style={{ fontSize: 14, letterSpacing: '-0.01em', color: '#e03e3e' }}>{note}</span>
       )}
     </>
   )

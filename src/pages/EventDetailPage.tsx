@@ -431,7 +431,7 @@ function EventView({
             zIndex: 40,
             background: 'rgba(21,21,25,0.92)',
             color: '#fff',
-            fontSize: 13.5,
+            fontSize: 14,
             fontWeight: 500,
             padding: '11px 18px',
             borderRadius: 999,
@@ -472,7 +472,7 @@ function MenuItem({
         borderRadius: 10,
         cursor: 'pointer',
         color: danger ? '#fa5252' : INK800,
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 500,
         letterSpacing: '-0.01em',
         WebkitTapHighlightColor: 'transparent',
@@ -577,7 +577,7 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            fontSize: 12.5,
+            fontSize: 14,
             fontWeight: 600,
             color: '#12b886',
             letterSpacing: '-0.01em',
@@ -694,7 +694,7 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={infoLabelStyle}>{label}</span>
-      <span style={{ fontSize: 15, color: '#6a717d', letterSpacing: '-0.01em' }}>{value}</span>
+      <span style={{ fontSize: 16, color: '#6a717d', letterSpacing: '-0.01em' }}>{value}</span>
     </div>
   )
 }
@@ -727,9 +727,9 @@ function LocationBlock({ event }: { event: EventDetailResponse }) {
         <MapPin size={18} color={VIOLET} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 600, color: INK700, letterSpacing: '-0.01em' }}>{region || '장소 미정'}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: INK700, letterSpacing: '-0.01em' }}>{region || '장소 미정'}</span>
         {event.address && (
-          <span style={{ fontSize: 13, color: GRAY500, letterSpacing: '-0.01em' }}>{event.address}</span>
+          <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{event.address}</span>
         )}
       </div>
     </div>
@@ -1044,7 +1044,7 @@ function NoticeCard({
                 borderRadius: '50%',
                 background: `linear-gradient(135deg, ${VIOLET} 0%, #9b93ff 100%)`,
                 color: '#fff',
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
@@ -1353,7 +1353,7 @@ function SettleRow({ tx }: { tx: Tx }) {
             {tx.name}
           </span>
           {tx.refunded && (
-            <span style={{ flexShrink: 0, padding: '1px 7px', borderRadius: 4, fontSize: 12, fontWeight: 500, color: GRAY500, background: GRAY50, letterSpacing: '-0.01em' }}>
+            <span style={{ flexShrink: 0, padding: '1px 7px', borderRadius: 4, fontSize: 14, fontWeight: 500, color: GRAY500, background: GRAY50, letterSpacing: '-0.01em' }}>
               환불됨
             </span>
           )}
@@ -1397,8 +1397,8 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
         textAlign: 'center',
       }}
     >
-      <span style={{ fontSize: 13, color: GRAY600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{label}</span>
-      <span style={{ fontSize: 14.5, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {value}
       </span>
     </div>
@@ -1471,8 +1471,8 @@ function StatDivider() {
 function EmptyState({ text, sub, action }: { text: string; sub?: string; action?: ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '24px 12px', textAlign: 'center' }}>
-      <span style={{ fontSize: 14.5, color: GRAY500, letterSpacing: '-0.01em' }}>{text}</span>
-      {sub && <span style={{ fontSize: 12.5, color: GRAY300, letterSpacing: '-0.01em', lineHeight: 1.5 }}>{sub}</span>}
+      <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{text}</span>
+      {sub && <span style={{ fontSize: 14, color: GRAY300, letterSpacing: '-0.01em', lineHeight: 1.5 }}>{sub}</span>}
       {action}
     </div>
   )

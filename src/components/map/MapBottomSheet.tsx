@@ -373,7 +373,7 @@ function EventTopCard({
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span
             style={{
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 600,
               color: mapTokens.gray900,
               letterSpacing: '-0.02em',
@@ -386,7 +386,7 @@ function EventTopCard({
           </span>
           <span
             style={{
-              fontSize: 13,
+              fontSize: 14,
               color: mapTokens.gray500,
               letterSpacing: '-0.02em',
               overflow: 'hidden',

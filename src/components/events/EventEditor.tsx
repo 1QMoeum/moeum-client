@@ -222,7 +222,7 @@ export default function EventEditor({ event, onClose }: Props) {
                   }}
                 >
                   <ImagePlus size={20} />
-                  <span style={{ fontSize: 11 }}>
+                  <span style={{ fontSize: 14 }}>
                     {images.length}/{MAX_IMAGES}
                   </span>
                 </button>
@@ -301,7 +301,7 @@ const inputStyle: React.CSSProperties = {
   padding: '12px 14px',
   border: '1px solid #e5e8eb',
   borderRadius: 12,
-  fontSize: 14.5,
+  fontSize: 14,
   color: '#191f28',
   outline: 'none',
   letterSpacing: '-0.01em',
@@ -329,14 +329,14 @@ const nativeInputStyle: React.CSSProperties = {
 }
 
 const fieldLabelStyle: React.CSSProperties = {
-  fontSize: 12.5,
+  fontSize: 14,
   fontWeight: 600,
   color: '#6b7684',
   letterSpacing: '-0.01em',
 }
 
 const errTextStyle: React.CSSProperties = {
-  fontSize: 12.5,
+  fontSize: 14,
   color: '#e03e3e',
   letterSpacing: '-0.01em',
   marginTop: -8,

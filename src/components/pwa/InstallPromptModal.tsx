@@ -92,7 +92,7 @@ export default function InstallPromptModal({ open, onDismiss, onInstalled }: Pro
           <p
             style={{
               margin: 0,
-              fontSize: 14.5,
+              fontSize: 14,
               lineHeight: 1.55,
               color: '#4E5968',
               letterSpacing: '-0.015em',
@@ -117,7 +117,7 @@ export default function InstallPromptModal({ open, onDismiss, onInstalled }: Pro
             padding: '18px 0 4px',
             textAlign: 'center',
             cursor: 'pointer',
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: 600,
             color: '#8B95A1',
             letterSpacing: '-0.015em',
@@ -176,7 +176,7 @@ function IosStep({ n, children }: { n: number; children: React.ReactNode }) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: 700,
           letterSpacing: '-0.02em',
         }}
@@ -185,7 +185,7 @@ function IosStep({ n, children }: { n: number; children: React.ReactNode }) {
       </span>
       <span
         style={{
-          fontSize: 14.5,
+          fontSize: 14,
           lineHeight: 1.5,
           color: '#4E5968',
           letterSpacing: '-0.015em',

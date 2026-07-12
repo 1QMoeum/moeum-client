@@ -171,7 +171,7 @@ export default function BudgetEditor({ eventId, items, onClose }: Props) {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
-                    fontSize: 13,
+                    fontSize: 14,
                     color: '#fa5252',
                     cursor: 'pointer',
                     WebkitTapHighlightColor: 'transparent',
@@ -205,7 +205,7 @@ export default function BudgetEditor({ eventId, items, onClose }: Props) {
             </button>
 
             {createMut.isError && (
-              <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.01em' }}>
                 {budgetErrorMessage(createMut.error)}
               </span>
             )}
@@ -250,7 +250,7 @@ function ExistingItem({ eventId, item }: { eventId: number; item: BudgetItem }) 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 14.5,
+            fontSize: 14,
             fontWeight: 600,
             color: dimmed ? '#adb5bd' : '#191f28',
             letterSpacing: '-0.01em',
@@ -262,13 +262,13 @@ function ExistingItem({ eventId, item }: { eventId: number; item: BudgetItem }) 
         >
           {item.title}
         </div>
-        <div style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em', marginTop: 2 }}>
+        <div style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em', marginTop: 2 }}>
           {won(item.amount)} · {item.scheduledDate.replaceAll('-', '.')}
         </div>
       </div>
 
       {cancelMut.isError ? (
-        <span style={{ fontSize: 11.5, color: '#e03e3e', maxWidth: 120, textAlign: 'right' }}>
+        <span style={{ fontSize: 14, color: '#e03e3e', maxWidth: 120, textAlign: 'right' }}>
           {budgetErrorMessage(cancelMut.error)}
         </span>
       ) : (
@@ -348,7 +348,7 @@ function ItemFields({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7684', letterSpacing: '-0.01em' }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: '#6b7684', letterSpacing: '-0.01em' }}>{label}</span>
       {children}
     </label>
   )
@@ -356,7 +356,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span style={{ fontSize: 13, fontWeight: 700, color: '#8b95a1', letterSpacing: '-0.01em' }}>{children}</span>
+    <span style={{ fontSize: 14, fontWeight: 700, color: '#8b95a1', letterSpacing: '-0.01em' }}>{children}</span>
   )
 }
 
@@ -366,7 +366,7 @@ const inputStyle: React.CSSProperties = {
   padding: '11px 12px',
   border: '1px solid #e5e8eb',
   borderRadius: 10,
-  fontSize: 14.5,
+  fontSize: 14,
   color: '#191f28',
   outline: 'none',
   letterSpacing: '-0.01em',
@@ -391,7 +391,7 @@ const smallBtnStyle: React.CSSProperties = {
   padding: '7px 12px',
   borderRadius: 8,
   border: '1px solid #e5e8eb',
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 600,
   color: '#4b5563',
   cursor: 'pointer',

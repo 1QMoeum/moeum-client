@@ -156,7 +156,7 @@ export default function PinScreen({
           {desc && (
             <p
               style={{
-                margin: '6px 0 0',
+                margin: '8px 0 0',
                 fontSize: 14,
                 lineHeight: 1.5,
                 letterSpacing: '-0.02em',
@@ -187,9 +187,9 @@ export default function PinScreen({
           <span
             aria-live="polite"
             style={{
-              marginTop: 10,
+              marginTop: 12,
               minHeight: 20,
-              fontSize: 13.5,
+              fontSize: 14,
               letterSpacing: '-0.02em',
               color: errorMessage ? '#e03e3e' : '#86869f',
             }}

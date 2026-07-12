@@ -125,7 +125,7 @@ export default function AccountSelectSheet({ open, onClose }: Props) {
                 borderRadius: 12,
                 background: '#fff5f5',
                 color: '#e03e3e',
-                fontSize: 13.5,
+                fontSize: 14,
                 letterSpacing: '-0.01em',
               }}
             >

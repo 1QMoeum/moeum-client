@@ -74,7 +74,7 @@ export default function KycPage() {
       <p
         style={{
           margin: 0,
-          fontSize: 13,
+          fontSize: 14,
           color: '#86869f',
           letterSpacing: '-0.02em',
           lineHeight: 1.55,
@@ -90,7 +90,7 @@ export default function KycPage() {
 /** 안내 카드 한 줄 — 아이콘 배지 + 제목 + 설명. */
 function InfoRow({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 0' }}>
       <span
         aria-hidden
         style={{
@@ -106,11 +106,11 @@ function InfoRow({ icon, title, children }: { icon: ReactNode; title: string; ch
       >
         {icon}
       </span>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#151519', letterSpacing: '-0.02em' }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#151519', letterSpacing: '-0.02em' }}>
           {title}
         </span>
-        <span style={{ fontSize: 13.5, color: '#5c5c72', letterSpacing: '-0.02em', lineHeight: 1.5 }}>
+        <span style={{ fontSize: 14, color: '#5c5c72', letterSpacing: '-0.02em', lineHeight: 1.5 }}>
           {children}
         </span>
       </span>

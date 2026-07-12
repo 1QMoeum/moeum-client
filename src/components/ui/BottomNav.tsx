@@ -88,7 +88,7 @@ export default function BottomNav({ onCreate }: Props) {
         <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           {ICON_PATHS[item.key]}
         </svg>
-        <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '-0.02em' }}>
+        <span style={{ fontSize: 14, fontWeight: 500, letterSpacing: '-0.02em' }}>
           {label}
         </span>
       </button>

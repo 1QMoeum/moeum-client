@@ -241,7 +241,7 @@ export default function NoticeComposer({ eventId, post, onClose }: Props) {
                   }}
                 >
                   <ImagePlus size={20} />
-                  <span style={{ fontSize: 11 }}>
+                  <span style={{ fontSize: 14 }}>
                     {images.length}/{MAX_IMAGES}
                   </span>
                 </button>
@@ -258,10 +258,10 @@ export default function NoticeComposer({ eventId, post, onClose }: Props) {
               }}
               style={{ display: 'none' }}
             />
-            {pickError && <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>{pickError}</span>}
+            {pickError && <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.01em' }}>{pickError}</span>}
           </div>
 
-          {errorMsg && <span style={{ fontSize: 12.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>{errorMsg}</span>}
+          {errorMsg && <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.01em' }}>{errorMsg}</span>}
         </div>
 
         <div style={{ padding: '12px 20px calc(14px + env(safe-area-inset-bottom))', borderTop: '1px solid #f1f3f5' }}>
@@ -285,7 +285,7 @@ const inputStyle: React.CSSProperties = {
   padding: '12px 14px',
   border: '1px solid #e5e8eb',
   borderRadius: 12,
-  fontSize: 14.5,
+  fontSize: 14,
   color: '#191f28',
   outline: 'none',
   letterSpacing: '-0.01em',
@@ -294,7 +294,7 @@ const inputStyle: React.CSSProperties = {
 }
 
 const fieldLabelStyle: React.CSSProperties = {
-  fontSize: 12.5,
+  fontSize: 14,
   fontWeight: 600,
   color: '#6b7684',
   letterSpacing: '-0.01em',

@@ -246,7 +246,7 @@ export default function ParticipatePage() {
                     background: '#fff5f5',
                     borderRadius: 12,
                     color: '#e03e3e',
-                    fontSize: 13,
+                    fontSize: 14,
                     letterSpacing: '-0.01em',
                   }}
                 >

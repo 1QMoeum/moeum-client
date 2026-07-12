@@ -287,7 +287,7 @@ function UploadBox({ label, onClick }: { label: string; onClick: () => void }) {
         border: '1.5px dashed #d8d8e4',
         borderRadius: 12,
         color: '#86869f',
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 500,
         letterSpacing: '-0.02em',
         cursor: 'pointer',
@@ -325,7 +325,7 @@ function RetakeButton({ label, onClick, disabled }: { label: string; onClick: ()
 
 function ConfirmRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 15, letterSpacing: '-0.02em' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 16, letterSpacing: '-0.02em' }}>
       <span style={{ color: '#86869f' }}>{label}</span>
       <span style={{ color: '#151519', fontWeight: 500 }}>{value}</span>
     </div>

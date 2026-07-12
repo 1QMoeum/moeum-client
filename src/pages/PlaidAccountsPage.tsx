@@ -100,7 +100,7 @@ export default function PlaidAccountsPage() {
           <p
             style={{
               margin: 0,
-              fontSize: 15,
+              fontSize: 16,
               lineHeight: 1.5,
               color: '#6b7684',
               letterSpacing: '-0.01em',
@@ -239,12 +239,12 @@ function AccountCard({
           {brand.short}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+          <div style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>
             {item.name}
           </div>
           <div
             style={{
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 600,
               color: '#191f28',
               letterSpacing: '-0.01em',
@@ -267,7 +267,7 @@ function AccountCard({
           paddingTop: 12,
         }}
       >
-        <span style={{ fontSize: 13, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+        <span style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>
           {item.subtype}
         </span>
         <span

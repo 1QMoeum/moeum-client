@@ -278,7 +278,7 @@ export default function CalendarPage() {
                   borderRadius: 20,
                   padding: 20,
                   color: '#e03e3e',
-                  fontSize: 13.5,
+                  fontSize: 14,
                 }}
               >
                 {`${error.message} (${error.status ?? '?'})`}

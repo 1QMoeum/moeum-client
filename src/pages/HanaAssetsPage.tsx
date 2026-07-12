@@ -70,7 +70,7 @@ const textColStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   color: '#73787e',
-  fontSize: 14.4,
+  fontSize: 14,
   fontWeight: 500,
   lineHeight: 1.4,
   letterSpacing: '-0.29px',
@@ -78,7 +78,7 @@ const titleStyle: CSSProperties = {
 
 const subtitleStyle: CSSProperties = {
   color: '#27282c',
-  fontSize: 17.5,
+  fontSize: 18,
   fontWeight: 600,
   lineHeight: 1.4,
   letterSpacing: '-0.35px',

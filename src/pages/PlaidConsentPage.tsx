@@ -63,7 +63,7 @@ export default function PlaidConsentPage() {
           <p
             style={{
               margin: 0,
-              fontSize: 15,
+              fontSize: 16,
               lineHeight: 1.5,
               color: '#6b7684',
               letterSpacing: '-0.01em',
@@ -88,7 +88,7 @@ export default function PlaidConsentPage() {
             >
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   color: '#8b95a1',
                   fontWeight: 500,
                   letterSpacing: '-0.01em',
@@ -98,7 +98,7 @@ export default function PlaidConsentPage() {
               </span>
               <span
                 style={{
-                  fontSize: 15,
+                  fontSize: 16,
                   color: '#191f28',
                   letterSpacing: '-0.01em',
                 }}

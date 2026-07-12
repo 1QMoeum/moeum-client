@@ -95,7 +95,7 @@ export default function PinSheet({ open, onComplete, onClose, pending, error, on
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              fontSize: 13,
+              fontSize: 14,
               color: '#e03e3e',
               letterSpacing: '-0.01em',
             }}
@@ -104,7 +104,7 @@ export default function PinSheet({ open, onComplete, onClose, pending, error, on
             {error}
           </div>
         ) : pending ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#86869f', fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#86869f', fontSize: 14 }}>
             <span className="moeum-splash-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
             {t('wallet.processing')}
           </div>
