@@ -21,22 +21,22 @@ import type { AiPlanVenue } from '@/types/venue'
 const BUDGET_PRESETS = [50, 100, 300, 500]
 
 const LABEL_STYLE: React.CSSProperties = {
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 600,
-  color: '#6b7684',
-  letterSpacing: '-0.01em',
+  color: '#5c5c72',
+  letterSpacing: '-0.02em',
 }
 
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '14px 16px',
+  padding: '16px',
   background: '#fff',
   border: '1.5px solid #f0f0f4',
   borderRadius: 14,
   fontSize: 16, // 16px 미만이면 iOS 사파리가 포커스 시 화면을 확대한다
-  color: '#191f28',
-  letterSpacing: '-0.01em',
+  color: '#1c1d1f',
+  letterSpacing: '-0.02em',
   outline: 'none',
 }
 
@@ -239,22 +239,22 @@ export default function CreateEventPage() {
           }}
         >
           <header style={{ display: 'flex', alignItems: 'center', gap: 4, paddingTop: 8 }}>
-            <h1 style={{ margin: 0, padding: '8px 4px', fontSize: 18, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
+            <h1 style={{ margin: 0, padding: '8px 4px', fontSize: 18, fontWeight: 700, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
               이벤트 생성
             </h1>
           </header>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '20px 0 0' }}>
-            <h2 style={{ margin: 0, fontSize: 21, fontWeight: 800, color: '#191f28', letterSpacing: '-0.02em', lineHeight: 1.35 }}>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em', lineHeight: 1.5 }}>
               새로운 이벤트가 만들어졌어요!
             </h2>
-            <span style={{ fontSize: 14, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
               설정한 시작일에 맞춰 모금이 자동으로 시작돼요.
             </span>
           </div>
 
-          <div style={{ ...CARD_STYLE, marginTop: 24, alignItems: 'center', gap: 14, padding: '28px 20px' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#191f28', letterSpacing: '-0.01em', textAlign: 'center' }}>
+          <div style={{ ...CARD_STYLE, marginTop: 24, alignItems: 'center', gap: 16, padding: '28px 20px' }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#1c1d1f', letterSpacing: '-0.02em', textAlign: 'center' }}>
               {title.trim()}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -262,15 +262,15 @@ export default function CreateEventPage() {
                 style={{
                   padding: '2px 8px',
                   borderRadius: 6,
-                  background: '#f3f0ff',
-                  color: '#8B5CF6',
-                  fontSize: 12.5,
+                  background: '#efedff',
+                  color: '#665bf7',
+                  fontSize: 14,
                   fontWeight: 600,
                 }}
               >
                 {categoryLabel(category)}
               </span>
-              <span style={{ fontSize: 13, color: '#8b95a1' }}>
+              <span style={{ fontSize: 14, color: '#86869f' }}>
                 {shortDate(startDate)} ~ {shortDate(endDate)}
               </span>
             </div>
@@ -292,15 +292,15 @@ export default function CreateEventPage() {
               ) : categoryImage(category) ? (
                 <img src={categoryImage(category)} alt="" style={{ width: 96, height: 96, objectFit: 'contain' }} />
               ) : (
-                <span style={{ fontSize: 48 }}>🎉</span>
+                <span style={{ fontSize: 36 }}>🎉</span>
               )}
             </div>
             <p
               style={{
                 margin: 0,
-                fontSize: 13.5,
-                color: '#6b7684',
-                letterSpacing: '-0.01em',
+                fontSize: 14,
+                color: '#5c5c72',
+                letterSpacing: '-0.02em',
                 lineHeight: 1.55,
                 textAlign: 'center',
                 whiteSpace: 'pre-line',
@@ -317,7 +317,7 @@ export default function CreateEventPage() {
               홈으로
             </Button>
             <Button
-              variant="solid"
+              variant="primary"
               onClick={() => navigate(`/events/${doneEventId}`, { replace: true })}
               style={{ borderRadius: 32 }}
             >
@@ -367,13 +367,13 @@ export default function CreateEventPage() {
               height: 40,
               borderRadius: 12,
               cursor: 'pointer',
-              color: '#191f28',
+              color: '#1c1d1f',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
             <ChevronLeft size={26} />
           </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#191f28', letterSpacing: '-0.02em' }}>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
             이벤트 생성
           </h1>
         </header>
@@ -383,7 +383,7 @@ export default function CreateEventPage() {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            gap: 22,
+            gap: 24,
             padding: '20px 0 24px',
             overflowY: 'auto',
           }}
@@ -421,9 +421,9 @@ export default function CreateEventPage() {
                   borderRadius: 14,
                   cursor: 'pointer',
                   overflow: 'hidden',
-                  color: '#8b95a1',
+                  color: '#86869f',
                   fontSize: 14,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: '-0.02em',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
@@ -448,12 +448,12 @@ export default function CreateEventPage() {
                 style={{ display: 'none' }}
               />
               {upload.isPending && (
-                <span style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#8b95a1' }}>
+                <span style={{ display: 'block', marginTop: 8, fontSize: 14, color: '#86869f' }}>
                   사진 업로드 중…
                 </span>
               )}
               {upload.error && (
-                <span style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#e03e3e' }}>
+                <span style={{ display: 'block', marginTop: 8, fontSize: 14, color: '#e03e3e' }}>
                   {upload.error.message}
                 </span>
               )}
@@ -477,10 +477,10 @@ export default function CreateEventPage() {
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  <span style={{ color: category ? '#191f28' : '#adb5bd' }}>
+                  <span style={{ color: category ? '#1c1d1f' : '#86869f' }}>
                     {category ? categoryLabel(category) : '카테고리를 선택하세요'}
                   </span>
-                  <ChevronDown size={18} color="#adb5bd" style={{ flexShrink: 0 }} />
+                  <ChevronDown size={18} color="#86869f" style={{ flexShrink: 0 }} />
                 </button>
               </Field>
 
@@ -503,7 +503,7 @@ export default function CreateEventPage() {
                 <DateField placeholder="종료일" value={endDate} onClick={() => setSheet('period')} />
               </div>
               {periodInvalid && (
-                <span style={{ fontSize: 12, color: '#e03e3e', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.02em' }}>
                   종료일이 시작일보다 빠를 수 없어요
                 </span>
               )}
@@ -517,7 +517,7 @@ export default function CreateEventPage() {
                   display: 'flex',
                   alignItems: 'baseline',
                   gap: 8,
-                  padding: '14px 16px',
+                  padding: '16px',
                   background: '#fff',
                   borderRadius: 14,
                   border: '1.5px solid #f0f0f4',
@@ -525,7 +525,7 @@ export default function CreateEventPage() {
               >
                 <input
                   inputMode="numeric"
-                  placeholder="만원 단위로 입력"
+                  placeholder="0"
                   value={manwon ? Number(manwon).toLocaleString('ko-KR') : ''}
                   onChange={(e) => setManwon(e.target.value.replace(/[^0-9]/g, ''))}
                   style={{
@@ -536,20 +536,20 @@ export default function CreateEventPage() {
                     background: 'transparent',
                     fontSize: 18,
                     fontWeight: 700,
-                    color: '#191f28',
-                    letterSpacing: '-0.01em',
+                    color: '#1c1d1f',
+                    letterSpacing: '-0.02em',
                     textAlign: 'right',
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 />
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#8b95a1' }}>만원</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#86869f' }}>만원</span>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {BUDGET_PRESETS.map((v) => (
                   <Chip key={v} label={`${v}만원`} active={manwon === String(v)} onClick={() => setManwon(String(v))} />
                 ))}
               </div>
-              <span style={{ fontSize: 12, color: '#adb5bd', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
                 ※ 직접 입력도 가능해요.{targetAmount > 0 ? ` (${targetAmount.toLocaleString('ko-KR')}원)` : ''}
               </span>
             </Field>
@@ -565,7 +565,7 @@ export default function CreateEventPage() {
             <>
               {aiVenue && (
                 <div style={{ ...CARD_STYLE, padding: '16px 20px' }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: '#27282c', letterSpacing: '-0.01em' }}>
+                  <span style={{ fontSize: 16, fontWeight: 600, color: '#27282c', letterSpacing: '-0.02em' }}>
                     선택 플랜
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -574,9 +574,9 @@ export default function CreateEventPage() {
                         style={{
                           padding: '2px 8px',
                           borderRadius: 6,
-                          background: '#f3f0ff',
-                          color: '#8B5CF6',
-                          fontSize: 12.5,
+                          background: '#efedff',
+                          color: '#665bf7',
+                          fontSize: 14,
                           fontWeight: 600,
                           flexShrink: 0,
                         }}
@@ -585,9 +585,9 @@ export default function CreateEventPage() {
                       </span>
                       <span
                         style={{
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: 600,
-                          color: '#191f28',
+                          color: '#1c1d1f',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -630,12 +630,12 @@ export default function CreateEventPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '12px 14px',
+                padding: '12px 16px',
                 background: '#fff5f5',
                 borderRadius: 12,
                 color: '#e03e3e',
-                fontSize: 13,
-                letterSpacing: '-0.01em',
+                fontSize: 14,
+                letterSpacing: '-0.02em',
               }}
             >
               <AlertCircle size={16} strokeWidth={2.2} style={{ flexShrink: 0 }} />
@@ -651,7 +651,7 @@ export default function CreateEventPage() {
               수정하기
             </Button>
           )}
-          <Button variant="solid" onClick={next} disabled={!stepValid[step]} style={{ borderRadius: 32 }}>
+          <Button variant="primary" onClick={next} disabled={!stepValid[step]} style={{ borderRadius: 32 }}>
             {isConfirm ? (create.isPending ? '만드는 중…' : '생성하기') : '다음'}
           </Button>
         </div>
@@ -686,15 +686,15 @@ export default function CreateEventPage() {
 function StepTitle({ no, title }: { no: string; title: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <span style={{ fontSize: 14, fontWeight: 700, color: '#adb5bd', letterSpacing: '0.02em' }}>{no}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: '#86869f', letterSpacing: '0.02em' }}>{no}</span>
       <h2
         style={{
           margin: 0,
-          fontSize: 21,
-          fontWeight: 800,
-          color: '#191f28',
+          fontSize: 24,
+          fontWeight: 600,
+          color: '#1c1d1f',
           letterSpacing: '-0.02em',
-          lineHeight: 1.35,
+          lineHeight: 1.5,
           whiteSpace: 'pre-line',
         }}
       >
@@ -732,16 +732,16 @@ function DateField({ placeholder, value, onClick }: { placeholder: string; value
     >
       <span
         style={{
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: value ? 600 : 400,
-          color: value ? '#191f28' : '#8b95a1',
-          letterSpacing: '-0.01em',
+          color: value ? '#1c1d1f' : '#86869f',
+          letterSpacing: '-0.02em',
           fontVariantNumeric: 'tabular-nums',
         }}
       >
         {value ? shortDate(value) : placeholder}
       </span>
-      <Calendar size={20} color="#b0b8c1" strokeWidth={2} style={{ flexShrink: 0 }} />
+      <Calendar size={20} color="#86869f" strokeWidth={2} style={{ flexShrink: 0 }} />
     </button>
   )
 }
@@ -771,7 +771,7 @@ function CategorySheet({
                 boxSizing: 'border-box',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
+                gap: 16,
                 padding: '12px 16px',
                 borderRadius: 12,
                 cursor: 'pointer',
@@ -841,7 +841,7 @@ function PeriodSheet({
           style={DAYPICKER_VARS}
         />
       </div>
-      <span style={{ fontSize: 13.5, color: '#5c5c72', textAlign: 'center', letterSpacing: '-0.01em', minHeight: 20 }}>
+      <span style={{ fontSize: 14, color: '#5c5c72', textAlign: 'center', letterSpacing: '-0.02em', minHeight: 20 }}>
         {range?.from
           ? complete && range.to
             ? `${shortDate(toYmd(range.from))} ~ ${shortDate(toYmd(range.to))}`
@@ -849,7 +849,7 @@ function PeriodSheet({
           : '시작일을 선택해주세요'}
       </span>
       <Button
-        variant="solid"
+        variant="primary"
         disabled={!complete}
         onClick={() => range?.from && range.to && onApply(toYmd(range.from), toYmd(range.to))}
         style={{ borderRadius: 32 }}
@@ -873,8 +873,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 15, fontWeight: 600, color: '#27282c', letterSpacing: '-0.01em' }}>{label}</span>
-      <span style={{ fontSize: 15, color: '#6a717d', letterSpacing: '-0.01em', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+      <span style={{ fontSize: 16, fontWeight: 600, color: '#27282c', letterSpacing: '-0.02em' }}>{label}</span>
+      <span style={{ fontSize: 16, color: '#6a717d', letterSpacing: '-0.02em', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
         {value}
       </span>
     </div>
@@ -884,9 +884,9 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 /** 선택 플랜 카드 — 라벨·값 가로 배치 */
 function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', gap: 12, fontSize: 13.5, letterSpacing: '-0.01em' }}>
-      <span style={{ color: '#8b95a1', flexShrink: 0, width: 56 }}>{label}</span>
-      <span style={{ color: '#4e5968', fontWeight: 500 }}>{value}</span>
+    <div style={{ display: 'flex', gap: 12, fontSize: 14, letterSpacing: '-0.02em' }}>
+      <span style={{ color: '#86869f', flexShrink: 0, width: 56 }}>{label}</span>
+      <span style={{ color: '#5c5c72', fontWeight: 500 }}>{value}</span>
     </div>
   )
 }
@@ -898,14 +898,14 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       onClick={onClick}
       style={{
         all: 'unset',
-        padding: '8px 14px',
+        padding: '8px 16px',
         borderRadius: 999,
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: 600,
-        letterSpacing: '-0.01em',
+        letterSpacing: '-0.02em',
         cursor: 'pointer',
-        color: active ? '#8B5CF6' : '#6b7684',
-        background: active ? '#f3f0ff' : '#f5f5f7',
+        color: active ? '#665bf7' : '#5c5c72',
+        background: active ? '#efedff' : '#f5f5f7',
         border: `1.5px solid ${active ? '#d9cffb' : 'transparent'}`,
         WebkitTapHighlightColor: 'transparent',
       }}

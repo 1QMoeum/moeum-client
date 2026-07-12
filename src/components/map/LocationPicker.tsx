@@ -137,7 +137,7 @@ export default function LocationPicker({ value, onChange }: Props) {
           borderRadius: 14,
         }}
       >
-        <Search size={18} strokeWidth={2.2} color="#adb5bd" style={{ flexShrink: 0 }} />
+        <Search size={18} strokeWidth={2.2} color="#86869f" style={{ flexShrink: 0 }} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -155,8 +155,8 @@ export default function LocationPicker({ value, onChange }: Props) {
             outline: 'none',
             background: 'transparent',
             fontSize: 16, // 16px 미만이면 iOS 사파리가 포커스 시 화면을 확대한다
-            color: '#191f28',
-            letterSpacing: '-0.01em',
+            color: '#1c1d1f',
+            letterSpacing: '-0.02em',
           }}
         />
         <button
@@ -164,7 +164,7 @@ export default function LocationPicker({ value, onChange }: Props) {
           onClick={runSearch}
           style={{
             all: 'unset',
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
             color: '#8B5CF6',
             cursor: 'pointer',
@@ -176,7 +176,7 @@ export default function LocationPicker({ value, onChange }: Props) {
         </button>
       </div>
       {searchError && (
-        <span style={{ fontSize: 12, color: '#e03e3e', letterSpacing: '-0.01em' }}>{searchError}</span>
+        <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.02em' }}>{searchError}</span>
       )}
 
       {results.length > 0 && (
@@ -206,10 +206,10 @@ export default function LocationPicker({ value, onChange }: Props) {
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
                 {r.name}
               </span>
-              <span style={{ fontSize: 12.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>{r.address}</span>
+              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>{r.address}</span>
             </button>
           ))}
         </div>
@@ -236,7 +236,7 @@ export default function LocationPicker({ value, onChange }: Props) {
               justifyContent: 'center',
               padding: 16,
               textAlign: 'center',
-              fontSize: 13,
+              fontSize: 14,
               color: '#e03e3e',
               background: '#fff5f5',
             }}
@@ -255,9 +255,9 @@ export default function LocationPicker({ value, onChange }: Props) {
               background: 'rgba(17,24,39,0.78)',
               color: '#fff',
               borderRadius: 10,
-              fontSize: 12.5,
+              fontSize: 14,
               fontWeight: 600,
-              letterSpacing: '-0.01em',
+              letterSpacing: '-0.02em',
               pointerEvents: 'none',
             }}
           >
@@ -280,22 +280,22 @@ export default function LocationPicker({ value, onChange }: Props) {
         <MapPin size={18} strokeWidth={2.2} color="#8B5CF6" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
           {geoError ? (
-            <span style={{ fontSize: 13.5, color: '#e03e3e', letterSpacing: '-0.01em' }}>{geoError}</span>
+            <span style={{ fontSize: 14, color: '#e03e3e', letterSpacing: '-0.02em' }}>{geoError}</span>
           ) : resolving ? (
-            <span style={{ fontSize: 13.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
               주소 확인 중…
             </span>
           ) : value ? (
             <>
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: '#191f28', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
                 {value.address}
               </span>
-              <span style={{ fontSize: 12.5, color: '#8b95a1', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
                 {value.siDo} {value.siGunGu} {value.legalDong}
               </span>
             </>
           ) : (
-            <span style={{ fontSize: 13.5, color: '#adb5bd', letterSpacing: '-0.01em' }}>
+            <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
               선택된 위치가 없어요
             </span>
           )}

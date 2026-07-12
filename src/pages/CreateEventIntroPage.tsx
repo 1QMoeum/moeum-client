@@ -49,24 +49,24 @@ export default function CreateEventIntroPage() {
               height: 40,
               borderRadius: 12,
               cursor: 'pointer',
-              color: '#191f28',
+              color: '#1c1d1f',
               WebkitTapHighlightColor: 'transparent',
             }}
           >
             <ChevronLeft size={26} />
           </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#191f28', letterSpacing: '-0.02em' }}>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
             이벤트 생성
           </h1>
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '28px 0 0' }}>
-          <span style={{ fontSize: 15, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>00</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>00</span>
           <h2
             style={{
               margin: 0,
-              fontSize: 23,
-              fontWeight: 700,
+              fontSize: 24,
+              fontWeight: 600,
               color: '#1c1d1f',
               letterSpacing: '-0.02em',
               lineHeight: 1.5,
@@ -80,29 +80,29 @@ export default function CreateEventIntroPage() {
 
         {/* 개설 진행 단계 — 보라 점 + 연결선 타임라인 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '48px 0 0' }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: '#73787e', letterSpacing: '-0.02em' }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>
             개설 진행 단계
           </span>
           <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' }}>
             {STEPS.map((step, i) => (
               <li key={step.title} style={{ display: 'flex', gap: 20 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 7 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 8 }}>
                   <span
                     aria-hidden
                     style={{
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      background: '#8B5CF6',
+                      background: '#665bf7',
                       flexShrink: 0,
                     }}
                   />
                   {i < STEPS.length - 1 && (
-                    <span aria-hidden style={{ flex: 1, minHeight: 56, width: 2, background: '#e6e1f9', margin: '6px 0' }} />
+                    <span aria-hidden style={{ flex: 1, minHeight: 56, width: 2, background: '#e6e1f9', margin: '8px 0' }} />
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 32 }}>
-                  <span style={{ fontSize: 16, fontWeight: 600, color: '#0c0d0d', letterSpacing: '-0.02em' }}>
+                  <span style={{ fontSize: 16, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
                     {step.title}
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>
@@ -133,7 +133,7 @@ export default function CreateEventIntroPage() {
           <Button variant="ghost" onClick={() => navigate('/events/new/ai')} style={{ borderRadius: 32 }}>
             AI 코칭 받기
           </Button>
-          <Button variant="solid" onClick={() => navigate('/events/new/manual')} style={{ borderRadius: 32 }}>
+          <Button variant="primary" onClick={() => navigate('/events/new/manual')} style={{ borderRadius: 32 }}>
             직접 생성하기
           </Button>
         </div>
