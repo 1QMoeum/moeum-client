@@ -476,7 +476,8 @@ function PlanCard({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        {/* 글자 확대 설정 기기에서 버튼 안 텍스트가 꺾이지 않도록 nowrap, 좁으면 버튼 단위로 줄바꿈 */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={onDetail}
@@ -492,6 +493,7 @@ function PlanCard({
               color: '#5c5c72',
               letterSpacing: '-0.02em',
               lineHeight: 1.5,
+              whiteSpace: 'nowrap',
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent',
             }}
@@ -512,6 +514,7 @@ function PlanCard({
               color: '#fff',
               letterSpacing: '-0.02em',
               lineHeight: 1.5,
+              whiteSpace: 'nowrap',
               cursor: 'pointer',
               WebkitTapHighlightColor: 'transparent',
             }}
