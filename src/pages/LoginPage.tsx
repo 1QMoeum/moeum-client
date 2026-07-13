@@ -76,7 +76,12 @@ export default function LoginPage() {
         </button>
       }
     >
-      <img src="/pin-shield.png" alt="" aria-hidden width={130} height={192} />
+      <img
+        src="/pin-shield.png"
+        alt=""
+        aria-hidden
+        style={{ height: 192, maxHeight: '100%', width: 'auto' }}
+      />
     </PinScreen>
   )
 }

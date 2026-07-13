@@ -46,7 +46,12 @@ export default function KycLoginPage() {
       pendingLabel="로그인 중…"
       onComplete={handleComplete}
     >
-      <img src="/pin-shield.png" alt="" aria-hidden width={130} height={192} />
+      <img
+        src="/pin-shield.png"
+        alt=""
+        aria-hidden
+        style={{ height: 192, maxHeight: '100%', width: 'auto' }}
+      />
     </PinScreen>
   )
 }

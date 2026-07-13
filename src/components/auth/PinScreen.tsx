@@ -66,7 +66,7 @@ export default function PinScreen({
   return (
     <main
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh', // vh 는 모바일 주소창 높이만큼 넘쳐 스크롤이 생긴다
         background: '#fafafa',
         display: 'flex',
         flexDirection: 'column',
@@ -119,21 +119,31 @@ export default function PinScreen({
           </h2>
         )}
 
-        <div style={{ flex: 1 }} />
-
-        {/* 헤드라인과 패널 사이 빈 공간의 가운데에 배치 (3D 아이콘·업로드 UI 등) */}
-        {children && (
-          <>
-            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {children}
-            </div>
-            <div style={{ flex: 1 }} />
-          </>
+        {/* 헤드라인과 패널 사이 빈 공간 — 가운데에 부가 요소(3D 아이콘·업로드 UI 등)를 담고,
+            화면이 낮은 기기에서는 이 영역만 줄어들어 키패드·하단 링크가 잘리지 않는다 */}
+        {children ? (
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              padding: '16px 20px',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {children}
+          </div>
+        ) : (
+          <div style={{ flex: 1 }} />
         )}
 
         {/* 비밀번호 패널 — 흰색 바텀시트 (피그마: 타이틀 + 도트 + 키패드 일체) */}
         <div
           style={{
+            flexShrink: 0,
             background: '#fff',
             borderRadius: '32px 32px 0 0',
             boxShadow: '0 0 16px rgba(21,21,21,0.04)',
