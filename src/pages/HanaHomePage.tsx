@@ -37,9 +37,9 @@ const accountOverlayStyle: CSSProperties = {
   justifyContent: 'center',
   background: '#d7fefc',
   color: '#27282c',
-  fontSize: 16,
+  fontSize: '3.96cqw', // 캡처 기준폭 404.031px 에서 16px — 캡처 스케일에 비례
   lineHeight: 1.4,
-  letterSpacing: '-0.33px',
+  letterSpacing: '-0.02em',
   whiteSpace: 'nowrap',
 }
 

@@ -21,7 +21,7 @@ export default function HanaAssetsPage() {
         <img
           src="/hana/moeum-mark.svg"
           alt=""
-          style={{ width: 63, height: 35.8, flexShrink: 0 }}
+          style={{ width: '15.59cqw', height: '8.86cqw', flexShrink: 0 }}
         />
         <span style={textColStyle}>
           <span style={titleStyle}>moeum 모음</span>
@@ -53,11 +53,11 @@ const cardStyle: CSSProperties = {
   height: '14.62%',
   display: 'flex',
   alignItems: 'center',
-  gap: 25,
-  padding: '0 23px',
+  gap: '6.19cqw',
+  padding: '0 5.69cqw',
   background: '#fff',
   border: 'none',
-  borderRadius: 33,
+  borderRadius: '8.17cqw',
   cursor: 'pointer',
   textAlign: 'left',
 }
@@ -65,31 +65,31 @@ const cardStyle: CSSProperties = {
 const textColStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 4,
+  gap: '1cqw',
 }
 
 const titleStyle: CSSProperties = {
   color: '#73787e',
-  fontSize: 14,
+  fontSize: '3.47cqw', // 캡처 기준폭 404.031px 에서 14px
   fontWeight: 500,
   lineHeight: 1.4,
-  letterSpacing: '-0.29px',
+  letterSpacing: '-0.02em',
 }
 
 const subtitleStyle: CSSProperties = {
   color: '#27282c',
-  fontSize: 18,
+  fontSize: '4.46cqw', // 캡처 기준폭 404.031px 에서 18px
   fontWeight: 600,
   lineHeight: 1.4,
-  letterSpacing: '-0.35px',
+  letterSpacing: '-0.02em',
 }
 
 const closeIconStyle: CSSProperties = {
   position: 'absolute',
   top: '15.25%',
   right: '5.07%',
-  width: 12.3,
-  height: 12.3,
+  width: '3.04cqw',
+  height: '3.04cqw',
 }
 
 // 하단 탭 좌표는 HanaHomePage 의 자산 탭 좌표(left 21.378%, top 87.96%) 를 그대로

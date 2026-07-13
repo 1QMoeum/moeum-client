@@ -22,5 +22,5 @@ export default function HanaSplashPage() {
     return () => clearTimeout(timer)
   }, [navigate])
 
-  return <HanaScreen image="/hana/splash.png" alt="하나원큐 로딩 화면" background="#fcfcfc" />
+  return <HanaScreen image="/hana/splash.png" alt="하나원큐 로딩 화면" background="#fcfcfc" ratio={1260 / 2418} />
 }
