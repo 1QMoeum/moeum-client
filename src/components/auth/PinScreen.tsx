@@ -121,10 +121,14 @@ export default function PinScreen({
 
         <div style={{ flex: 1 }} />
 
+        {/* 헤드라인과 패널 사이 빈 공간의 가운데에 배치 (3D 아이콘·업로드 UI 등) */}
         {children && (
-          <div style={{ padding: '0 20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {children}
-          </div>
+          <>
+            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {children}
+            </div>
+            <div style={{ flex: 1 }} />
+          </>
         )}
 
         {/* 비밀번호 패널 — 흰색 바텀시트 (피그마: 타이틀 + 도트 + 키패드 일체) */}

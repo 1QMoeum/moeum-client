@@ -75,6 +75,8 @@ export default function LoginPage() {
           {t('login.forgotPin')}
         </button>
       }
-    />
+    >
+      <img src="/pin-shield.png" alt="" aria-hidden width={130} height={192} />
+    </PinScreen>
   )
 }
