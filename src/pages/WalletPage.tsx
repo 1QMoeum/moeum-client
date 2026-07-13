@@ -44,7 +44,7 @@ export default function WalletPage() {
   const noWallet = error?.status === ErrorCode.WALLET_NOT_FOUND
 
   return (
-    <main style={{ minHeight: '100vh', background: PAGE_BG, display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: PAGE_BG, display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

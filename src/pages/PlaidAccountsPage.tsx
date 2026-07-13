@@ -65,7 +65,7 @@ export default function PlaidAccountsPage() {
   return (
     <main
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: '#f9fafb',
         display: 'flex',
         flexDirection: 'column',

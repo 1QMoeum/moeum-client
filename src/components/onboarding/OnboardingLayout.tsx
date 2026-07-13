@@ -21,7 +21,7 @@ export default function OnboardingLayout({ title, onBack, actions, footer, child
   return (
     <main
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: '#fafafa',
         display: 'flex',
         flexDirection: 'column',

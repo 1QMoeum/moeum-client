@@ -22,7 +22,7 @@ export default function CreateEventIntroPage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

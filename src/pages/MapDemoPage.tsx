@@ -15,7 +15,7 @@ export default function MapDemoPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
       <form
         onSubmit={handleSubmit}
         style={{ display: 'flex', gap: 8, padding: 12, borderBottom: '1px solid #e5e7eb' }}

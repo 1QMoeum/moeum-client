@@ -115,7 +115,7 @@ export default function AiPlannerPage() {
 
   return (
     // 피그마(1404:27321·27353)처럼 옅은 회색 바탕 위에 흰 시트/카드가 뜬다
-    <main style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,
@@ -542,7 +542,7 @@ function PlanDetail({
   const { data: detail, isPending } = useVenueDetail(venue.venueId)
 
   return (
-    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

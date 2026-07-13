@@ -101,7 +101,7 @@ export default function EventDetailPage() {
   const notFound = !validId || error?.status === ErrorCode.EVENT_NOT_FOUND
 
   return (
-    <main style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: BG, display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

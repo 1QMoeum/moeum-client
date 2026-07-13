@@ -370,7 +370,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
 function TxScreen({ title, onBack, children }: { title: string; onBack: () => void; children: ReactNode }) {
   const { t } = useTranslation()
   return (
-    <main style={{ minHeight: '100vh', background: PAGE_BG, display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: PAGE_BG, display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

@@ -16,7 +16,7 @@ interface Props {
  */
 export default function IllustrationLoading({ topTitle, onBack, title, desc }: Props) {
   return (
-    <main style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <main style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,

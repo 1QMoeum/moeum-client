@@ -28,7 +28,7 @@ export default function PlaidConsentPage() {
   return (
     <main
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
