@@ -113,12 +113,29 @@ body,
   height: 100%;
 }
 
+/* 앱형 UI 고정: 문서 레벨 스크롤·iOS 고무줄 바운스를 막고
+   스크롤은 #root(및 내부 컨테이너)에서만 일어나게 한다. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* iOS 가로 회전 시 임의 폰트 확대 방지 */
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  overflow-y: auto;
+  overscroll-behavior: none;
+  /* 세로 스크롤만 허용 — 핀치 줌·가로 팬 제스처 차단 (user-scalable을 무시하는 iOS 대응) */
+  touch-action: pan-y;
 }
 
 /* 모바일 탭 시 더블탭 줌/지연 방지 — 버튼 연타로 화면이 확대되는 문제 차단 */
