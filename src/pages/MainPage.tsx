@@ -130,9 +130,6 @@ export default function MainPage() {
               onScroll={onScroll}
               style={{
                 display: 'flex',
-                // 남는 세로 공간을 캐러셀이 흡수 — 링이 축소/여백으로 대응해 화면 밀도를 낮춘다
-                flex: 1,
-                minHeight: 0,
                 overflowX: 'auto',
                 scrollSnapType: 'x mandatory',
                 scrollbarWidth: 'none',
@@ -234,7 +231,6 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
     <section
       style={{
         flex: '0 0 100%',
-        minHeight: 0,
         scrollSnapAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
@@ -273,7 +269,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
           {t('main.targetPrefix', { amount: won(event.targetAmount) })}
         </span>
       </div>
-      <p style={{ margin: '4px 0 16px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
             fontSize: 36,
@@ -289,12 +285,9 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
-      {/* 남는 세로 공간의 가운데에 링 배치 — 낮은 화면에선 링이 축소돼 잘림을 막는다 */}
-      <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <ProgressRing percent={percent} size={256} active={active}>
-          <EventImage event={event} />
-        </ProgressRing>
-      </div>
+      <ProgressRing percent={percent} size={256} active={active}>
+        <EventImage event={event} />
+      </ProgressRing>
     </section>
   )
 }
@@ -537,7 +530,7 @@ function WalletView() {
           : t('main.linkAccountCta')}
         <ChevronRight size={14} strokeWidth={2.4} />
       </button>
-      <p style={{ margin: '4px 0 16px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
             fontSize: 36,
@@ -553,27 +546,16 @@ function WalletView() {
         <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
-      {/* 남는 세로 공간의 가운데에 구슬 배치 — 낮은 화면에선 구슬이 축소돼 잘림을 막는다 */}
       <button
         type="button"
         onClick={() => navigate('/wallet')}
         aria-label={t('main.viewWalletAria')}
-        style={{
-          all: 'unset',
-          cursor: 'pointer',
-          flex: 1,
-          minHeight: 0,
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          WebkitTapHighlightColor: 'transparent',
-        }}
+        style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
         <TokenSphere size={256} />
       </button>
 
-      <div style={{ display: 'flex', gap: 24, marginTop: 32 }}>
+      <div style={{ display: 'flex', gap: 24, marginTop: 44 }}>
         <ActionPill label={t('main.charge')} variant="outline" onClick={() => navigate('/wallet/charge')} />
         <ActionPill label={t('main.convert')} variant="filled" onClick={() => navigate('/wallet/convert')} />
       </div>
@@ -651,11 +633,8 @@ function TokenSphere({ size }: { size: number }) {
     <div
       aria-hidden
       style={{
-        // size 는 최대 지름 — 부모 flex 높이가 이보다 작으면 비율을 유지한 채 축소된다
-        height: '100%',
-        maxHeight: size,
-        maxWidth: '100%',
-        aspectRatio: '1 / 1',
+        width: size,
+        height: size,
         borderRadius: '50%',
         position: 'relative',
         overflow: 'hidden',
