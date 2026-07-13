@@ -99,7 +99,7 @@ export default function MainPage() {
         </header>
 
         {/* 세그먼트 토글 */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 24px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 24px 0' }}>
           <div
             role="tablist"
             aria-label={t('main.viewToggleAria')}
@@ -118,8 +118,8 @@ export default function MainPage() {
 
         {tab === 'events' ? (
           isLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '160px 24px 0' }}>
-              <div style={{ width: 256, height: 256, borderRadius: '50%', background: '#eef0f3' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '140px 24px 0' }}>
+              <div style={{ width: 208, height: 208, borderRadius: '50%', background: '#eef0f3' }} />
             </div>
           ) : treatAsEmpty || events.length === 0 ? (
             <EmptyEvents onExplore={() => navigate('/explore')} />
@@ -142,7 +142,7 @@ export default function MainPage() {
             </div>
 
             {/* 인디케이터 */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, padding: '20px 0 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 4, padding: '14px 0 0' }}>
               {events.map((ev, i) => (
                 <span
                   key={ev.eventId}
@@ -159,7 +159,7 @@ export default function MainPage() {
             </div>
 
             {/* 통계 카드 */}
-            <div style={{ padding: '32px 24px 0' }}>
+            <div style={{ padding: '20px 24px 0' }}>
               <div
                 style={{
                   display: 'flex',
@@ -235,7 +235,7 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '24px 24px 0',
+        padding: '16px 24px 0',
       }}
     >
       <h1
@@ -269,10 +269,10 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
           {t('main.targetPrefix', { amount: won(event.targetAmount) })}
         </span>
       </div>
-      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+      <p style={{ margin: '4px 0 20px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
-            fontSize: 36,
+            fontSize: 30,
             fontWeight: 700,
             lineHeight: 1.5,
             letterSpacing: '-0.02em',
@@ -282,10 +282,10 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         >
           {won(event.currentAmount)}
         </span>
-        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
+        <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
-      <ProgressRing percent={percent} size={256} active={active}>
+      <ProgressRing percent={percent} size={208} active={active}>
         <EventImage event={event} />
       </ProgressRing>
     </section>
@@ -463,7 +463,7 @@ function WalletView() {
   if (isPending) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 24px 0' }}>
-        <div style={{ width: 256, height: 256, borderRadius: '50%', background: '#eef0f3' }} />
+        <div style={{ width: 208, height: 208, borderRadius: '50%', background: '#eef0f3' }} />
       </div>
     )
   }
@@ -483,7 +483,7 @@ function WalletView() {
   }
   if (!wallet) return null
 
-  // 이벤트 탭(EventSlide)과 같은 위치/타이포 — 상단 정렬, 제목 19/700, 보조줄 14, 금액 38+22.
+  // 이벤트 탭(EventSlide)과 같은 위치/타이포 — 상단 정렬, 제목 19/700, 보조줄 14, 금액 30+18.
   return (
     <section
       style={{
@@ -491,7 +491,7 @@ function WalletView() {
         flex: 1,
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '24px 24px 0',
+        padding: '16px 24px 0',
       }}
     >
       <h1
@@ -530,10 +530,10 @@ function WalletView() {
           : t('main.linkAccountCta')}
         <ChevronRight size={14} strokeWidth={2.4} />
       </button>
-      <p style={{ margin: '4px 0 32px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+      <p style={{ margin: '4px 0 20px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span
           style={{
-            fontSize: 36,
+            fontSize: 30,
             fontWeight: 700,
             lineHeight: 1.5,
             letterSpacing: '-0.02em',
@@ -543,7 +543,7 @@ function WalletView() {
         >
           {won(wallet.tokenBalance)}
         </span>
-        <span style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
+        <span style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: '#222229' }}>{t('main.unit')}</span>
       </p>
 
       <button
@@ -552,10 +552,10 @@ function WalletView() {
         aria-label={t('main.viewWalletAria')}
         style={{ all: 'unset', cursor: 'pointer', borderRadius: '50%', WebkitTapHighlightColor: 'transparent' }}
       >
-        <TokenSphere size={256} />
+        <TokenSphere size={208} />
       </button>
 
-      <div style={{ display: 'flex', gap: 24, marginTop: 44 }}>
+      <div style={{ display: 'flex', gap: 24, marginTop: 32 }}>
         <ActionPill label={t('main.charge')} variant="outline" onClick={() => navigate('/wallet/charge')} />
         <ActionPill label={t('main.convert')} variant="filled" onClick={() => navigate('/wallet/convert')} />
       </div>

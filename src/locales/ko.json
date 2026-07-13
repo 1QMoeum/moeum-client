@@ -130,7 +130,7 @@
     "notifAria": "알림",
     "myPageAria": "내 정보",
     "viewToggleAria": "홈 보기 전환",
-    "tabEvents": "진행중인 이벤트",
+    "tabEvents": "참여중인 이벤트",
     "tabWallet": "내 지갑",
     "targetPrefix": "목표 {{amount}}원",
     "dDay": "D-{{n}}",
