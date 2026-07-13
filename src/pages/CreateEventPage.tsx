@@ -69,13 +69,13 @@ const CARD_STYLE: React.CSSProperties = {
 /**
  * 위저드 스텝 — 피그마 기준 한 화면 한 질문.
  * 직접(MANUAL): 이름 → 사진 → 설명 → 기간 → 예산 → 장소 → 확인 (01~07)
- * AI: 이름 → 사진 → 설명 → 기간 → 확인 (01~05). 예산·장소는 선택한 플랜에서 온다
- * (서버가 venue 위치 자동복사, 목표 금액은 플랜 예상 비용 사용 — targetAmount 는 서버 필수값).
+ * AI: 이름 → 사진 → 설명 → 기간 → 예산 → 확인 (01~06). 장소는 선택한 플랜에서 온다
+ * (서버가 venue 위치 자동복사). 목표 금액은 두 경로 모두 사용자가 직접 입력한다.
  */
 type StepKey = 'title' | 'photo' | 'describe' | 'period' | 'budget' | 'location' | 'confirm'
 
 const MANUAL_STEPS: StepKey[] = ['title', 'photo', 'describe', 'period', 'budget', 'location', 'confirm']
-const AI_STEPS: StepKey[] = ['title', 'photo', 'describe', 'period', 'confirm']
+const AI_STEPS: StepKey[] = ['title', 'photo', 'describe', 'period', 'budget', 'confirm']
 
 const STEP_TITLES: Record<StepKey, string> = {
   title: '이벤트의 이름을\n입력해주세요',
@@ -131,8 +131,8 @@ export default function CreateEventPage() {
     return <Navigate to="/" replace />
   }
 
-  // AI 경로는 플랜 예상 비용을 목표 금액으로 사용한다 (서버 targetAmount 필수)
-  const targetAmount = aiVenue ? aiVenue.price : Number(manwon) * 10_000
+  // targetAmount 는 서버 필수값 — 두 경로 모두 예산 스텝에서 직접 입력받는다
+  const targetAmount = Number(manwon) * 10_000
   const periodInvalid = !!startDate && !!endDate && endDate < startDate
 
   const stepValid: Record<StepKey, boolean> = {
@@ -225,7 +225,7 @@ export default function CreateEventPage() {
   // ===== 완료 화면 — 새로운 이벤트가 만들어졌어요! =====
   if (doneEventId != null) {
     return (
-      <main style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ minHeight: '100dvh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
         <div
           style={{
             flex: 1,
@@ -334,7 +334,7 @@ export default function CreateEventPage() {
   return (
     <main
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: '#fafafa',
         display: 'flex',
         flexDirection: 'column',
@@ -614,12 +614,11 @@ export default function CreateEventPage() {
                 <SummaryRow label="이벤트 카테고리" value={categoryLabel(category)} />
                 <SummaryRow label="이벤트 설명" value={description.trim()} />
                 <SummaryRow label="모금 기간" value={`${shortDate(startDate)} ~ ${shortDate(endDate)}`} />
-                {!aiVenue && (
-                  <>
-                    <SummaryRow label="목표 예산" value={`${Number(manwon).toLocaleString('ko-KR')}만원`} />
-                    <SummaryRow label="이벤트 장소" value={location ? location.address : '모름'} />
-                  </>
-                )}
+                <SummaryRow
+                  label="목표 예산"
+                  value={`${Math.round(targetAmount / 10_000).toLocaleString('ko-KR')}만원`}
+                />
+                {!aiVenue && <SummaryRow label="이벤트 장소" value={location ? location.address : '모름'} />}
               </div>
             </>
           )}
