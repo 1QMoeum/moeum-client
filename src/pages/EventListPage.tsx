@@ -5,7 +5,7 @@ import { useEventList } from '@/hooks/events'
 import { useHomeOnBack } from '@/hooks/useHomeOnBack'
 import { useAuthStore } from '@/store/auth'
 import BottomNav from '@/components/ui/BottomNav'
-import { EVENT_CATEGORIES, categoryImage, fundingPercent } from '@/types/event'
+import { EVENT_CATEGORIES, categoryImage, fundingPercent, isBeforeFundingStart } from '@/types/event'
 import type { EventListItem, EventStatus } from '@/types/event'
 
 /** 진행 상태 필터. 마감임박(closing)은 서버 ONGOING + 클라이언트 7일 필터. */
@@ -90,7 +90,8 @@ export default function EventListPage() {
   )
 
   const filtered = useMemo(() => {
-    let list = data?.content ?? []
+    // 모금 시작 전 이벤트는 공개 탐색에 노출하지 않는다 (총대는 마이페이지에서 확인)
+    let list = (data?.content ?? []).filter((e) => !isBeforeFundingStart(e.startDate))
     const q = query.trim().toLowerCase()
     if (q !== '') list = list.filter((e) => e.title.toLowerCase().includes(q))
     if (region) list = list.filter((e) => e.siDo?.startsWith(region))

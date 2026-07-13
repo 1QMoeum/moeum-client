@@ -13,7 +13,7 @@ import { toKakaoPaths } from '@/lib/geo'
 import { loadLegalDongFeature } from '@/lib/legalDongGeo'
 import { categoryMeta, createFlagElement, createInfoBubbleElement } from '@/lib/mapPin'
 import { reverseGeocode } from '@/lib/reverseGeocode'
-import { EVENT_CATEGORIES, categoryImage, fundingPercent } from '@/types/event'
+import { EVENT_CATEGORIES, categoryImage, fundingPercent, isBeforeFundingStart } from '@/types/event'
 import type {
   EventHistoryDistrict,
   EventMapDistrict,
@@ -140,6 +140,8 @@ export default function EventMap() {
   const trending = useMemo(() => {
     const list = (trendQ.data?.content ?? []).filter(
       (e) =>
+        // 모금 시작 전 이벤트는 공개 목록에 노출하지 않는다 (총대는 마이페이지에서 확인)
+        !isBeforeFundingStart(e.startDate) &&
         (category === null || e.category === category) &&
         (q === '' || e.title.toLowerCase().includes(q)),
     )

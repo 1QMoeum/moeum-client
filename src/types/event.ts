@@ -35,6 +35,17 @@ export function categoryImage(category: string): string | undefined {
 }
 
 /**
+ * 모금 시작 전(로컬 기준 오늘 < startDate) 여부.
+ * 시작 전 이벤트는 공개 화면(탐색·지도 목록)에 노출하지 않는다 — 총대는 마이페이지에서 확인.
+ * 서버 응답에 creatorId 가 없어 "내 이벤트" 판별이 불가하므로 일괄 숨김으로 처리한다.
+ */
+export function isBeforeFundingStart(startDate: string): boolean {
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return startDate > today
+}
+
+/**
  * 달성률(%) 0~100 정수. 서버 `fundingRate` 는 스케일이 불안정하므로(0~1 비율로 내려옴)
  * 신뢰하지 않고 실제 금액(currentAmount/targetAmount)에서 직접 계산한다.
  * 목표가 0 이하면 0% 로 본다.
