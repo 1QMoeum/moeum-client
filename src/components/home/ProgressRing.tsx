@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 interface Props {
   /** 진행률 0~100 */
   percent: number
-  /** 링 지름(px) */
+  /** 링 최대 지름(px). 부모가 flex 로 준 높이가 이보다 작으면 비율을 유지한 채 축소된다. */
   size?: number
   /** 링 두께(px) */
   stroke?: number
@@ -48,13 +48,14 @@ export default function ProgressRing({ percent, size = 280, stroke = 8, active =
   const circumference = 2 * Math.PI * radius
   const dash = (progress / 100) * circumference
   const center = size / 2
-  const inner = size - stroke * 2 - 14
+  // 내부 원은 바깥 지름 대비 %로 두어 링이 축소돼도 비례가 유지되게 한다
+  const innerPct = ((size - stroke * 2 - 14) / size) * 100
 
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
+    <div style={{ position: 'relative', height: '100%', maxHeight: size, maxWidth: '100%', aspectRatio: '1 / 1' }}>
       <svg
-        width={size}
-        height={size}
+        width="100%"
+        height="100%"
         viewBox={`0 0 ${size} ${size}`}
         role="img"
         aria-label={`달성률 ${Math.round(clamped)}%`}
@@ -87,8 +88,8 @@ export default function ProgressRing({ percent, size = 280, stroke = 8, active =
           position: 'absolute',
           top: '50%',
           left: '50%',
-          width: inner,
-          height: inner,
+          width: `${innerPct}%`,
+          height: `${innerPct}%`,
           transform: 'translate(-50%, -50%)',
           borderRadius: '50%',
           overflow: 'hidden',
