@@ -503,18 +503,14 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           aria-label="에스크로 지갑 보기"
           title={`에스크로 ${shortAddr(event.escrowAddress)} · 블록체인에서 모금액 확인`}
           style={{
+            ...iconBtnStyle,
             position: 'absolute',
-            top: 8,
-            right: 20,
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 4,
+            top: 4,
+            right: 16,
             textDecoration: 'none',
-            WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <ExternalLink size={22} strokeWidth={2} color={GRAY500} />
+          <ExternalLink size={22} strokeWidth={2.2} color={INK800} />
         </a>
       )}
       {/* 타이틀 + 금액 */}
