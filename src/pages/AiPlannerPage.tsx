@@ -617,6 +617,26 @@ function PlanDetail({
             <DetailStat label="위치" value={venue.siGunGu} />
           </div>
 
+          {/* 추천 이유 */}
+          {venue.reason && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                padding: '12px 20px',
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow: '0 0 8px rgba(21, 21, 21, 0.04)',
+              }}
+            >
+              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>추천 이유</span>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: '#5c5c72', lineHeight: 1.5, letterSpacing: '-0.02em' }}>
+                {venue.reason}
+              </p>
+            </div>
+          )}
+
           {/* 장소 소개 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f' }}>장소 소개</span>
@@ -648,22 +668,6 @@ function PlanDetail({
             </div>
           )}
 
-          {/* 추천 이유 */}
-          {venue.reason && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                padding: '16px',
-                background: '#f5f5f7',
-                borderRadius: 16,
-              }}
-            >
-              <span style={{ fontSize: 14, color: '#86869f' }}>추천 이유</span>
-              <p style={{ margin: 0, fontSize: 14, color: '#5c5c72', lineHeight: 1.6 }}>{venue.reason}</p>
-            </div>
-          )}
         </div>
 
         <div
