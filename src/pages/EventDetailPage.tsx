@@ -504,19 +504,17 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           title={`에스크로 ${shortAddr(event.escrowAddress)} · 블록체인에서 모금액 확인`}
           style={{
             position: 'absolute',
-            top: 12,
+            top: 8,
             right: 20,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
+            justifyContent: 'center',
+            padding: 4,
             textDecoration: 'none',
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <span style={{ fontSize: 12, fontWeight: 500, color: '#0c0d0d', letterSpacing: '-0.01em' }}>
-            에스크로
-          </span>
-          <ExternalLink size={14} strokeWidth={2} color={GRAY500} style={{ flexShrink: 0 }} />
+          <ExternalLink size={22} strokeWidth={2} color={GRAY500} />
         </a>
       )}
       {/* 타이틀 + 금액 */}
