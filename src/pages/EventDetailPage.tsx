@@ -8,6 +8,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Heart,
   MapPin,
   MoreVertical,
@@ -15,7 +16,6 @@ import {
   Share2,
   ShieldCheck,
   Trash2,
-  Wallet,
 } from 'lucide-react'
 import {
   useCancelEvent,
@@ -504,20 +504,19 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           title={`에스크로 ${shortAddr(event.escrowAddress)} · 블록체인에서 모금액 확인`}
           style={{
             position: 'absolute',
-            top: 8,
+            top: 12,
             right: 20,
             display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: VIOLET_BG,
-            color: VIOLET,
+            gap: 4,
             textDecoration: 'none',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <Wallet size={18} strokeWidth={2.2} />
+          <span style={{ fontSize: 12, fontWeight: 500, color: '#0c0d0d', letterSpacing: '-0.01em' }}>
+            에스크로
+          </span>
+          <ExternalLink size={14} strokeWidth={2} color={GRAY500} style={{ flexShrink: 0 }} />
         </a>
       )}
       {/* 타이틀 + 금액 */}
