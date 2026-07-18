@@ -8,7 +8,6 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Heart,
   MapPin,
   MoreVertical,
@@ -494,7 +493,33 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
   const rate = pct
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
+      {/* 에스크로 바로가기 — 우상단(TopBar 아이콘 아래) 아이콘 버튼 */}
+      {event.escrowExplorerUrl && event.escrowAddress && (
+        <a
+          href={event.escrowExplorerUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          aria-label="에스크로 지갑 보기"
+          title={`에스크로 ${shortAddr(event.escrowAddress)} · 블록체인에서 모금액 확인`}
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 20,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: VIOLET_BG,
+            color: VIOLET,
+            textDecoration: 'none',
+          }}
+        >
+          <Wallet size={18} strokeWidth={2.2} />
+        </a>
+      )}
       {/* 타이틀 + 금액 */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', textAlign: 'center' }}>
@@ -520,34 +545,6 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           </span>
           <span style={{ fontSize: 24, fontWeight: 500, color: INK800 }}>원</span>
         </div>
-        {event.escrowExplorerUrl && event.escrowAddress && (
-          <a
-            href={event.escrowExplorerUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-            title="에스크로 지갑 주소 · 블록체인에서 모금액 확인"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              height: 28,
-              padding: '0 12px',
-              marginTop: 6,
-              borderRadius: 999,
-              background: VIOLET_BG,
-              color: VIOLET,
-              textDecoration: 'none',
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '-0.01em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Wallet size={13} strokeWidth={2.4} />
-            에스크로 {shortAddr(event.escrowAddress)}
-            <ExternalLink size={12} strokeWidth={2.4} />
-          </a>
-        )}
       </div>
 
       {/* 진행률 링 + 대표 이미지 */}
