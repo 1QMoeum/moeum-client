@@ -6,8 +6,10 @@ import {
   ArrowDown,
   ArrowUp,
   Bell,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   Heart,
   MapPin,
@@ -16,6 +18,7 @@ import {
   Share2,
   ShieldCheck,
   Trash2,
+  Wallet,
 } from 'lucide-react'
 import {
   useCancelEvent,
@@ -336,7 +339,7 @@ function EventView({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 108 }}>
-        <Header event={event} dday={dday} ongoing={ongoing} />
+        <Header event={event} dday={dday} ongoing={ongoing} onToast={setToast} />
 
         {/* 탭 */}
         <nav
@@ -496,15 +499,17 @@ function MenuItem({
   )
 }
 
-/* ===== 공통 헤더 (진행률 링 + 통계) ===== */
+/* ===== 공통 헤더 (진행률 링 + 통계 + 이벤트 지갑 정보) ===== */
 function Header({
   event,
   dday,
   ongoing,
+  onToast,
 }: {
   event: EventDetailResponse
   dday: number
   ongoing: boolean
+  onToast: (msg: string) => void
 }) {
   const pct = fundingPercent(event.currentAmount, event.targetAmount)
   const rate = pct
@@ -520,25 +525,6 @@ function Header({
         padding: '12px 20px 4px',
       }}
     >
-      {/* 에스크로 바로가기 — 우상단(TopBar 아이콘 아래) 아이콘 버튼 */}
-      {event.escrowExplorerUrl && event.escrowAddress && (
-        <a
-          href={event.escrowExplorerUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          aria-label="에스크로 지갑 보기"
-          title={`에스크로 ${shortAddr(event.escrowAddress)} · 블록체인에서 모금액 확인`}
-          style={{
-            ...iconBtnStyle,
-            position: 'absolute',
-            top: 4,
-            right: 16,
-            textDecoration: 'none',
-          }}
-        >
-          <ExternalLink size={22} strokeWidth={2.2} color={INK800} />
-        </a>
-      )}
       {/* 타이틀 + 금액 */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <h2
@@ -663,8 +649,138 @@ function Header({
         <StatDivider />
         <Stat label="마감일" value={shortDate(event.endDate)} />
       </section>
+
+      {/* 이벤트 지갑 정보 — 모금별 에스크로 주소 + 익스플로러 (접이식, Figma 1789:6246) */}
+      {event.escrowAddress && (
+        <EscrowWalletCard
+          address={event.escrowAddress}
+          explorerUrl={event.escrowExplorerUrl}
+          onToast={onToast}
+        />
+      )}
     </div>
   )
+}
+
+/** 통계 카드 아래 접이식 카드 — 헤더 탭으로 펼치고, 지갑 주소 복사·블록체인 익스플로러 이동 제공 */
+function EscrowWalletCard({
+  address,
+  explorerUrl,
+  onToast,
+}: {
+  address: string
+  explorerUrl: string | null
+  onToast: (msg: string) => void
+}) {
+  const [open, setOpen] = useState(true)
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard?.writeText(address)
+      onToast('지갑 주소를 복사했어요')
+    } catch {
+      /* 클립보드 미지원/거부 — 무시 */
+    }
+  }
+
+  return (
+    <section style={{ width: '100%', background: '#fff', borderRadius: 12, boxShadow: CARD_SHADOW }}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          all: 'unset',
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Wallet size={20} strokeWidth={2} color={VIOLET} />
+          <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.02em' }}>
+            이벤트 지갑 정보
+          </span>
+        </span>
+        <ChevronDown
+          size={20}
+          strokeWidth={2}
+          color={INK800}
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+        />
+      </button>
+
+      {open && (
+        <div style={{ borderTop: `1px solid ${GRAY50}` }}>
+          <button
+            type="button"
+            aria-label="지갑 주소 복사"
+            onClick={() => void copyAddress()}
+            style={escrowRowStyle}
+          >
+            <span style={escrowRowTextColStyle}>
+              <span style={escrowRowLabelStyle}>지갑 주소</span>
+              <span style={escrowRowValueStyle}>{shortAddr(address)}</span>
+            </span>
+            <Copy size={18} strokeWidth={2} color={GRAY500} />
+          </button>
+
+          {explorerUrl && (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              style={{ ...escrowRowStyle, borderTop: `1px solid ${GRAY50}`, textDecoration: 'none' }}
+            >
+              <span style={escrowRowTextColStyle}>
+                <span style={escrowRowLabelStyle}>익스플로러</span>
+                <span style={escrowRowValueStyle}>블록체인에서 보기</span>
+              </span>
+              <ExternalLink size={18} strokeWidth={2} color={GRAY500} />
+            </a>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+const escrowRowStyle: CSSProperties = {
+  all: 'unset',
+  boxSizing: 'border-box',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  width: '100%',
+  padding: '10px 24px 12px',
+  cursor: 'pointer',
+  WebkitTapHighlightColor: 'transparent',
+}
+
+const escrowRowTextColStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+}
+
+const escrowRowLabelStyle: CSSProperties = {
+  fontSize: 12,
+  color: GRAY500,
+  letterSpacing: '-0.01em',
+}
+
+const escrowRowValueStyle: CSSProperties = {
+  fontSize: 15,
+  fontWeight: 500,
+  color: INK900,
+  letterSpacing: '-0.01em',
+  fontVariantNumeric: 'tabular-nums',
 }
 
 /* ===== 이벤트 소개 탭 ===== */
