@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { AlertCircle, ChevronLeft, Pencil } from 'lucide-react'
 import { useRecommendVenues, useVenueDetail } from '@/hooks/venues'
-import { useKakaoMap } from '@/hooks/useKakaoMap'
 import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 import { useAuthStore } from '@/store/auth'
 import { toErrorMessage } from '@/api/client'
 import Button from '@/components/ui/Button'
 import FadeImage from '@/components/ui/FadeImage'
 import IllustrationLoading from '@/components/ui/IllustrationLoading'
+import VenuePreviewMap from '@/components/map/VenuePreviewMap'
 import { venueImageSrc, venueThumbSrc, venueTypeLabel } from '@/types/venue'
 import type { AiPlanVenue, RecommendedVenue } from '@/types/venue'
 
@@ -20,7 +20,8 @@ const EXAMPLE_QUERIES = [
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`
 /** 원 → "80만원" 표기 (만원 미만은 원 단위 그대로) */
-const manwon = (n: number) => (n >= 10_000 ? `${Math.round(n / 10_000).toLocaleString('ko-KR')}만원` : won(n))
+const manwon = (n: number) =>
+  n >= 10_000 ? `${Math.round(n / 10_000).toLocaleString('ko-KR')}만원` : won(n)
 
 /**
  * AI 플래너 — 자연어 조건으로 장소 플랜을 추천받는다. (POST /v1/venues/recommend)
@@ -115,7 +116,14 @@ export default function AiPlannerPage() {
 
   return (
     // 피그마(1404:27321·27353)처럼 옅은 회색 바탕 위에 흰 시트/카드가 뜬다
-    <main style={{ minHeight: '100dvh', background: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+    <main
+      style={{
+        minHeight: '100dvh',
+        background: '#fafafa',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div
         style={{
           flex: 1,
@@ -148,7 +156,15 @@ export default function AiPlannerPage() {
           >
             <ChevronLeft size={26} />
           </button>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em' }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 18,
+              fontWeight: 600,
+              color: '#1c1d1f',
+              letterSpacing: '-0.02em',
+            }}
+          >
             AI 플래너
           </h1>
         </header>
@@ -156,7 +172,16 @@ export default function AiPlannerPage() {
         {view === 'input' ? (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '28px 0 0' }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>01</span>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: '#5c5c72',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                01
+              </span>
               <h2
                 style={{
                   margin: 0,
@@ -171,14 +196,37 @@ export default function AiPlannerPage() {
                 <br />
                 준비하고 있나요?
               </h2>
-              <span style={{ fontSize: 16, fontWeight: 500, color: '#5c5c72', letterSpacing: '-0.02em' }}>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 500,
+                  color: '#5c5c72',
+                  letterSpacing: '-0.02em',
+                }}
+              >
                 원하는 조건을 아래에 입력해주세요.
               </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '28px 0 0' }}>
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#73787e', letterSpacing: '-0.02em' }}>예시</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#73787e',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                예시
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
                 {EXAMPLE_QUERIES.map((ex) => (
                   <button
                     key={ex}
@@ -217,7 +265,10 @@ export default function AiPlannerPage() {
                 background: '#fff',
                 borderRadius: '32px 32px 0 0',
                 margin: '0 -20px',
-                padding: keyboardInset > 0 ? '20px 20px 16px' : '20px 20px calc(20px + env(safe-area-inset-bottom))',
+                padding:
+                  keyboardInset > 0
+                    ? '20px 20px 16px'
+                    : '20px 20px calc(20px + env(safe-area-inset-bottom))',
                 boxShadow: '0 0 16px rgba(21,21,21,0.04)',
               }}
             >
@@ -265,7 +316,12 @@ export default function AiPlannerPage() {
                 </div>
               )}
 
-              <Button variant="primary" onClick={submit} disabled={query.trim() === '' || recommend.isPending} style={{ borderRadius: 32 }}>
+              <Button
+                variant="primary"
+                onClick={submit}
+                disabled={query.trim() === '' || recommend.isPending}
+                style={{ borderRadius: 32 }}
+              >
                 {recommend.isPending ? 'AI가 플랜을 찾는 중…' : 'AI 플랜 추천 받기'}
               </Button>
             </div>
@@ -274,15 +330,32 @@ export default function AiPlannerPage() {
           <>
             {/* 입력한 조건 — 라벨 + 수정 아이콘 행, 아래 보라 말풍선 (피그마 1404:27354) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 16, fontWeight: 500, color: '#222229', letterSpacing: '-0.02em' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <span
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 500,
+                    color: '#222229',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
                   입력한 조건
                 </span>
                 <button
                   type="button"
                   onClick={() => setView('input')}
                   aria-label="조건 수정"
-                  style={{ all: 'unset', display: 'flex', padding: 4, margin: -4, cursor: 'pointer', color: '#222229', WebkitTapHighlightColor: 'transparent' }}
+                  style={{
+                    all: 'unset',
+                    display: 'flex',
+                    padding: 4,
+                    margin: -4,
+                    cursor: 'pointer',
+                    color: '#222229',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
                 >
                   <Pencil size={20} strokeWidth={2} />
                 </button>
@@ -306,13 +379,17 @@ export default function AiPlannerPage() {
               </span>
             </div>
 
-            <span style={{ fontSize: 16, fontWeight: 600, color: '#1c1d1f', margin: '24px 0 12px' }}>
+            <span
+              style={{ fontSize: 16, fontWeight: 600, color: '#1c1d1f', margin: '24px 0 12px' }}
+            >
               AI 추천 플랜
             </span>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 0 32px' }}>
               {results.length === 0 && (
-                <span style={{ fontSize: 14, color: '#86869f', textAlign: 'center', padding: '32px 0' }}>
+                <span
+                  style={{ fontSize: 14, color: '#86869f', textAlign: 'center', padding: '32px 0' }}
+                >
                   조건에 맞는 플랜이 없어요. 조건을 바꿔 다시 시도해보세요.
                 </span>
               )}
@@ -460,7 +537,15 @@ function PlanCard({
           </span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', fontSize: 14, letterSpacing: '-0.02em', lineHeight: 1.5 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: 14,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.5,
+          }}
+        >
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ width: 60, flexShrink: 0, color: '#86869f' }}>예상 비용</span>
             <span style={{ fontWeight: 500, color: '#2f2f3b' }}>
@@ -542,7 +627,9 @@ function PlanDetail({
   const { data: detail, isPending } = useVenueDetail(venue.venueId)
 
   return (
-    <main style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <main
+      style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column' }}
+    >
       <div
         style={{
           flex: 1,
@@ -555,7 +642,9 @@ function PlanDetail({
         }}
       >
         {/* 상단 이미지 */}
-        <div style={{ position: 'relative', height: 240, background: '#e9ecef', overflow: 'hidden' }}>
+        <div
+          style={{ position: 'relative', height: 240, background: '#e9ecef', overflow: 'hidden' }}
+        >
           {venueImageSrc(venue.imageUrl) && (
             <FadeImage
               src={venueThumbSrc(venue.imageUrl, 960)}
@@ -589,10 +678,27 @@ function PlanDetail({
           </button>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20, padding: '20px 20px 0' }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20,
+            padding: '20px 20px 0',
+          }}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <PlanBadge label={badge} />
-            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#1c1d1f', letterSpacing: '-0.02em', lineHeight: 1.5 }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 24,
+                fontWeight: 600,
+                color: '#1c1d1f',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.5,
+              }}
+            >
               {venue.title}
             </h2>
             <span style={{ fontSize: 14, color: '#5c5c72' }}>
@@ -612,7 +718,10 @@ function PlanDetail({
           >
             <DetailStat label="예상 비용" value={manwon(venue.price)} />
             <StatDivider />
-            <DetailStat label="보증금" value={venue.deposit != null ? manwon(venue.deposit) : '없음'} />
+            <DetailStat
+              label="보증금"
+              value={venue.deposit != null ? manwon(venue.deposit) : '없음'}
+            />
             <StatDivider />
             <DetailStat label="위치" value={venue.siGunGu} />
           </div>
@@ -630,8 +739,19 @@ function PlanDetail({
                 boxShadow: '0 0 8px rgba(21, 21, 21, 0.04)',
               }}
             >
-              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>추천 이유</span>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: '#5c5c72', lineHeight: 1.5, letterSpacing: '-0.02em' }}>
+              <span style={{ fontSize: 14, color: '#86869f', letterSpacing: '-0.02em' }}>
+                추천 이유
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#5c5c72',
+                  lineHeight: 1.5,
+                  letterSpacing: '-0.02em',
+                }}
+              >
                 {venue.reason}
               </p>
             </div>
@@ -643,7 +763,15 @@ function PlanDetail({
             {isPending ? (
               <div style={{ height: 64, borderRadius: 12, background: '#f1f3f5' }} />
             ) : (
-              <p style={{ margin: 0, fontSize: 14, color: '#5c5c72', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  color: '#5c5c72',
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-line',
+                }}
+              >
                 {detail?.description || '소개 정보가 없어요.'}
               </p>
             )}
@@ -658,16 +786,17 @@ function PlanDetail({
           {detail && detail.latitude != null && detail.longitude != null && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f' }}>위치</span>
-              <VenueMap latitude={detail.latitude} longitude={detail.longitude} />
+              <VenuePreviewMap latitude={detail.latitude} longitude={detail.longitude} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f' }}>{venue.title}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#1c1d1f' }}>
+                  {venue.title}
+                </span>
                 {detail.address && (
                   <span style={{ fontSize: 14, color: '#86869f' }}>{detail.address}</span>
                 )}
               </div>
             </div>
           )}
-
         </div>
 
         <div
@@ -687,35 +816,18 @@ function PlanDetail({
   )
 }
 
-/** 플랜 상세의 위치 미리보기 지도 — 마커 1개, 조작 비활성(스크롤 방해 방지). */
-function VenueMap({ latitude, longitude }: { latitude: number; longitude: number }) {
-  const { containerRef, map, error } = useKakaoMap(4)
-
-  useEffect(() => {
-    if (!map) return
-    const position = new kakao.maps.LatLng(latitude, longitude)
-    map.setCenter(position)
-    map.setDraggable(false)
-    map.setZoomable(false)
-    const marker = new kakao.maps.Marker({ position })
-    marker.setMap(map)
-    return () => marker.setMap(null)
-  }, [map, latitude, longitude])
-
-  if (error) return null
-
-  return (
-    <div
-      ref={containerRef}
-      aria-hidden
-      style={{ width: '100%', height: 160, borderRadius: 12, overflow: 'hidden', background: '#f1f3f5' }}
-    />
-  )
-}
-
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        minWidth: 0,
+      }}
+    >
       <span style={{ fontSize: 14, color: '#86869f' }}>{label}</span>
       <span
         style={{

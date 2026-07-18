@@ -33,6 +33,7 @@ import Button from '@/components/ui/Button'
 import BudgetEditor from '@/components/events/BudgetEditor'
 import NoticeComposer from '@/components/events/NoticeComposer'
 import EventEditor from '@/components/events/EventEditor'
+import VenuePreviewMap from '@/components/map/VenuePreviewMap'
 import { fundingPercent } from '@/types/event'
 import type { BudgetItem, BudgetStatus, EventDetailResponse, EventPost } from '@/types/event'
 
@@ -159,18 +160,23 @@ function TopBar({ onBack, right }: { onBack: () => void; right?: ReactNode }) {
         background: BG,
       }}
     >
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="뒤로"
-        style={iconBtnStyle}
-      >
+      <button type="button" onClick={onBack} aria-label="뒤로" style={iconBtnStyle}>
         <ChevronLeft size={26} color={INK800} />
       </button>
-      <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: INK800, letterSpacing: '-0.02em' }}>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 20,
+          fontWeight: 700,
+          color: INK800,
+          letterSpacing: '-0.02em',
+        }}
+      >
         이벤트 상세
       </h1>
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>{right}</div>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+        {right}
+      </div>
     </header>
   )
 }
@@ -206,10 +212,7 @@ function EventView({
   const onToggleLike = () => {
     const next = !liked
     setLiked(next)
-    toggleBookmark.mutate(
-      { eventId: event.eventId, next },
-      { onError: () => setLiked(!next) },
-    )
+    toggleBookmark.mutate({ eventId: event.eventId, next }, { onError: () => setLiked(!next) })
   }
 
   const cancelMut = useCancelEvent(event.eventId)
@@ -293,7 +296,10 @@ function EventView({
       {/* 총대 메뉴 (수정/공유/취소) */}
       {menuOpen && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setMenuOpen(false)} />
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 30 }}
+            onClick={() => setMenuOpen(false)}
+          />
           <div
             role="menu"
             style={{
@@ -402,7 +408,12 @@ function EventView({
         }}
       >
         <IconBtn label={liked ? '찜 해제' : '찜'} onClick={onToggleLike}>
-          <Heart size={22} strokeWidth={2.2} color={liked ? '#fa5252' : GRAY500} fill={liked ? '#fa5252' : 'none'} />
+          <Heart
+            size={22}
+            strokeWidth={2.2}
+            color={liked ? '#fa5252' : GRAY500}
+            fill={liked ? '#fa5252' : 'none'}
+          />
         </IconBtn>
         <IconBtn label="공유" onClick={() => void share()}>
           <Share2 size={21} strokeWidth={2.2} color={GRAY500} />
@@ -417,9 +428,7 @@ function EventView({
         </Button>
       </div>
 
-      {editing && (
-        <BudgetEditorGate event={event} onClose={() => setEditing(false)} />
-      )}
+      {editing && <BudgetEditorGate event={event} onClose={() => setEditing(false)} />}
 
       {editingEvent && <EventEditor event={event} onClose={() => setEditingEvent(false)} />}
 
@@ -488,12 +497,29 @@ function MenuItem({
 }
 
 /* ===== 공통 헤더 (진행률 링 + 통계) ===== */
-function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: number; ongoing: boolean }) {
+function Header({
+  event,
+  dday,
+  ongoing,
+}: {
+  event: EventDetailResponse
+  dday: number
+  ongoing: boolean
+}) {
   const pct = fundingPercent(event.currentAmount, event.targetAmount)
   const rate = pct
 
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, padding: '12px 20px 4px' }}>
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 24,
+        padding: '12px 20px 4px',
+      }}
+    >
       {/* 에스크로 바로가기 — 우상단(TopBar 아이콘 아래) 아이콘 버튼 */}
       {event.escrowExplorerUrl && event.escrowAddress && (
         <a
@@ -515,7 +541,16 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
       )}
       {/* 타이틀 + 금액 */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', textAlign: 'center' }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 16,
+            fontWeight: 600,
+            color: INK900,
+            letterSpacing: '-0.02em',
+            textAlign: 'center',
+          }}
+        >
           {event.title}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -641,7 +676,10 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
         <IntroContentBody event={event} />
 
         <Hr />
-        <InfoBlock label="모금 기간" value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`} />
+        <InfoBlock
+          label="모금 기간"
+          value={`${dotDate(event.startDate)} ~ ${dotDate(event.endDate)}`}
+        />
 
         {event.operatingStartDate && event.operatingEndDate && (
           <>
@@ -656,7 +694,10 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
         {event.operatingStartTime && event.operatingEndTime && (
           <>
             <Hr />
-            <InfoBlock label="진행 시간" value={`${hm(event.operatingStartTime)} ~ ${hm(event.operatingEndTime)}`} />
+            <InfoBlock
+              label="진행 시간"
+              value={`${hm(event.operatingStartTime)} ~ ${hm(event.operatingEndTime)}`}
+            />
           </>
         )}
 
@@ -678,7 +719,13 @@ function IntroContentBody({ event }: { event: EventDetailResponse }) {
   return (
     <>
       {imgs.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: imgs.length === 1 ? '1fr' : '1fr 1fr', gap: 8 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: imgs.length === 1 ? '1fr' : '1fr 1fr',
+            gap: 8,
+          }}
+        >
           {imgs.map((img) => (
             <img
               key={img.fileId}
@@ -723,36 +770,48 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
 
 function LocationBlock({ event }: { event: EventDetailResponse }) {
   const region = [event.siDo, event.siGunGu, event.legalDong].filter(Boolean).join(' ')
+  // 서버가 좌표를 안 주거나(런타임 null) 미설정(0,0)이면 지도 없이 주소 카드만 보여준다
+  const hasCoords =
+    event.latitude != null &&
+    event.longitude != null &&
+    !(event.latitude === 0 && event.longitude === 0)
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 12,
-        alignItems: 'flex-start',
-        background: GRAY50,
-        borderRadius: 12,
-        padding: '14px 16px',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {hasCoords && <VenuePreviewMap latitude={event.latitude} longitude={event.longitude} />}
       <div
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          background: VIOLET_BG,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
+          gap: 12,
+          alignItems: 'flex-start',
+          background: GRAY50,
+          borderRadius: 12,
+          padding: '14px 16px',
         }}
       >
-        <MapPin size={18} color={VIOLET} />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: INK700, letterSpacing: '-0.01em' }}>{region || '장소 미정'}</span>
-        {event.address && (
-          <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{event.address}</span>
-        )}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: VIOLET_BG,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <MapPin size={18} color={VIOLET} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: INK700, letterSpacing: '-0.01em' }}>
+            {region || '장소 미정'}
+          </span>
+          {event.address && (
+            <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+              {event.address}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -809,7 +868,15 @@ function BudgetTab({
         <SectionTitle>총 목표 금액</SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: INK800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+            <span
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: INK800,
+                letterSpacing: '-0.02em',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
               {event.targetAmount.toLocaleString('ko-KR')}
             </span>
             <span style={{ fontSize: 16, fontWeight: 500, color: GRAY600 }}>원</span>
@@ -823,9 +890,16 @@ function BudgetTab({
       {/* 예상 사용 계획 */}
       <Card gap={20} radius={20}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}>예상 사용 계획</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}>
+            예상 사용 계획
+          </span>
           {isOwner && (
-            <button type="button" onClick={onEdit} aria-label="사용 계획 편집" style={{ ...iconBtnStyle, width: 28, height: 28 }}>
+            <button
+              type="button"
+              onClick={onEdit}
+              aria-label="사용 계획 편집"
+              style={{ ...iconBtnStyle, width: 28, height: 28 }}
+            >
               <Pencil size={20} color={INK800} />
             </button>
           )}
@@ -836,7 +910,17 @@ function BudgetTab({
             text="아직 등록된 사용 계획이 없어요."
             action={
               isOwner ? (
-                <Button variant="solid" onClick={onEdit} style={{ width: 'auto', padding: '11px 22px', fontSize: 14, background: VIOLET, borderRadius: 24 }}>
+                <Button
+                  variant="solid"
+                  onClick={onEdit}
+                  style={{
+                    width: 'auto',
+                    padding: '11px 22px',
+                    fontSize: 14,
+                    background: VIOLET,
+                    borderRadius: 24,
+                  }}
+                >
                   사용 계획 추가하기
                 </Button>
               ) : undefined
@@ -856,13 +940,22 @@ function BudgetTab({
               }}
             >
               <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>항목</span>
-              <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>예상 금액 (원)</span>
+              <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>
+                예상 금액 (원)
+              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', padding: '0 4px' }}>
               {items.map((item, i) => (
                 <div key={item.budgetId}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 8px',
+                    }}
+                  >
                     <span
                       style={{
                         fontSize: 14,
@@ -877,8 +970,18 @@ function BudgetTab({
                     >
                       {item.title}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
-                      <span style={{ fontSize: 16, fontWeight: 600, color: '#0c0d0d', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+                    <span
+                      style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: '#0c0d0d',
+                          fontVariantNumeric: 'tabular-nums',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
                         {item.amount.toLocaleString('ko-KR')}
                       </span>
                       <span style={{ fontSize: 14, color: INK700 }}>원</span>
@@ -890,10 +993,29 @@ function BudgetTab({
             </div>
 
             {/* 총 합계 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px' }}>
-              <span style={{ fontSize: 14, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}>총 합계</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 12px',
+              }}
+            >
+              <span
+                style={{ fontSize: 14, fontWeight: 500, color: INK900, letterSpacing: '-0.01em' }}
+              >
+                총 합계
+              </span>
               <span style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontSize: 20, fontWeight: 600, color: VIOLET, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 600,
+                    color: VIOLET,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
                   {totalAmount.toLocaleString('ko-KR')}
                 </span>
                 <span style={{ fontSize: 14, color: INK700 }}>원</span>
@@ -907,14 +1029,22 @@ function BudgetTab({
       {executed.length > 0 && (
         <Card gap={20} radius={12}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}>집행 내역</span>
-            <span style={{ fontSize: 14, color: INK800, letterSpacing: '-0.01em' }}>총 {executed.length}건</span>
+            <span
+              style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}
+            >
+              집행 내역
+            </span>
+            <span style={{ fontSize: 14, color: INK800, letterSpacing: '-0.01em' }}>
+              총 {executed.length}건
+            </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {executed.map((item, i) => (
               <div key={item.budgetId}>
                 <ExecutionRow item={item} />
-                {i < executed.length - 1 && <div style={{ height: 1, background: LINE, margin: '20px 0' }} />}
+                {i < executed.length - 1 && (
+                  <div style={{ height: 1, background: LINE, margin: '20px 0' }} />
+                )}
               </div>
             ))}
           </div>
@@ -927,15 +1057,38 @@ function BudgetTab({
 function ExecutionRow({ item }: { item: BudgetItem }) {
   const chip = EXEC_CHIP[item.status] ?? EXEC_CHIP.PENDING
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+    <div
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: INK900,
+            letterSpacing: '-0.01em',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {item.title}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>{dotDate(item.scheduledDate)}</span>
+          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>
+            {dotDate(item.scheduledDate)}
+          </span>
           <span style={{ width: 1, height: 12, background: LINE }} />
-          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}>{won(item.amount)}</span>
+          <span
+            style={{
+              fontSize: 14,
+              color: GRAY600,
+              letterSpacing: '-0.01em',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {won(item.amount)}
+          </span>
         </div>
       </div>
       <span
@@ -1013,7 +1166,10 @@ function NoticeTab({ event, isOwner }: { event: EventDetailResponse; isOwner: bo
         />
       ) : posts.length === 0 ? (
         <Card gap={12} radius={20}>
-          <EmptyState text="아직 등록된 공지가 없어요." sub="총대가 카페 계약·영수증 등 소식을 이곳에 남깁니다." />
+          <EmptyState
+            text="아직 등록된 공지가 없어요."
+            sub="총대가 카페 계약·영수증 등 소식을 이곳에 남깁니다."
+          />
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1054,7 +1210,17 @@ function NoticeCard({
   const imgs = post.imageUrls ?? []
 
   return (
-    <div style={{ background: '#fff', borderRadius: 20, boxShadow: CARD_SHADOW, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: 20,
+        boxShadow: CARD_SHADOW,
+        padding: '20px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 18,
+      }}
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* 작성자 헤더 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1077,16 +1243,26 @@ function NoticeCard({
               총
             </div>
             <span style={{ fontSize: 14, color: INK800, letterSpacing: '-0.01em' }}>총대</span>
-            <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{monthDay(post.createdAt)}</span>
+            <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+              {monthDay(post.createdAt)}
+            </span>
           </div>
           {isOwner && (
             <div style={{ position: 'relative' }}>
-              <button type="button" aria-label="공지 메뉴" onClick={() => setMenuOpen((v) => !v)} style={{ ...iconBtnStyle, width: 28, height: 28 }}>
+              <button
+                type="button"
+                aria-label="공지 메뉴"
+                onClick={() => setMenuOpen((v) => !v)}
+                style={{ ...iconBtnStyle, width: 28, height: 28 }}
+              >
                 <MoreVertical size={20} color={GRAY500} />
               </button>
               {menuOpen && (
                 <>
-                  <div style={{ position: 'fixed', inset: 0, zIndex: 30 }} onClick={() => setMenuOpen(false)} />
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 30 }}
+                    onClick={() => setMenuOpen(false)}
+                  />
                   <div
                     role="menu"
                     style={{
@@ -1127,8 +1303,19 @@ function NoticeCard({
 
         {/* 제목 + 내용 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>{post.title}</span>
-          <p style={{ margin: 0, fontSize: 14, color: GRAY600, letterSpacing: '-0.01em', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>
+            {post.title}
+          </span>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              color: GRAY600,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.5,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
             {post.content}
           </p>
         </div>
@@ -1216,7 +1403,10 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
     if (error.status === ErrorCode.EVENT_NOT_PARTICIPATED) {
       return (
         <Card gap={12} radius={20}>
-          <EmptyState text="참여 후 정산 내역을 볼 수 있어요." sub="이 이벤트에 참여하면 입금·집행 내역이 공개됩니다." />
+          <EmptyState
+            text="참여 후 정산 내역을 볼 수 있어요."
+            sub="이 이벤트에 참여하면 입금·집행 내역이 공개됩니다."
+          />
         </Card>
       )
     }
@@ -1240,11 +1430,27 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
   const txs: Tx[] = [
     ...deposits.map((d, i) => {
       const p = txParts(d.date)
-      return { id: `d${i}`, kind: 'in' as const, name: d.name, memo: '모금 참여', amount: d.amount, refunded: d.status === 'REFUNDED', ...p }
+      return {
+        id: `d${i}`,
+        kind: 'in' as const,
+        name: d.name,
+        memo: '모금 참여',
+        amount: d.amount,
+        refunded: d.status === 'REFUNDED',
+        ...p,
+      }
     }),
     ...executions.map((e, i) => {
       const p = txParts(e.executedAt)
-      return { id: `e${i}`, kind: 'out' as const, name: e.title, memo: '집행', amount: e.amount, refunded: false, ...p }
+      return {
+        id: `e${i}`,
+        kind: 'out' as const,
+        name: e.title,
+        memo: '집행',
+        amount: e.amount,
+        refunded: false,
+        ...p,
+      }
     }),
   ]
 
@@ -1276,9 +1482,19 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
           <SummaryCard label="환불 예정액" value={won(refund)} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>잔여 금액</span>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em' }}>
+            잔여 금액
+          </span>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: '#0c0d0d', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#0c0d0d',
+                fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '-0.01em',
+              }}
+            >
               {remaining.toLocaleString('ko-KR')}
             </span>
             <span style={{ fontSize: 14, color: INK700 }}>원</span>
@@ -1288,12 +1504,24 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
 
       {/* 필터 토글 */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 24, boxShadow: CARD_SHADOW, padding: 4 }}>
-          {([
-            { key: 'all', label: '전체' },
-            { key: 'in', label: '입금' },
-            { key: 'out', label: '출금' },
-          ] as Array<{ key: SettleFilter; label: string }>).map((f) => {
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: '#fff',
+            borderRadius: 24,
+            boxShadow: CARD_SHADOW,
+            padding: 4,
+          }}
+        >
+          {(
+            [
+              { key: 'all', label: '전체' },
+              { key: 'in', label: '입금' },
+              { key: 'out', label: '출금' },
+            ] as Array<{ key: SettleFilter; label: string }>
+          ).map((f) => {
             const active = filter === f.key
             return (
               <button
@@ -1322,22 +1550,39 @@ function SettlementTab({ event }: { event: EventDetailResponse }) {
 
       {/* 월 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 18, fontWeight: 600, color: INK800, letterSpacing: '-0.02em' }}>{monthLabel}</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: INK800, letterSpacing: '-0.02em' }}>
+          {monthLabel}
+        </span>
         <ChevronRight size={22} color={GRAY500} />
       </div>
 
       {groups.length === 0 ? (
         <Card gap={12} radius={20}>
-          <EmptyState text="거래 내역이 아직 없어요." sub="모금 참여(입금)와 집행(출금) 내역이 이곳에 표시됩니다." />
+          <EmptyState
+            text="거래 내역이 아직 없어요."
+            sub="모금 참여(입금)와 집행(출금) 내역이 이곳에 표시됩니다."
+          />
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {groups.map((g) => (
             <div key={g.dayLabel} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <span style={{ fontSize: 16, fontWeight: 500, color: GRAY600, letterSpacing: '-0.01em' }}>{g.dayLabel}</span>
+              <span
+                style={{ fontSize: 16, fontWeight: 500, color: GRAY600, letterSpacing: '-0.01em' }}
+              >
+                {g.dayLabel}
+              </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {g.items.map((t) => (
-                  <div key={t.id} style={{ background: '#fff', borderRadius: 20, boxShadow: CARD_SHADOW, padding: '20px 16px' }}>
+                  <div
+                    key={t.id}
+                    style={{
+                      background: '#fff',
+                      borderRadius: 20,
+                      boxShadow: CARD_SHADOW,
+                      padding: '20px 16px',
+                    }}
+                  >
                     <SettleRow tx={t} />
                   </div>
                 ))}
@@ -1371,16 +1616,45 @@ function SettleRow({ tx }: { tx: Tx }) {
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: INK800, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              color: INK800,
+              letterSpacing: '-0.01em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {tx.name}
           </span>
           {tx.refunded && (
-            <span style={{ flexShrink: 0, padding: '1px 7px', borderRadius: 4, fontSize: 14, fontWeight: 500, color: GRAY500, background: GRAY50, letterSpacing: '-0.01em' }}>
+            <span
+              style={{
+                flexShrink: 0,
+                padding: '1px 7px',
+                borderRadius: 4,
+                fontSize: 14,
+                fontWeight: 500,
+                color: GRAY500,
+                background: GRAY50,
+                letterSpacing: '-0.01em',
+              }}
+            >
               환불됨
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 16, fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            fontSize: 14,
+            color: GRAY500,
+            letterSpacing: '-0.01em',
+          }}
+        >
           <span>{tx.memo}</span>
           <span>{tx.time}</span>
         </div>
@@ -1419,8 +1693,21 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
         textAlign: 'center',
       }}
     >
-      <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 600, color: INK900, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+      <span
+        style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: INK900,
+          letterSpacing: '-0.02em',
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {value}
       </span>
     </div>
@@ -1449,7 +1736,15 @@ function Chip({ children }: { children: ReactNode }) {
   )
 }
 
-function Card({ children, gap = 16, radius = 12 }: { children: ReactNode; gap?: number; radius?: number }) {
+function Card({
+  children,
+  gap = 16,
+  radius = 12,
+}: {
+  children: ReactNode
+  gap?: number
+  radius?: number
+}) {
   return (
     <div
       style={{
@@ -1468,7 +1763,11 @@ function Card({ children, gap = 16, radius = 12 }: { children: ReactNode; gap?: 
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return <span style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}>{children}</span>
+  return (
+    <span style={{ fontSize: 16, fontWeight: 500, color: INK800, letterSpacing: '-0.01em' }}>
+      {children}
+    </span>
+  )
 }
 
 function Hr() {
@@ -1477,9 +1776,19 @@ function Hr() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+    <div
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+    >
       <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em' }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 600, color: INK900, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}>
+      <span
+        style={{
+          fontSize: 16,
+          fontWeight: 600,
+          color: INK900,
+          letterSpacing: '-0.01em',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
         {value}
       </span>
     </div>
@@ -1492,15 +1801,36 @@ function StatDivider() {
 
 function EmptyState({ text, sub, action }: { text: string; sub?: string; action?: ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '24px 12px', textAlign: 'center' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+        padding: '24px 12px',
+        textAlign: 'center',
+      }}
+    >
       <span style={{ fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>{text}</span>
-      {sub && <span style={{ fontSize: 14, color: GRAY300, letterSpacing: '-0.01em', lineHeight: 1.5 }}>{sub}</span>}
+      {sub && (
+        <span style={{ fontSize: 14, color: GRAY300, letterSpacing: '-0.01em', lineHeight: 1.5 }}>
+          {sub}
+        </span>
+      )}
       {action}
     </div>
   )
 }
 
-function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+function IconBtn({
+  label,
+  onClick,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  children: ReactNode
+}) {
   return (
     <button
       type="button"
@@ -1552,7 +1882,15 @@ function BudgetEditorGate({ event, onClose }: { event: EventDetailResponse; onCl
 /* ===== 상태 화면 ===== */
 function DetailSkeleton() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 20px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 16,
+        padding: '24px 20px',
+      }}
+    >
       <div style={{ height: 22, width: '60%', borderRadius: 8, background: '#eef0f3' }} />
       <div style={{ height: 32, width: '50%', borderRadius: 8, background: '#eef0f3' }} />
       <div style={{ width: 216, height: 216, borderRadius: '50%', background: '#eef0f3' }} />
@@ -1578,16 +1916,38 @@ function NotFound({ onBack }: { onBack: () => void }) {
       }}
     >
       <AlertCircle size={36} strokeWidth={2} color={GRAY300} />
-      <div style={{ fontSize: 17, fontWeight: 700, color: INK900, letterSpacing: '-0.02em' }}>이벤트를 찾을 수 없어요</div>
-      <p style={{ margin: 0, fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>삭제되었거나 잘못된 주소예요.</p>
-      <Button variant="solid" onClick={onBack} style={{ width: 'auto', padding: '12px 28px', marginTop: 4, background: VIOLET, borderRadius: 24 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: INK900, letterSpacing: '-0.02em' }}>
+        이벤트를 찾을 수 없어요
+      </div>
+      <p style={{ margin: 0, fontSize: 14, color: GRAY500, letterSpacing: '-0.01em' }}>
+        삭제되었거나 잘못된 주소예요.
+      </p>
+      <Button
+        variant="solid"
+        onClick={onBack}
+        style={{
+          width: 'auto',
+          padding: '12px 28px',
+          marginTop: 4,
+          background: VIOLET,
+          borderRadius: 24,
+        }}
+      >
         탐색으로 가기
       </Button>
     </div>
   )
 }
 
-function ErrorState({ message, onRetry, retrying }: { message: string; onRetry: () => void; retrying: boolean }) {
+function ErrorState({
+  message,
+  onRetry,
+  retrying,
+}: {
+  message: string
+  onRetry: () => void
+  retrying: boolean
+}) {
   return (
     <div
       style={{
@@ -1604,8 +1964,23 @@ function ErrorState({ message, onRetry, retrying }: { message: string; onRetry: 
       }}
     >
       <AlertCircle size={36} strokeWidth={2} color="#e03e3e" />
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: GRAY600, letterSpacing: '-0.01em' }}>{message}</p>
-      <Button variant="solid" onClick={onRetry} disabled={retrying} style={{ width: 'auto', padding: '12px 28px', background: VIOLET, borderRadius: 24 }}>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 14,
+          lineHeight: 1.5,
+          color: GRAY600,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {message}
+      </p>
+      <Button
+        variant="solid"
+        onClick={onRetry}
+        disabled={retrying}
+        style={{ width: 'auto', padding: '12px 28px', background: VIOLET, borderRadius: 24 }}
+      >
         {retrying ? '불러오는 중…' : '다시 시도'}
       </Button>
     </div>
