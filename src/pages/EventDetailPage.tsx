@@ -12,13 +12,13 @@ import {
   Copy,
   ExternalLink,
   Heart,
+  Info,
   MapPin,
   MoreVertical,
   Pencil,
   Share2,
   ShieldCheck,
   Trash2,
-  Wallet,
 } from 'lucide-react'
 import {
   useCancelEvent,
@@ -702,7 +702,7 @@ function EscrowWalletCard({
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Wallet size={20} strokeWidth={2} color={VIOLET} />
+          <Info size={20} strokeWidth={2} color={INK800} />
           <span style={{ fontSize: 16, fontWeight: 500, color: INK900, letterSpacing: '-0.02em' }}>
             이벤트 지갑 정보
           </span>
