@@ -69,6 +69,14 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
   if (!accessToken) return <Navigate to="/" replace />
   if (walletError?.status === ErrorCode.WALLET_NOT_FOUND) return <Navigate to="/wallet" replace />
 
+  // 뒤로 가기 — push 하면 지갑↔충전이 히스토리에 계속 쌓여 무한 왕복하므로 pop 한다.
+  // 히스토리가 없으면(딥링크) 지갑으로 대체 이동.
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (idx > 0) navigate(-1)
+    else navigate('/wallet', { replace: true })
+  }
+
   const tokenBalance = wallet?.tokenBalance ?? 0
   const availableKrw = balance?.currency === 'KRW' ? balance.available : undefined
   const amount = Number(amountStr)
@@ -125,7 +133,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
     const amountLabel = mode === 'charge' ? t('wallet.chargeAmountLabel') : t('wallet.convertAmountLabel')
     const dateLabel = mode === 'charge' ? t('wallet.chargeDate') : t('wallet.convertDate')
     return (
-      <TxScreen title={mode === 'charge' ? t('wallet.chargeCta') : t('wallet.convertCta')} onBack={() => navigate('/wallet')}>
+      <TxScreen title={mode === 'charge' ? t('wallet.chargeCta') : t('wallet.convertCta')} onBack={goBack}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 700, color: GRAY_900, letterSpacing: '-0.02em' }}>
             {doneTitle}
@@ -196,14 +204,14 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
         <Footer>
           <Button
             variant="ghost"
-            onClick={() => navigate('/main')}
+            onClick={() => navigate('/main', { replace: true })}
             style={{ flex: 1, borderRadius: 24, padding: '15px 20px' }}
           >
             {t('wallet.goMain')}
           </Button>
           <Button
             variant="solid"
-            onClick={() => navigate('/wallet')}
+            onClick={() => navigate('/wallet', { replace: true })}
             style={{ flex: 1, borderRadius: 24, padding: '15px 20px' }}
           >
             {t('wallet.goWallet')}
@@ -231,7 +239,7 @@ export default function WalletTxPage({ mode }: { mode: Mode }) {
   )
 
   return (
-    <TxScreen title={mode === 'charge' ? t('wallet.chargeCta') : t('wallet.convertCta')} onBack={() => navigate('/wallet')}>
+    <TxScreen title={mode === 'charge' ? t('wallet.chargeCta') : t('wallet.convertCta')} onBack={goBack}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 28 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: GRAY_900, letterSpacing: '-0.02em' }}>
