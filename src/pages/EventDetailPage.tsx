@@ -8,6 +8,7 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Heart,
   MapPin,
   MoreVertical,
@@ -15,6 +16,7 @@ import {
   Share2,
   ShieldCheck,
   Trash2,
+  Wallet,
 } from 'lucide-react'
 import {
   useCancelEvent,
@@ -57,6 +59,8 @@ const shortDate = (d: string) => d.replaceAll('-', '.').slice(2)
 const dotDate = (d: string) => d.replaceAll('-', '.')
 /** "HH:mm:ss" | null → "HH:mm" (없으면 빈 문자열) */
 const hm = (t: string | null) => (t ? t.slice(0, 5) : '')
+/** 0x1234abcd…5678 형태로 지갑 주소 축약 */
+const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
 
 /** endDate(YYYY-MM-DD)까지 남은 일수. 지났으면 0. */
 function daysLeft(endDate: string): number {
@@ -516,6 +520,34 @@ function Header({ event, dday, ongoing }: { event: EventDetailResponse; dday: nu
           </span>
           <span style={{ fontSize: 24, fontWeight: 500, color: INK800 }}>원</span>
         </div>
+        {event.escrowExplorerUrl && event.escrowAddress && (
+          <a
+            href={event.escrowExplorerUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            title="에스크로 지갑 주소 · 블록체인에서 모금액 확인"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              height: 28,
+              padding: '0 12px',
+              marginTop: 6,
+              borderRadius: 999,
+              background: VIOLET_BG,
+              color: VIOLET,
+              textDecoration: 'none',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '-0.01em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Wallet size={13} strokeWidth={2.4} />
+            에스크로 {shortAddr(event.escrowAddress)}
+            <ExternalLink size={12} strokeWidth={2.4} />
+          </a>
+        )}
       </div>
 
       {/* 진행률 링 + 대표 이미지 */}

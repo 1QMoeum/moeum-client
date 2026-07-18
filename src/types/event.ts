@@ -275,6 +275,10 @@ export interface EventDetailResponse {
   siDo: string
   siGunGu: string
   legalDong: string
+  /** 이벤트별 에스크로(모금함) 지갑 주소. 참여 토큰이 모이는 곳. 미부여 시 null */
+  escrowAddress: string | null
+  /** 에스크로 주소의 블록 익스플로러 조회 URL. escrowAddress 없으면 null */
+  escrowExplorerUrl: string | null
 }
 
 /** ===== 이벤트 수정 (PATCH /v1/events/{eventId}) — 총대만 =====
