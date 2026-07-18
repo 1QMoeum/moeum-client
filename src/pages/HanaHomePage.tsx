@@ -4,7 +4,8 @@ import HanaScreen from '@/components/hana/HanaScreen'
 
 /**
  * 하나원큐 홈 화면(캡처 기반).
- * 실제 동작하는 요소는 하단 네비게이션의 "자산" 탭 하나 — 클릭 시 자산 탭 화면으로 이동한다.
+ * 캡처의 첫 바로가기 카드("개인사업자") 위에 "moeum 모음" 카드를 덮어 올리고,
+ * 클릭 시 모음 진입 스플래시(`/hana/moeum`) 를 거쳐 모음 온보딩(`/start`) 으로 넘어간다.
  * 계좌번호 영역은 캡처 위에 데모용 번호를 덮어 노출한다.
  */
 export default function HanaHomePage() {
@@ -15,13 +16,23 @@ export default function HanaHomePage() {
       {/* 계좌번호 마스킹 오버레이 */}
       <div style={accountOverlayStyle}>153-162342-36116</div>
 
-      {/* 하단 네비 "자산" 탭 핫스팟 — 캡처에 이미 탭이 그려져 있어 투명 클릭 영역만 얹는다 */}
+      {/* "moeum 모음" 바로가기 카드 — 캡처의 첫 카드를 흰색 카드로 덮어 교체 */}
       <button
         type="button"
-        aria-label="자산 탭으로 이동"
-        style={assetTabStyle}
-        onClick={() => navigate('/hana/assets')}
-      />
+        aria-label="모음 시작하기"
+        style={moeumCardStyle}
+        onClick={() => navigate('/hana/moeum')}
+      >
+        <img
+          src="/hana/moeum-mark.svg"
+          alt=""
+          style={{ width: '8.28cqw', height: '4.7cqw' }}
+        />
+        <span style={moeumTextColStyle}>
+          <span style={moeumTitleStyle}>moeum 모음</span>
+          <span style={moeumSubtitleStyle}>투명한 공동모금</span>
+        </span>
+      </button>
     </HanaScreen>
   )
 }
@@ -43,14 +54,42 @@ const accountOverlayStyle: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-const assetTabStyle: CSSProperties = {
+// 캡처의 첫 바로가기 카드(개인사업자) 를 정확히 덮는 좌표. 살짝 여유를 둬 원본이 비치지 않게 한다.
+const moeumCardStyle: CSSProperties = {
   position: 'absolute',
-  left: '21.378%',
-  top: '87.96%',
-  width: '20.105%',
-  height: '12.02%',
-  padding: 0,
-  background: 'transparent',
+  left: '4.67%',
+  top: '60.1%',
+  width: '31%',
+  height: '15.2%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: '4.21cqw',
+  padding: '6.68cqw 0 0 3.71cqw',
+  background: '#fff',
   border: 'none',
+  borderRadius: '5.94cqw',
   cursor: 'pointer',
+  textAlign: 'left',
+}
+
+const moeumTextColStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+}
+
+const moeumTitleStyle: CSSProperties = {
+  color: '#27282c',
+  fontSize: '3.96cqw', // 캡처 기준폭 404.031px 에서 16px
+  fontWeight: 600,
+  lineHeight: 1.4,
+  letterSpacing: '-0.02em',
+}
+
+const moeumSubtitleStyle: CSSProperties = {
+  color: '#5e6976',
+  fontSize: '3.47cqw', // 캡처 기준폭 404.031px 에서 14px
+  fontWeight: 500,
+  lineHeight: 1.4,
+  letterSpacing: '-0.02em',
 }

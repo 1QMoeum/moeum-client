@@ -4,7 +4,6 @@ import { useAutoRegisterFcmToken, useForegroundFcmNotifications } from '@/hooks/
 import HomePage from '@/pages/HomePage'
 import HanaSplashPage from '@/pages/HanaSplashPage'
 import HanaHomePage from '@/pages/HanaHomePage'
-import HanaAssetsPage from '@/pages/HanaAssetsPage'
 import MoeumEntrySplashPage from '@/pages/MoeumEntrySplashPage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
@@ -40,10 +39,9 @@ export default function App() {
   return (
     <AuthBootstrap>
       <Routes>
-        {/* 하나원큐 인앱 진입 플로우: 스플래시 → 홈 → 자산 탭 → 모음 진입 스플래시 → 모음(/start) */}
+        {/* 하나원큐 인앱 진입 플로우: 스플래시 → 홈(moeum 카드) → 모음 진입 스플래시 → 모음(/start) */}
         <Route path="/" element={<HanaSplashPage />} />
         <Route path="/hana/home" element={<HanaHomePage />} />
-        <Route path="/hana/assets" element={<HanaAssetsPage />} />
         <Route path="/hana/moeum" element={<MoeumEntrySplashPage />} />
         <Route path="/start" element={<HomePage />} />
         <Route path="/main" element={<MainPage />} />
