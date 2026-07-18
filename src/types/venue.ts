@@ -32,9 +32,13 @@ export function isAdVenue(type: string): boolean {
 /** 크롤링 원본 키(product-image/x.webp)의 이미지 호스트 base. */
 const VENUE_IMAGE_BASE = 'https://kr.cafe24obs.com/data'
 
+/** 퍼블릭 읽기가 막혀 있는 백엔드 S3 버킷 — 직접 치면 403이라 카페24 host 로 치환한다. */
+const PRIVATE_S3_HOST = 'moeum-bucket.s3.ap-northeast-2.amazonaws.com'
+
 /**
  * 렌더 가능한 이미지 src. 서버 imageUrl 은
- * - 절대 URL(https://…) 이면 그대로,
+ * - 비공개 S3 버킷(moeum-bucket) URL 이면 같은 키가 있는 카페24 host 로 치환,
+ * - 그 외 절대 URL(https://…) 이면 그대로,
  * - 크롤링 원본 키(product-image/x.webp) 이면 base 를 붙여 절대 URL 로 만든다.
  * 값이 없으면 undefined(플레이스홀더 표시).
  *
@@ -42,7 +46,11 @@ const VENUE_IMAGE_BASE = 'https://kr.cafe24obs.com/data'
  */
 export function venueImageSrc(imageUrl: string | null | undefined): string | undefined {
   if (!imageUrl) return undefined
-  if (/^https?:\/\//.test(imageUrl)) return imageUrl
+  if (/^https?:\/\//.test(imageUrl)) {
+    const url = new URL(imageUrl)
+    if (url.host === PRIVATE_S3_HOST) return `${VENUE_IMAGE_BASE}${url.pathname}`
+    return imageUrl
+  }
   // base 끝 슬래시 + 키(product-image/…) 이중 슬래시 방지
   return `${VENUE_IMAGE_BASE}/${imageUrl.replace(/^\/+/, '')}`
 }
