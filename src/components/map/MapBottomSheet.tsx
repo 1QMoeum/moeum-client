@@ -253,7 +253,8 @@ export default function MapBottomSheet({ areaLabel, nearby, trending, pending, o
           overflowX: 'hidden',
           padding: `0 20px calc(20px + ${NAV_CLEARANCE})`,
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          // minmax(0, …) — 1fr 의 암묵적 min-content 하한을 제거해 nowrap 제목이 컬럼을 못 밀어내게 한다
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gap: '22px 16px',
           alignContent: 'start',
           touchAction: expanded ? 'pan-y' : 'none',
@@ -315,7 +316,7 @@ function EventTopCard({
   onClick: () => void
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
       <button
         type="button"
         onClick={onClick}
