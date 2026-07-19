@@ -1,5 +1,5 @@
 import { Wallet as WalletIcon, ChevronRight, AlertCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { CSSProperties, UIEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -27,7 +27,15 @@ export default function MainPage() {
   const [tab, setTab] = useState<Tab>('events')
   const [index, setIndex] = useState(0)
   const { data, isLoading, error } = useParticipatingEvents()
-  const events = data?.content ?? []
+  // 진행중을 앞에(서버 마감임박순 유지), 완료·종료는 뒤로 — 완료끼리는 최근 마감이 앞, 오래된 게 맨 뒤
+  const events = useMemo(() => {
+    const list = data?.content ?? []
+    const ongoing = list.filter((e) => e.status === 'ONGOING')
+    const done = list
+      .filter((e) => e.status !== 'ONGOING')
+      .sort((a, b) => b.endDate.localeCompare(a.endDate))
+    return [...ongoing, ...done]
+  }, [data])
   const active = events[index] ?? events[0]
   // 서버에 GET /v1/events/participating 미구현 상태 — 1000(INVALID_INPUT) 로 떨어짐.
   // 사용자에겐 에러 노출 대신 empty state 로 우회 (환경 별 무의미한 노이즈 제거).
