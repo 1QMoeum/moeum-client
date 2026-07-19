@@ -106,8 +106,23 @@ export default function EventListPage() {
         return [...list].sort((a, b) => b.fundingRate - a.fundingRate)
       case 'closing':
         return [...list].sort((a, b) => a.endDate.localeCompare(b.endDate))
-      default:
-        return list
+      default: {
+        // 기본(최신순) — 상태 그룹 우선: 마감임박(7일 이내) → 진행중 → 완료 → 무산/취소.
+        // 마감임박 그룹만 마감일 오름차순, 나머지는 서버 순서(최신순) 유지(stable sort).
+        const closingLimit = Date.now() + CLOSING_DAYS * 24 * 60 * 60 * 1000
+        const rank = (e: EventListItem) => {
+          if (e.status === 'ONGOING') {
+            return new Date(e.endDate).getTime() <= closingLimit ? 0 : 1
+          }
+          return e.status === 'COMPLETED' ? 2 : 3
+        }
+        return [...list].sort((a, b) => {
+          const ra = rank(a)
+          const rb = rank(b)
+          if (ra !== rb) return ra - rb
+          return ra === 0 ? a.endDate.localeCompare(b.endDate) : 0
+        })
+      }
     }
   }, [data, query, region, statusKey, sortKey])
 
