@@ -132,6 +132,7 @@
     "viewToggleAria": "홈 보기 전환",
     "tabEvents": "참여중인 이벤트",
     "tabWallet": "내 지갑",
+    "eventDetailAria": "{{title}} 상세 보기",
     "targetPrefix": "목표 {{amount}}원",
     "dDay": "D-{{n}}",
     "unit": "원",

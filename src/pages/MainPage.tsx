@@ -137,7 +137,12 @@ export default function MainPage() {
               }}
             >
               {events.map((ev, i) => (
-                <EventSlide key={ev.eventId} event={ev} active={i === index} />
+                <EventSlide
+                  key={ev.eventId}
+                  event={ev}
+                  active={i === index}
+                  onOpen={() => navigate(`/events/${ev.eventId}`)}
+                />
               ))}
             </div>
 
@@ -223,12 +228,27 @@ function SegmentButton({
   )
 }
 
-function EventSlide({ event, active }: { event: ParticipatingEvent; active: boolean }) {
+function EventSlide({
+  event,
+  active,
+  onOpen,
+}: {
+  event: ParticipatingEvent
+  active: boolean
+  onOpen: () => void
+}) {
   const { t, i18n } = useTranslation()
   const won = (n: number) => n.toLocaleString(numLocale(i18n.resolvedLanguage))
   const percent = fundingPercent(event.currentAmount, event.targetAmount)
   return (
     <section
+      role="button"
+      tabIndex={0}
+      aria-label={t('main.eventDetailAria', { title: event.title })}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onOpen()
+      }}
       style={{
         flex: '0 0 100%',
         scrollSnapAlign: 'center',
@@ -236,6 +256,8 @@ function EventSlide({ event, active }: { event: ParticipatingEvent; active: bool
         flexDirection: 'column',
         alignItems: 'center',
         padding: '16px 24px 0',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
       <h1

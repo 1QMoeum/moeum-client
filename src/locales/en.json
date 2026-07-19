@@ -132,6 +132,7 @@
     "viewToggleAria": "Switch home view",
     "tabEvents": "Participating events",
     "tabWallet": "My wallet",
+    "eventDetailAria": "View {{title}} details",
     "targetPrefix": "Goal {{amount}} KRW",
     "dDay": "D-{{n}}",
     "unit": "KRW",
