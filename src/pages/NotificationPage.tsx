@@ -25,7 +25,6 @@ const VIOLET = '#665bf7'
 const INK800 = '#27282c'
 const INK900 = '#151519'
 const GRAY500 = '#86869f'
-const GRAY600 = '#5c5c72'
 
 const AQUA = '#15beb4'
 
