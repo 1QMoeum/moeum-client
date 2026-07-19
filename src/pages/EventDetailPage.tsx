@@ -34,6 +34,7 @@ import { useAuthStore } from '@/store/auth'
 import { getUserIdFromToken } from '@/lib/jwt'
 import { ErrorCode } from '@/constants/errorCodes'
 import Button from '@/components/ui/Button'
+import ImageLightbox from '@/components/ui/ImageLightbox'
 import BudgetEditor from '@/components/events/BudgetEditor'
 import NoticeComposer from '@/components/events/NoticeComposer'
 import EventEditor from '@/components/events/EventEditor'
@@ -840,6 +841,7 @@ function IntroTab({ event }: { event: EventDetailResponse }) {
  *  둘 다 이벤트 수정으로 채운다. 생성 시 짧은 소개(description)는 원 아래 문구 전용. */
 function IntroContentBody({ event }: { event: EventDetailResponse }) {
   const imgs = [...(event.introImages ?? [])].sort((a, b) => a.seq - b.seq)
+  const [viewer, setViewer] = useState<number | null>(null)
 
   return (
     <>
@@ -851,21 +853,36 @@ function IntroContentBody({ event }: { event: EventDetailResponse }) {
             gap: 8,
           }}
         >
-          {imgs.map((img) => (
-            <img
+          {imgs.map((img, i) => (
+            <button
               key={img.fileId}
-              src={img.url}
-              alt=""
-              style={{
-                width: '100%',
-                aspectRatio: imgs.length === 1 ? 'auto' : '1 / 1',
-                objectFit: imgs.length === 1 ? 'contain' : 'cover',
-                borderRadius: 8,
-                display: 'block',
-              }}
-            />
+              type="button"
+              aria-label={`소개 사진 ${i + 1} 확대`}
+              onClick={() => setViewer(i)}
+              style={galleryButtonStyle}
+            >
+              <img
+                src={img.url}
+                alt=""
+                style={{
+                  width: '100%',
+                  aspectRatio: imgs.length === 1 ? 'auto' : '1 / 1',
+                  objectFit: imgs.length === 1 ? 'contain' : 'cover',
+                  borderRadius: 8,
+                  display: 'block',
+                }}
+              />
+            </button>
           ))}
         </div>
+      )}
+      {viewer !== null && (
+        <ImageLightbox
+          images={imgs.map((img) => img.url)}
+          index={viewer}
+          onClose={() => setViewer(null)}
+          onIndexChange={setViewer}
+        />
       )}
       {event.detailDescription && <p style={introTextStyle}>{event.detailDescription}</p>}
       {imgs.length === 0 && !event.detailDescription && (
@@ -873,6 +890,16 @@ function IntroContentBody({ event }: { event: EventDetailResponse }) {
       )}
     </>
   )
+}
+
+/** 갤러리 이미지 탭 영역 — 이미지 그대로 보이는 투명 버튼 */
+const galleryButtonStyle: CSSProperties = {
+  all: 'unset',
+  boxSizing: 'border-box',
+  display: 'block',
+  width: '100%',
+  cursor: 'zoom-in',
+  WebkitTapHighlightColor: 'transparent',
 }
 
 const introTextStyle: CSSProperties = {
@@ -1332,6 +1359,7 @@ function NoticeCard({
   onDelete: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [viewer, setViewer] = useState<number | null>(null)
   const imgs = post.imageUrls ?? []
 
   return (
@@ -1456,20 +1484,30 @@ function NoticeCard({
           }}
         >
           {imgs.map((url, i) => (
-            <img
+            <button
               key={`${url}-${i}`}
-              src={url}
-              alt=""
-              style={{
-                width: '100%',
-                aspectRatio: imgs.length === 1 ? '337 / 180' : '1 / 1',
-                objectFit: 'cover',
-                borderRadius: 12,
-                display: 'block',
-              }}
-            />
+              type="button"
+              aria-label={`첨부 사진 ${i + 1} 확대`}
+              onClick={() => setViewer(i)}
+              style={galleryButtonStyle}
+            >
+              <img
+                src={url}
+                alt=""
+                style={{
+                  width: '100%',
+                  aspectRatio: imgs.length === 1 ? '337 / 180' : '1 / 1',
+                  objectFit: 'cover',
+                  borderRadius: 12,
+                  display: 'block',
+                }}
+              />
+            </button>
           ))}
         </div>
+      )}
+      {viewer !== null && (
+        <ImageLightbox images={imgs} index={viewer} onClose={() => setViewer(null)} onIndexChange={setViewer} />
       )}
     </div>
   )
