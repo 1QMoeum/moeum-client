@@ -196,6 +196,7 @@ function EventView({
   onBack: () => void
   onParticipate: () => void
 }) {
+  const navigate = useNavigate()
   const accessToken = useAuthStore((s) => s.accessToken)
   const [tab, setTab] = useState<Tab>('intro')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -284,7 +285,12 @@ function EventView({
         onBack={onBack}
         right={
           <>
-            <button type="button" aria-label="알림" style={iconBtnStyle}>
+            <button
+              type="button"
+              aria-label="알림"
+              style={iconBtnStyle}
+              onClick={() => navigate('/notifications')}
+            >
               <Bell size={22} color={INK800} fill={INK800} />
             </button>
             {isOwner && (

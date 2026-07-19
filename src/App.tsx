@@ -8,6 +8,7 @@ import MoeumEntrySplashPage from '@/pages/MoeumEntrySplashPage'
 import MainPage from '@/pages/MainPage'
 import CalendarPage from '@/pages/CalendarPage'
 import MyPage from '@/pages/MyPage'
+import NotificationPage from '@/pages/NotificationPage'
 import MyEventsPage from '@/pages/MyEventsPage'
 import KycPage from '@/pages/KycPage'
 import KycForeignPage from '@/pages/KycForeignPage'
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/main" element={<MainPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/notifications" element={<NotificationPage />} />
         <Route path="/mypage/events/:tab" element={<MyEventsPage />} />
         <Route path="/kyc" element={<KycPage />} />
         <Route path="/kyc/foreign" element={<KycForeignPage />} />

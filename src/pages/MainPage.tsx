@@ -8,6 +8,7 @@ import ProgressRing from '@/components/home/ProgressRing'
 import { useMyWallet } from '@/hooks/wallet'
 import { useMyAccount } from '@/hooks/account'
 import { useParticipatingEvents } from '@/hooks/events'
+import { useUnreadNotificationCount } from '@/hooks/notification'
 import AccountSelectSheet from '@/components/wallet/AccountSelectSheet'
 import { useAuthStore } from '@/store/auth'
 import { ErrorCode } from '@/constants/errorCodes'
@@ -15,6 +16,25 @@ import { dDayLabel, fundingPercent } from '@/types/event'
 import type { ParticipatingEvent } from '@/types/event'
 
 type Tab = 'events' | 'wallet'
+
+/** 벨 우상단 미읽음 뱃지 */
+const unreadBadgeStyle: CSSProperties = {
+  position: 'absolute',
+  top: -4,
+  right: -6,
+  minWidth: 16,
+  height: 16,
+  padding: '0 4px',
+  borderRadius: 999,
+  background: '#fa5252',
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: 700,
+  lineHeight: '16px',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+  pointerEvents: 'none',
+}
 
 const numLocale = (lang: string | undefined) => (lang === 'ko' ? 'ko-KR' : 'en-US')
 
@@ -27,6 +47,7 @@ export default function MainPage() {
   const [tab, setTab] = useState<Tab>('events')
   const [index, setIndex] = useState(0)
   const { data, isLoading, error } = useParticipatingEvents()
+  const unreadCount = useUnreadNotificationCount().data?.count ?? 0
   // 진행중을 앞에(서버 마감임박순 유지), 완료·종료는 뒤로 — 완료끼리는 최근 마감이 앞, 오래된 게 맨 뒤
   const events = useMemo(() => {
     const list = data?.content ?? []
@@ -92,13 +113,20 @@ export default function MainPage() {
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HeaderIconButton label={t('main.notifAria')}>
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V3.75H10.4426C8.21751 3.75 6.37591 5.48001 6.23702 7.70074L6.01601 11.2342C5.93175 12.5814 5.47946 13.8797 4.7084 14.9876C4.01172 15.9886 4.63194 17.3712 5.84287 17.5165L9.25 17.9254V19C9.25 20.5188 10.4812 21.75 12 21.75C13.5188 21.75 14.75 20.5188 14.75 19V17.9254L18.1571 17.5165C19.3681 17.3712 19.9883 15.9886 19.2916 14.9876C18.5205 13.8797 18.0682 12.5814 17.984 11.2342L17.763 7.70074C17.6241 5.48001 15.7825 3.75 13.5574 3.75H13V3ZM10.75 19C10.75 19.6904 11.3096 20.25 12 20.25C12.6904 20.25 13.25 19.6904 13.25 19V18.25H10.75V19Z"
-              />
-            </HeaderIconButton>
+            <span style={{ position: 'relative', display: 'flex' }}>
+              <HeaderIconButton label={t('main.notifAria')} onClick={() => navigate('/notifications')}>
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V3.75H10.4426C8.21751 3.75 6.37591 5.48001 6.23702 7.70074L6.01601 11.2342C5.93175 12.5814 5.47946 13.8797 4.7084 14.9876C4.01172 15.9886 4.63194 17.3712 5.84287 17.5165L9.25 17.9254V19C9.25 20.5188 10.4812 21.75 12 21.75C13.5188 21.75 14.75 20.5188 14.75 19V17.9254L18.1571 17.5165C19.3681 17.3712 19.9883 15.9886 19.2916 14.9876C18.5205 13.8797 18.0682 12.5814 17.984 11.2342L17.763 7.70074C17.6241 5.48001 15.7825 3.75 13.5574 3.75H13V3ZM10.75 19C10.75 19.6904 11.3096 20.25 12 20.25C12.6904 20.25 13.25 19.6904 13.25 19V18.25H10.75V19Z"
+                />
+              </HeaderIconButton>
+              {unreadCount > 0 && (
+                <span aria-hidden style={unreadBadgeStyle}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </span>
             <HeaderIconButton label={t('main.myPageAria')} onClick={() => navigate('/mypage')}>
               <path d="M12 3.75C9.92893 3.75 8.25 5.42893 8.25 7.5C8.25 9.57107 9.92893 11.25 12 11.25C14.0711 11.25 15.75 9.57107 15.75 7.5C15.75 5.42893 14.0711 3.75 12 3.75Z" />
               <path d="M8 13.25C5.92893 13.25 4.25 14.9289 4.25 17V18.1883C4.25 18.9415 4.79588 19.5837 5.53927 19.7051C9.8181 20.4037 14.1819 20.4037 18.4607 19.7051C19.2041 19.5837 19.75 18.9415 19.75 18.1883V17C19.75 14.9289 18.0711 13.25 16 13.25H15.6591C15.4746 13.25 15.2913 13.2792 15.1159 13.3364L14.2504 13.6191C12.7881 14.0965 11.2119 14.0965 9.74959 13.6191L8.88407 13.3364C8.70869 13.2792 8.52536 13.25 8.34087 13.25H8Z" />
