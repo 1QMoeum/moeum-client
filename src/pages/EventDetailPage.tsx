@@ -27,6 +27,7 @@ import {
   useEventDetail,
   useEventPosts,
   useEventSettlement,
+  useParticipatingEvents,
 } from '@/hooks/events'
 import { useBookmarkedIds, useToggleBookmark } from '@/hooks/bookmark'
 import { useAuthStore } from '@/store/auth'
@@ -205,6 +206,11 @@ function EventView({
   const ongoing = event.status === 'ONGOING'
   const dday = daysLeft(event.endDate)
 
+  // 이벤트 지갑 정보(에스크로 주소)는 참여 확정자·총대에게만 노출한다
+  const { data: participating } = useParticipatingEvents()
+  const isParticipant = (participating?.content ?? []).some((e) => e.eventId === event.eventId)
+  const showEscrow = isOwner || isParticipant
+
   // 찜(관심 이벤트) — 서버 관심 목록으로 초기 상태를 맞추고, 토글은 낙관적 갱신 후 mutation.
   const bookmarkedIds = useBookmarkedIds()
   const toggleBookmark = useToggleBookmark()
@@ -339,7 +345,7 @@ function EventView({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', paddingBottom: 108 }}>
-        <Header event={event} dday={dday} ongoing={ongoing} onToast={setToast} />
+        <Header event={event} dday={dday} ongoing={ongoing} showEscrow={showEscrow} onToast={setToast} />
 
         {/* 탭 */}
         <nav
@@ -504,11 +510,14 @@ function Header({
   event,
   dday,
   ongoing,
+  showEscrow,
   onToast,
 }: {
   event: EventDetailResponse
   dday: number
   ongoing: boolean
+  /** 지갑 정보 노출 여부 — 참여 확정자·총대만 true */
+  showEscrow: boolean
   onToast: (msg: string) => void
 }) {
   const pct = fundingPercent(event.currentAmount, event.targetAmount)
@@ -650,8 +659,8 @@ function Header({
         <Stat label="마감일" value={shortDate(event.endDate)} />
       </section>
 
-      {/* 이벤트 지갑 정보 — 모금별 에스크로 주소 + 익스플로러 (접이식, Figma 1789:6246) */}
-      {event.escrowAddress && (
+      {/* 이벤트 지갑 정보 — 모금별 에스크로 주소 + 익스플로러 (접이식, Figma 1789:6246). 미참여자에겐 숨김 */}
+      {showEscrow && event.escrowAddress && (
         <EscrowWalletCard
           address={event.escrowAddress}
           explorerUrl={event.escrowExplorerUrl}
