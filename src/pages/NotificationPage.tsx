@@ -147,22 +147,6 @@ export default function NotificationPage() {
         {/* 고정 공지 — 모든 유저에게 항상 노출 (클라이언트 고정) */}
         {!isPending && <PinnedNotice />}
 
-        {!isPending && !error && items.length === 0 && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 12,
-              padding: '80px 20px 0',
-              color: GRAY500,
-            }}
-          >
-            <Bell size={40} strokeWidth={1.6} color="#d5d5e4" />
-            <p style={{ margin: 0, fontSize: 15, letterSpacing: '-0.01em' }}>새로운 알림이 없어요</p>
-          </div>
-        )}
-
         {items.length > 0 && (
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' }}>
             {items.map((n) => (
