@@ -123,9 +123,9 @@ export default function NotificationPage() {
         </header>
 
         {isPending && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '8px 20px' }}>
             {[0, 1, 2].map((i) => (
-              <div key={i} style={{ height: 76, borderRadius: 16, background: '#eef0f3' }} />
+              <div key={i} style={{ height: 84, borderRadius: 20, background: '#eef0f3' }} />
             ))}
           </div>
         )}
@@ -153,7 +153,7 @@ export default function NotificationPage() {
         )}
 
         {items.length > 0 && (
-          <ul style={{ margin: 0, padding: '4px 20px 0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ul style={{ margin: 0, padding: '8px 20px 0', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {items.map((n) => (
               <NotificationRow key={n.notificationId} item={n} onSelect={() => onSelect(n)} />
             ))}
@@ -202,35 +202,37 @@ function NotificationRow({ item, onSelect }: { item: NotificationSummary; onSele
           alignItems: 'flex-start',
           gap: 12,
           width: '100%',
-          padding: '14px 16px',
-          borderRadius: 16,
-          background: item.isRead ? '#fff' : '#f1f0ff',
+          padding: '16px',
+          borderRadius: 20,
+          background: '#fff',
+          boxShadow: '0 2px 12px rgba(21, 21, 21, 0.05)',
           cursor: 'pointer',
           WebkitTapHighlightColor: 'transparent',
         }}
       >
+        {/* 아이콘 칩 — 미읽음은 D-day 칩과 같은 연보라/바이올렛, 읽음은 회색 톤 */}
         <span
           style={{
             flexShrink: 0,
             width: 38,
             height: 38,
-            borderRadius: '50%',
-            background: item.isRead ? '#f3f3f8' : '#e3e1ff',
+            borderRadius: 12,
+            background: item.isRead ? '#f6f6fa' : '#e3e1ff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon size={18} strokeWidth={2} color={item.isRead ? GRAY500 : VIOLET} />
+          <Icon size={18} strokeWidth={2} color={item.isRead ? '#a4a4bd' : VIOLET} />
         </span>
         <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
               style={{
                 fontSize: 15,
                 fontWeight: 600,
-                color: INK900,
-                letterSpacing: '-0.01em',
+                color: item.isRead ? GRAY600 : INK900,
+                letterSpacing: '-0.02em',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -238,11 +240,25 @@ function NotificationRow({ item, onSelect }: { item: NotificationSummary; onSele
             >
               {item.title}
             </span>
-            <span style={{ flexShrink: 0, marginLeft: 'auto', fontSize: 12, color: GRAY500 }}>
+            {!item.isRead && (
+              <span
+                aria-hidden
+                style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: VIOLET }}
+              />
+            )}
+            <span style={{ flexShrink: 0, marginLeft: 'auto', fontSize: 12, color: GRAY500, letterSpacing: '-0.01em' }}>
               {timeLabel(item.createdAt)}
             </span>
           </span>
-          <span style={{ fontSize: 14, color: GRAY600, letterSpacing: '-0.01em', lineHeight: 1.5, wordBreak: 'break-word' }}>
+          <span
+            style={{
+              fontSize: 14,
+              color: item.isRead ? GRAY500 : GRAY600,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.5,
+              wordBreak: 'break-word',
+            }}
+          >
             {item.message}
           </span>
         </span>
