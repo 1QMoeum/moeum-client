@@ -32,6 +32,28 @@ export function useVerifyKyc() {
   })
 }
 
+const DEMO_KYC_KEY = 'moeum:demo-kyc-key'
+
+/**
+ * [시연용] 인증 없이 바로 체험 — 포트원 SDK 를 건너뛰고 `demo:{키}` 형식 ID 로 서버 KYC 검증을 받는다
+ * (서버의 데모 우회 어댑터가 가상 인증으로 통과 처리, docs/note/10_DEMO_AUTH_BYPASS.md).
+ * 키는 localStorage 에 보관해 재방문 시 같은 체험 계정으로 이어진다(newUser=false → 재인증 로그인).
+ */
+export function useVerifyDemoKyc() {
+  return useMutation<{ identityVerificationId: string; result: KycVerifyResponse }, Error, void>({
+    mutationFn: async () => {
+      let key = localStorage.getItem(DEMO_KYC_KEY)
+      if (!key) {
+        key = crypto.randomUUID()
+        localStorage.setItem(DEMO_KYC_KEY, key)
+      }
+      const identityVerificationId = `demo:${key}`
+      const result = await authApi.verifyKyc(identityVerificationId)
+      return { identityVerificationId, result }
+    },
+  })
+}
+
 /** 간편 로그인 — refresh + PIN. 성공 시 토큰 저장. */
 export function useLogin() {
   const setTokens = useAuthStore((s) => s.setTokens)

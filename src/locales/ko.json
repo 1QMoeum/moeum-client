@@ -18,7 +18,9 @@
     "ctaStart": "시작하기",
     "ctaLogin": "간편 로그인",
     "ctaDomestic": "본인인증 시작하기",
-    "ctaForeign": "여권 인증 시작하기"
+    "ctaForeign": "여권 인증 시작하기",
+    "ctaDemo": "인증 없이 바로 체험하기",
+    "ctaDemoPending": "체험 계정 준비 중…"
   },
   "plaid": {
     "consent": {

@@ -18,7 +18,9 @@
     "ctaStart": "Get started",
     "ctaLogin": "Quick login",
     "ctaDomestic": "Verify by phone (Korea)",
-    "ctaForeign": "Verify with passport"
+    "ctaForeign": "Verify with passport",
+    "ctaDemo": "Try instantly without verification",
+    "ctaDemoPending": "Preparing demo account…"
   },
   "plaid": {
     "consent": {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { toErrorMessage } from '@/api/client'
 import { useAuthStore, type UserType } from '@/store/auth'
+import { useVerifyDemoKyc } from '@/hooks/auth'
 import MoeumLogo from '@/components/ui/MoeumLogo'
 import Button from '@/components/ui/Button'
 import LanguageSelector from '@/components/ui/LanguageSelector'
@@ -30,6 +32,18 @@ export default function HomePage() {
   const startKyc = () => {
     setUserType(inferredType)
     navigate(inferredType === 'DOMESTIC' ? '/kyc' : '/kyc/foreign')
+  }
+
+  // [시연용] 인증 없이 바로 체험 — SDK 없이 demo KYC 검증 후 기존 가입/재로그인 플로우로 합류.
+  const { mutate: verifyDemo, isPending: demoPending, error: demoError } = useVerifyDemoKyc()
+  const startDemo = () => {
+    setUserType('DOMESTIC')
+    verifyDemo(undefined, {
+      onSuccess: ({ identityVerificationId, result }) => {
+        const navState = { identityVerificationId, name: result.name }
+        navigate(result.newUser ? '/signup' : '/kyc-login', { state: navState })
+      },
+    })
   }
 
   const standalone = useIsStandalone()
@@ -104,9 +118,42 @@ export default function HomePage() {
       {hasRefresh ? (
         <Button onClick={() => navigate('/login')}>{t('home.ctaLogin')}</Button>
       ) : (
-        <Button onClick={startKyc}>
-          {isKorean ? t('home.ctaDomestic') : t('home.ctaForeign')}
-        </Button>
+        <>
+          <Button onClick={startKyc}>
+            {isKorean ? t('home.ctaDomestic') : t('home.ctaForeign')}
+          </Button>
+          {/* [시연용] 인증 없이 체험 진입 — 옅은 회색 채움 + 진한 글씨 보조 버튼 */}
+          {isKorean && (
+            <>
+              <Button
+                onClick={startDemo}
+                disabled={demoPending}
+                style={{
+                  marginTop: 12,
+                  background: '#f4f4f7',
+                  color: '#4b4b5c',
+                  fontWeight: 500,
+                  boxShadow: 'none',
+                }}
+              >
+                {demoPending ? t('home.ctaDemoPending') : t('home.ctaDemo')}
+              </Button>
+              {demoError && (
+                <p
+                  style={{
+                    margin: '8px 0 0',
+                    textAlign: 'center',
+                    fontSize: 13,
+                    color: '#e5484d',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {toErrorMessage(demoError)}
+                </p>
+              )}
+            </>
+          )}
+        </>
       )}
 
       <InstallPromptModal open={showInstall} onDismiss={handleDismissInstall} />
