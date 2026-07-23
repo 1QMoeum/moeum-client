@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 /**
  * 하나원큐 인앱 화면 프레임.
  * 실제 앱 캡처 이미지를 배경으로 깔고, 위에 클릭 핫스팟/오버레이(children)를 얹는다.
- * 오버레이는 캡처(상태바·하단 홈 인디케이터 여백 크롭 후 404.031 × 802.081 기준) 좌표를 % 로 환산해 절대 배치한다.
+ * 오버레이는 캡처 좌표를 % 로 환산해 절대 배치한다.
  *
  * <p>레이아웃 — 캡처 비율(ratio)의 "스테이지"를 화면에 cover 방식(가운데·하단 정렬)으로
  * 깔고, 이미지와 오버레이를 모두 스테이지 안에 둔다. 기기 비율이 달라 캡처가 잘려나가도
@@ -15,21 +15,15 @@ export default function HanaScreen({
   image,
   alt,
   background = '#fff',
-  ratio = 1284 / 2549,
-  cropAnchorX = 0.5,
+  ratio = 1260 / 2418,
   children,
 }: {
   image: string
   alt: string
   /** 크롭·확대 시 노출될 수 있는 좌우 여백 색(대부분 케이스에선 안 보임) */
   background?: string
-  /** 캡처 원본의 가로/세로 비율. home 캡처(1284×2549 — 하단 홈 인디케이터 흰 여백 크롭)가 디폴트 */
+  /** 캡처 원본의 가로/세로 비율. splash 캡처(1260×2418)가 디폴트 */
   ratio?: number
-  /**
-   * 화면이 캡처보다 길쭉해 좌우가 잘릴 때 크롭 기준점(0 = 왼쪽 고정 → 오른쪽만 잘림,
-   * 0.5 = 가운데 → 양쪽 균등). 홈은 왼쪽 첫 카드(moeum)가 잘리지 않게 0.2 를 쓴다.
-   */
-  cropAnchorX?: number
   children?: ReactNode
 }) {
   return (
@@ -49,8 +43,8 @@ export default function HanaScreen({
           style={{
             position: 'absolute',
             bottom: 0,
-            // (컨테이너 폭 - 스테이지 폭) 의 cropAnchorX 비율만큼만 왼쪽으로 밀어 크롭 지점을 조절
-            left: `calc((100% - max(100%, 100dvh * ${ratio})) * ${cropAnchorX})`,
+            left: '50%',
+            transform: 'translateX(-50%)',
             width: `max(100%, calc(100dvh * ${ratio}))`,
             aspectRatio: String(ratio),
             containerType: 'inline-size',
