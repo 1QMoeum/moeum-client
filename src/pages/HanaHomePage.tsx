@@ -12,7 +12,7 @@ export default function HanaHomePage() {
   const navigate = useNavigate()
 
   return (
-    <HanaScreen image="/hana/home.png" alt="하나원큐 홈 화면" background="#dcf3e4">
+    <HanaScreen image="/hana/home.png" alt="하나원큐 홈 화면" background="#dcf3e4" cropAnchorX={0.2}>
       {/* 계좌번호 마스킹 오버레이 */}
       <div style={accountOverlayStyle}>153-162342-36116</div>
 

@@ -16,6 +16,7 @@ export default function HanaScreen({
   alt,
   background = '#fff',
   ratio = 1284 / 2549,
+  cropAnchorX = 0.5,
   children,
 }: {
   image: string
@@ -24,6 +25,11 @@ export default function HanaScreen({
   background?: string
   /** 캡처 원본의 가로/세로 비율. home 캡처(1284×2549 — 하단 홈 인디케이터 흰 여백 크롭)가 디폴트 */
   ratio?: number
+  /**
+   * 화면이 캡처보다 길쭉해 좌우가 잘릴 때 크롭 기준점(0 = 왼쪽 고정 → 오른쪽만 잘림,
+   * 0.5 = 가운데 → 양쪽 균등). 홈은 왼쪽 첫 카드(moeum)가 잘리지 않게 0.2 를 쓴다.
+   */
+  cropAnchorX?: number
   children?: ReactNode
 }) {
   return (
@@ -43,8 +49,8 @@ export default function HanaScreen({
           style={{
             position: 'absolute',
             bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            // (컨테이너 폭 - 스테이지 폭) 의 cropAnchorX 비율만큼만 왼쪽으로 밀어 크롭 지점을 조절
+            left: `calc((100% - max(100%, 100dvh * ${ratio})) * ${cropAnchorX})`,
             width: `max(100%, calc(100dvh * ${ratio}))`,
             aspectRatio: String(ratio),
             containerType: 'inline-size',
