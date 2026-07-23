@@ -85,7 +85,7 @@ export default function HomePage() {
         <LanguageSelector />
       </div>
 
-      {/* 중앙 — 로고 + 설명 */}
+      {/* 중앙 — 로고 + 설명 + CTA 를 한 덩어리로 화면 가운데 배치 */}
       <section
         style={{
           flex: 1,
@@ -112,49 +112,51 @@ export default function HomePage() {
         >
           {t('home.tagline')}
         </p>
-      </section>
 
-      {/* 하단 CTA — 언어별 1개만 노출 (한국어 = 국내, 그 외 = 여권) */}
-      {hasRefresh ? (
-        <Button onClick={() => navigate('/login')}>{t('home.ctaLogin')}</Button>
-      ) : (
-        <>
-          <Button onClick={startKyc}>
-            {isKorean ? t('home.ctaDomestic') : t('home.ctaForeign')}
-          </Button>
-          {/* [시연용] 인증 없이 체험 진입 — 옅은 회색 채움 + 진한 글씨 보조 버튼 */}
-          {isKorean && (
+        {/* CTA — 언어별 1개만 노출 (한국어 = 국내, 그 외 = 여권) */}
+        <div style={{ width: '100%', marginTop: 16 }}>
+          {hasRefresh ? (
+            <Button onClick={() => navigate('/login')}>{t('home.ctaLogin')}</Button>
+          ) : (
             <>
-              <Button
-                onClick={startDemo}
-                disabled={demoPending}
-                style={{
-                  marginTop: 12,
-                  background: '#f4f4f7',
-                  color: '#4b4b5c',
-                  fontWeight: 500,
-                  boxShadow: 'none',
-                }}
-              >
-                {demoPending ? t('home.ctaDemoPending') : t('home.ctaDemo')}
+              <Button onClick={startKyc}>
+                {isKorean ? t('home.ctaDomestic') : t('home.ctaForeign')}
               </Button>
-              {demoError && (
-                <p
-                  style={{
-                    margin: '8px 0 0',
-                    textAlign: 'center',
-                    fontSize: 13,
-                    color: '#e5484d',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {toErrorMessage(demoError)}
-                </p>
+              {/* [시연용] 인증 없이 체험 진입 — 옅은 회색 채움 + 진한 글씨 보조 버튼 */}
+              {isKorean && (
+                <>
+                  <Button
+                    onClick={startDemo}
+                    disabled={demoPending}
+                    style={{
+                      marginTop: 16,
+                      background: '#f4f4f7',
+                      color: '#4b4b5c',
+                      fontWeight: 500,
+                      boxShadow: 'none',
+                    }}
+                  >
+                    {demoPending ? t('home.ctaDemoPending') : t('home.ctaDemo')}
+                  </Button>
+                  {demoError && (
+                    <p
+                      style={{
+                        margin: '8px 0 0',
+                        textAlign: 'center',
+                        fontSize: 13,
+                        color: '#e5484d',
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {toErrorMessage(demoError)}
+                    </p>
+                  )}
+                </>
               )}
             </>
           )}
-        </>
-      )}
+        </div>
+      </section>
 
       <InstallPromptModal open={showInstall} onDismiss={handleDismissInstall} />
     </main>
