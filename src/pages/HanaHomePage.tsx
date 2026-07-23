@@ -45,9 +45,9 @@ export default function HanaHomePage() {
 const accountOverlayStyle: CSSProperties = {
   position: 'absolute',
   left: '35.375%',
-  top: '16.96%',
+  top: '17.545%',
   width: '38.683%',
-  height: '2.85%',
+  height: '2.948%',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -63,9 +63,9 @@ const accountOverlayStyle: CSSProperties = {
 const moeumCardStyle: CSSProperties = {
   position: 'absolute',
   left: '4.67%',
-  top: '60.1%',
+  top: '62.175%',
   width: '31%',
-  height: '15.2%',
+  height: '15.725%',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
