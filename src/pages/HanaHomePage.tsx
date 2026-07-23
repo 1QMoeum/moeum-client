@@ -16,13 +16,18 @@ export default function HanaHomePage() {
       {/* 계좌번호 마스킹 오버레이 */}
       <div style={accountOverlayStyle}>153-162342-36116</div>
 
-      {/* "moeum 모음" 바로가기 카드 — 캡처의 첫 카드를 흰색 카드로 덮어 교체 */}
+      {/* "moeum 모음" 바로가기 카드 — 캡처의 첫 카드를 흰색 카드로 덮어 교체.
+          글로우 펄스 + N 배지로 다른 바로가기 카드보다 시선이 먼저 가게 한다. */}
       <button
         type="button"
         aria-label="모음 시작하기"
+        className="moeum-hana-glow"
         style={moeumCardStyle}
         onClick={() => navigate('/hana/moeum')}
       >
+        <span aria-hidden style={moeumBadgeStyle}>
+          N
+        </span>
         <img
           src="/hana/moeum-mark.svg"
           alt=""
@@ -71,6 +76,26 @@ const moeumCardStyle: CSSProperties = {
   borderRadius: '5.94cqw',
   cursor: 'pointer',
   textAlign: 'left',
+}
+
+// 캡처 속 알림 종의 빨간 N 배지와 같은 문법 — 하나원큐 네이티브처럼 보이게 한다.
+const moeumBadgeStyle: CSSProperties = {
+  position: 'absolute',
+  top: '-1.5cqw',
+  right: '-1.5cqw',
+  minWidth: '4.95cqw',
+  height: '4.95cqw',
+  padding: '0 1.2cqw',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: '#ff4d4f',
+  color: '#fff',
+  fontSize: '2.97cqw', // 캡처 기준폭 404.031px 에서 12px
+  fontWeight: 700,
+  lineHeight: 1,
+  borderRadius: '999px',
+  border: '0.5cqw solid #fff',
 }
 
 const moeumTextColStyle: CSSProperties = {
